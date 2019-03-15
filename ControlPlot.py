@@ -10,7 +10,8 @@ def reload():
 
 def plot_x1(x, y, oo={}):
     fig, ax = mpl.subplots(figsize=(5, 3))
-    ax.plot(x, y)
+#    ax.plot(x, y)
+    ax.semilogy(x, abs(y))
 
 
 def plot_x1x2(x, y, z, oo={}):

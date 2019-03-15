@@ -19,6 +19,9 @@ def prepare_data(dd, path_to_folder):
 
 path_sim = 'd:/Work-Projects/MyProgs/ORB_data/' \
                      'turbulence/AUG20787/adiab/linear/n60/'
+                     
+                     
+path_sim_draco = '/u/ivannovi/turbulence/AUG20787/adiab/linear/n60'
 
 # Main principles:
 # -> main script which import necessary modules
