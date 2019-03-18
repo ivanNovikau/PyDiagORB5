@@ -58,7 +58,7 @@ def plot_schi(dd, t1, oo={}):
     # cpr.plot_x1x2(r, z, pot_nz, oop)
 
 
-def calc_gamma(dd, s1, s2, chi1, oo={}):
+def calc_gamma_chi0(dd, s1, s2, chi1, oo={}):
     # coordinate axes
     t = dd['potsc']['t']  # create a new reference
     s = dd['potsc']['s']  # create a new reference
@@ -76,44 +76,47 @@ def calc_gamma(dd, s1, s2, chi1, oo={}):
     pot_nz = np.mean(pot_nz_chi, axis=1)
 
     # estimation:
-    wg = ymath.estimate_wg(t, pot_nz)
+    wg_est = ymath.estimate_wg(t, pot_nz)
 
-    # plotting: time evolution and peaks
+    # plotting: estimation: time evolution and peaks
     curves_est = crv.Curves().xlab('t').ylab('\Phi')
     curves_est.flag_semilogy = True
     curves_est.new('init')\
         .XS(t).YS(pot_nz).leg('init')
     curves_est.new('peaks')\
-        .XS(wg['x_peaks']).YS(wg['y_peaks'])\
-        .leg('peaks').sty('o').col('red')
+        .XS(wg_est['x_peaks']).YS(wg_est['y_peaks'])\
+        .leg('peaks').sty('o').col('green')
     curves_est.new('fitting')\
-        .XS(t).YS(wg['y_fit']).leg('fitting')\
-        .col('green')
+        .XS(t).YS(wg_est['y_fit'])\
+        .leg('fitting').col('red').sty('--')
     cpr.plot_curves(curves_est)
+
+    # advanced w,g calculation
+    ainf = {'est': wg_est,
+            'x_start': wg_est['x_peaks'][0],
+            'x_end': wg_est['x_peaks'][-1]
+            }
+    wg_adv = ymath.advanced_wg(t, pot_nz, ainf)
+    curves_adv = crv.Curves().xlab('t').ylab('\Phi')
+    curves_adv.flag_semilogy = True
+    curves_adv.new('init') \
+        .XS(t).YS(pot_nz).leg('init')
+    curves_adv.new('fitting') \
+        .XS(wg_adv['x_fit']).YS(wg_adv['y_fit'])\
+        .leg('adv. fitting').col('red').sty('--')
+    cpr.plot_curves(curves_adv)
 
     # print results:
     print('--- Estimation ---')
-    print('w = {:0.3e}'.format(wg['w']))
-    print('g = {:0.3e}'.format(wg['g']))
+    print('w = {:0.3e}'.format(wg_est['w']))
+    print('g = {:0.3e}'.format(wg_est['g']))
+
+    print('--- Advanced ---')
+    print('w = {:0.3e}'.format(wg_adv['w']))
+    print('g = {:0.3e}'.format(wg_adv['g']))
 
 
-def test_curves():
-    x = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
-    fx = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
-    curves = crv.Curves().xlab('\kappa').ylab('\mathbf{\Phi}')
-    curves.flag_semilogy = True
-
-    curves.new('c1').XS(x).YS(fx).sty('--').col('blue')\
-        .leg('\Phi')
-    curves.new('c2').XS(x).YS(100*fx).sty('o').col((1, 0, 0))\
-        .leg('\overline{\Phi}')
-
-    cpr.plot_curves(curves)
-
-    curves.set_print()
-    curves.map('c2').col('green')
-    cpr.plot_curves(curves)
 
 
 
