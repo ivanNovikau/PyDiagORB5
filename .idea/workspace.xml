@@ -2,9 +2,7 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ControlPlot.py" beforeDir="false" afterPath="$PROJECT_DIR$/ControlPlot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/lib/tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ymath.py" beforeDir="false" afterPath="$PROJECT_DIR$/ymath.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -34,8 +32,8 @@
           <file leaf-file-name="tests.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/lib/tests.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="760">
-                  <caret line="109" column="41" selection-start-line="109" selection-start-column="41" selection-end-line="109" selection-end-column="41" />
+                <state relative-caret-position="660">
+                  <caret line="104" column="23" lean-forward="true" selection-start-line="104" selection-start-column="23" selection-end-line="104" selection-end-column="23" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                     <element signature="e#116#283#0" />
@@ -66,7 +64,7 @@
           <file leaf-file-name="main_ITG.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/main_ITG.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="120">
+                <state relative-caret-position="160">
                   <caret line="8" selection-start-line="8" selection-end-line="11" selection-end-column="26" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
@@ -75,10 +73,10 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="ControlPlot.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="ControlPlot.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ControlPlot.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="830">
+                <state relative-caret-position="1160">
                   <caret line="72" selection-start-line="72" selection-end-line="72" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
@@ -90,14 +88,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="ymath.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="ymath.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/ymath.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1220">
-                  <caret line="65" column="13" selection-start-line="65" selection-start-column="13" selection-end-line="65" selection-end-column="13" />
-                  <folding>
-                    <element signature="e#0#17#0" expanded="true" />
-                  </folding>
+                <state relative-caret-position="40">
+                  <caret line="2" column="6" selection-start-line="2" selection-start-column="6" selection-end-line="2" selection-end-column="6" />
                 </state>
               </provider>
             </entry>
@@ -169,7 +164,6 @@
       <list>
         <option value="$PROJECT_DIR$/read-data.py" />
         <option value="$PROJECT_DIR$/ITG-gamma.py" />
-        <option value="$PROJECT_DIR$/main_ITG.py" />
         <option value="$PROJECT_DIR$/read_data.py" />
         <option value="$PROJECT_DIR$/Mix.py" />
         <option value="$PROJECT_DIR$/Constants" />
@@ -177,10 +171,11 @@
         <option value="$PROJECT_DIR$/curve.py" />
         <option value="$PROJECT_DIR$/Additional/tests.py" />
         <option value="$PROJECT_DIR$/lib/__init__.py" />
-        <option value="$PROJECT_DIR$/ymath.py" />
         <option value="$PROJECT_DIR$/ITG_gamma.py" />
         <option value="$PROJECT_DIR$/ControlPlot.py" />
         <option value="$PROJECT_DIR$/lib/tests.py" />
+        <option value="$PROJECT_DIR$/main_ITG.py" />
+        <option value="$PROJECT_DIR$/ymath.py" />
       </list>
     </option>
   </component>
@@ -532,9 +527,6 @@ ys = Y.shape</expression-string>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
           <caret line="11" column="36" selection-start-line="11" selection-start-column="36" selection-end-line="11" selection-end-column="36" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -786,16 +778,6 @@ ys = Y.shape</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main_ITG.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="120">
-          <caret line="8" selection-start-line="8" selection-end-line="11" selection-end-column="26" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/scipy/stats/_stats_mstats_common.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="41">
@@ -832,16 +814,6 @@ ys = Y.shape</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ymath.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1220">
-          <caret line="65" column="13" selection-start-line="65" selection-start-column="13" selection-end-line="65" selection-end-column="13" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ITG_gamma.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="620">
@@ -863,29 +835,46 @@ ys = Y.shape</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/lib/tests.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="760">
-          <caret line="109" column="41" selection-start-line="109" selection-start-column="41" selection-end-line="109" selection-end-column="41" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-            <element signature="e#116#283#0" />
-            <element signature="e#309#800#0" />
-            <element signature="e#831#2229#0" />
-            <element signature="e#2269#2347#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ControlPlot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="830">
+        <state relative-caret-position="1160">
           <caret line="72" selection-start-line="72" selection-end-line="72" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
             <element signature="e#286#370#0" />
             <element signature="e#408#688#0" />
             <element signature="e#1948#2043#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/main_ITG.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="160">
+          <caret line="8" selection-start-line="8" selection-end-line="11" selection-end-column="26" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ymath.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="40">
+          <caret line="2" column="6" selection-start-line="2" selection-start-column="6" selection-end-line="2" selection-end-column="6" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/lib/tests.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="660">
+          <caret line="104" column="23" lean-forward="true" selection-start-line="104" selection-start-column="23" selection-end-line="104" selection-end-column="23" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+            <element signature="e#116#283#0" />
+            <element signature="e#309#800#0" />
+            <element signature="e#831#2229#0" />
+            <element signature="e#2269#2347#0" />
           </folding>
         </state>
       </provider>

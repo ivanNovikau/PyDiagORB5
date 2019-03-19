@@ -1,6 +1,6 @@
 import Mix as mix
 import numpy as np
-from scipy.signal import find_peaks
+import scipy.signal
 from scipy import stats
 from scipy.optimize import curve_fit
 
@@ -19,7 +19,7 @@ def estimate_wg(x_init, y_init, oo={}):
     y = np.array(mix.get_slice(y_init, ids_x))
 
     # find peaks of the signal
-    ids_peaks, _ = find_peaks(abs(y), height=0)
+    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
     x_peaks = x[ids_peaks]
     y_peaks = abs(y[ids_peaks])
 
