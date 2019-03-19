@@ -1,7 +1,7 @@
 import Mix as mix
 import curve as crv
 import matplotlib.pyplot as mpl
-from matplotlib import rc as mrc
+from matplotlib import animation
 import numpy as np
 
 
@@ -34,10 +34,6 @@ def plot_x1x2(x, y, z, oo={}):
 def plot_curves(curves):
     # -> curves - class crv.Curves
 
-    # # change font size
-    # map_font = {'size': curves.fontS}
-    # mrc('font', **map_font)
-
     # number of curves
     ncurves = curves.n()
 
@@ -67,6 +63,28 @@ def plot_curves(curves):
 
     ax.legend(fontsize = curves.fontS)
     mpl.grid(True)
+
+
+def animation_curves_2d(curves):
+    # -> curves - class crv.Curves
+
+    # number of curves
+    ncurves = curves.n()
+
+    fig, (ax) = mpl.subplots(1, 1, figsize=(10, 6))
+    ax.set_xlim(0, 3)
+    ax.set_ylim(0, 4)
+
+
+def animation_curves_3d(curves):
+    # -> curves - class crv.Curves
+
+    # number of curves
+    ncurves = curves.n()
+
+
+
+    mpl.axes
 
 
 

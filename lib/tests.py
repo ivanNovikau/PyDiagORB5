@@ -3,6 +3,10 @@ import ymath
 import curve as crv
 import ControlPlot as cpr
 import numpy as np
+import pyqtgraph.examples
+import plotly.plotly as py
+from plotly.graph_objs import *
+
 
 
 def reload():
@@ -79,6 +83,36 @@ def test_advanced_wg():
     print('--- Advanced ---')
     print('w = {:0.3e}'.format(wg_adv['w']))
     print('g = {:0.3e}'.format(wg_adv['g']))
+
+
+def test_animation_curves_2d():
+
+    curves = crv.Curves().xlab('x').ylab('y')
+
+    cpr.animation_curves_2d(curves)
+
+
+def test_pyqtgraph():
+    pyqtgraph.examples.run()
+
+
+def test_plotly():
+    trace0 = Scatter(
+        x=[1, 2, 3, 4],
+        y=[10, 15, 13, 17]
+    )
+    trace1 = Scatter(
+        x=[1, 2, 3, 4],
+        y=[16, 5, 11, 9]
+    )
+    data = Data([trace0, trace1])
+
+    py.iplot(data, filename='basic-line')
+
+# test_pyqtgraph()
+
+# print(10)
+
 
 
 
