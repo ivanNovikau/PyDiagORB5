@@ -4,9 +4,6 @@ import curve as crv
 import ControlPlot as cpr
 import numpy as np
 import pyqtgraph.examples
-import plotly.plotly as py
-from plotly.graph_objs import *
-
 
 
 def reload():
@@ -21,18 +18,17 @@ def test_curves():
     x = np.array([10, 20, 30, 40, 50, 60, 70, 80, 90, 100])
     fx = np.array([1, 2, 3, 4, 5, 6, 7, 8, 9, 10])
 
-    curves = crv.Curves().xlab('\kappa').ylab('\mathbf{\Phi}')
+    curves = crv.Curves().xlab('\kappa').ylab('\mathbf{\Phi}').tit('Some data')
     curves.flag_semilogy = True
 
-    curves.new('c1').XS(x).YS(fx).sty('--').col('blue')\
-        .leg('\Phi')
-    curves.new('c2').XS(x).YS(100*fx).sty('o').col((1, 0, 0))\
-        .leg('\overline{\Phi}')
-
+    curves.new('c1').XS(x).YS(fx)\
+        .leg('\mathbf{\Phi}').sty('--').col('blue')
+    curves.new('c2').XS(x).YS(100*fx)\
+        .leg('\mathbf{\overline{\Phi}}').sty('o').col('red')
     cpr.plot_curves(curves)
 
-    curves.set_print()
-    curves.map('c2').col('green')
+    curves.set_print().tit('The same data')
+    curves.map('c2').col('grey').ms(16)
     cpr.plot_curves(curves)
 
 
@@ -92,26 +88,67 @@ def test_animation_curves_2d():
     cpr.animation_curves_2d(curves)
 
 
+def test_fft_gam_s1():
+    T = 10
+    w0 = 2 * np.pi / T
+    print(w0)
+    print(w0 / (2 * np.pi))
+    x = np.linspace(0, 100, 201)
+    y = np.cos(w0 * x)
+
+    w, w2 = ymath.w_for_fft(x)
+    f, f2 = ymath.fft_y(y)
+
+    # initial singal
+    curves = crv.Curves().xlab('x').ylab('y')
+    curves.new('y').XS(x).YS(y).leg('init')
+    cpr.plot_curves(curves)
+
+    # fourier spectrum
+    curves = crv.Curves().xlab('w').ylab('f')
+    curves.new('f').XS(w).YS(f).leg('fft')
+    cpr.plot_curves(curves)
+
+    return
+
+
+def test_fft_gam_2d():
+    T = 10
+    w0 = 2 * np.pi / T
+    print(w0)
+    print(w0 / (2 * np.pi))
+
+    L = 0.5
+    k0 = 2 * np.pi / L
+    print(k0)
+    print(k0 / (2 * np.pi))
+
+    t = np.linspace(0, 100, 201)
+    x = np.linspace(0, 2, 401)
+    tt, xx = np.meshgrid(t, x)
+    yy = np.cos(w0 * tt) * np.cos(k0 * xx)
+
+    w, w2 = ymath.w_for_fft(t)
+    ff, f2 = ymath.fft_y(yy, 1)
+
+    # initial singal
+    curves = crv.Curves().xlab('t').ylab('x').tit('yy')
+    curves.new('yy').XS(t).YS(x).ZS(yy).leg('init')
+    cpr.plot_curves_3d(curves)
+
+    # fourier spectrum
+    curves = crv.Curves().xlab('w').ylab('x').tit('ff')
+    curves.new('f').XS(w).YS(x).ZS(ff).leg('ff')
+    cpr.plot_curves_3d(curves)
+
+    return
+
+
 def test_pyqtgraph():
     pyqtgraph.examples.run()
 
 
-def test_plotly():
-    trace0 = Scatter(
-        x=[1, 2, 3, 4],
-        y=[10, 15, 13, 17]
-    )
-    trace1 = Scatter(
-        x=[1, 2, 3, 4],
-        y=[16, 5, 11, 9]
-    )
-    data = Data([trace0, trace1])
 
-    py.iplot(data, filename='basic-line')
-
-# test_pyqtgraph()
-
-# print(10)
 
 
 

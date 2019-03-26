@@ -14,6 +14,7 @@ class Curve:
     xs = None
     ys = None
     zs = None
+    ws = None
     xlabel = ''
     ylabel = ''
     legend = ''
@@ -21,6 +22,7 @@ class Curve:
     width = None
     color = 'blue'
     markersize = None
+    colormap = 'jet'
 
     def XS(seld, v):
         seld.xs = v
@@ -32,6 +34,10 @@ class Curve:
 
     def ZS(self, v):
         self.zs = v
+        return self
+
+    def WS(self, v):
+        self.ws = v
         return self
 
     def xlab(self, v):
@@ -66,6 +72,10 @@ class Curve:
         self.name = v
         return self
 
+    def cmp(self, v):
+        self.colormap = v
+        return self
+
 
 class Curves:
     list_curves = None
@@ -74,13 +84,21 @@ class Curves:
 
     xlabel = ''
     ylabel = ''
+    zlabel = ''
+    wlabel = ''
+    title = ''
 
     flag_semilogy = False
+    flag_norm = False
 
     axisFS = None
     lineW = None
     markerS = None
     fontS = None
+
+    xlimits = []
+    ylimits = []
+    zlimits = []
 
     def __init__(self):
         self.list_curves = []
@@ -107,6 +125,18 @@ class Curves:
         self.ylabel = v
         return self
 
+    def zlab(self, v):
+        self.zlabel = v
+        return self
+
+    def wlab(self, v):
+        self.wlabel = v
+        return self
+
+    def tit(self, v):
+        self.title += v
+        return self
+
     def n(self):
         return self.n_curves
 
@@ -117,19 +147,42 @@ class Curves:
         return self.map_curves.get(name_curve, None)
 
     def set_print(self):
-        self.axisFS = 48
+        self.axisFS = 24
         self.lineW = 10
         self.markerS = 32
-        self.fontS = 48
+        self.fontS = 38
 
         for curve in self.list_curves:
             curve.w(self.lineW).ms(self.markerS)
+        return self
 
     def set_work(self):
-        self.axisFS = 10
+        self.axisFS = 18
         self.lineW = 4
         self.markerS = 12
-        self.fontS = 10
+        self.fontS = 18
 
         for curve in self.list_curves:
             curve.w(self.lineW).ms(self.markerS)
+        return self
+
+    def xlim(self, v):
+        self.xlimits = v
+        return self
+
+    def ylim(self, v):
+        self.ylimits = v
+        return self
+
+    def zlim(self, v):
+        self.zlimits = v
+        return self
+
+    def set_limits(self):
+        cr1 = self.list_curves[0]
+        if cr1.xs is not None:
+            self.xlimits = [cr1.xs[0], cr1.xs[-1]]
+        if cr1.ys is not None:
+            self.ylimits = [cr1.ys[0], cr1.ys[-1]]
+        if cr1.zs is not None:
+            self.zlimits = [cr1.zs[0], cr1.zs[-1]]

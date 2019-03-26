@@ -13,6 +13,7 @@ def reload_module(obj_module):
 
 
 def find(x, x1):
+    # works only for monotonic increasing arrays!!!
     id_x1 = np.where(x >= x1)[0]
     if id_x1.size != 0:
         id_x1 = id_x1[0]
