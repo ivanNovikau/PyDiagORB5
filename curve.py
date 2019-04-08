@@ -12,6 +12,8 @@ def reload():
 class Curve:
     name = ''
     xs = None
+    xs_err = None
+    ys_err = None
     ys = None
     zs = None
     ws = None
@@ -22,14 +24,24 @@ class Curve:
     width = None
     color = 'blue'
     markersize = None
+    markerfacecolor = "None"
     colormap = 'jet'
+    levels = 10  # for contour plot
 
-    def XS(seld, v):
-        seld.xs = v
-        return seld
+    def XS(self, v):
+        self.xs = v
+        return self
+
+    def XS_ERR(self, v):
+        self.xs_err = v
+        return self
 
     def YS(self, v):
         self.ys = v
+        return self
+
+    def YS_ERR(self, v):
+        self.ys_err = v
         return self
 
     def ZS(self, v):
@@ -68,6 +80,9 @@ class Curve:
         self.markersize = v
         return self
 
+    def mfc(self, v):
+        self.markerfacecolor = v
+
     def name(self, v):
         self.name = v
         return self
@@ -76,17 +91,21 @@ class Curve:
         self.colormap = v
         return self
 
+    def lev(self, v):
+        self.levels = v
+        return self
+
 
 class Curves:
     list_curves = None
     map_curves = None
     n_curves = 0
 
-    xlabel = ''
-    ylabel = ''
-    zlabel = ''
-    wlabel = ''
-    title = ''
+    xlabel = '\ '
+    ylabel = '\ '
+    zlabel = '\ '
+    wlabel = '\ '
+    title = '\ '
 
     flag_semilogy = False
     flag_norm = False
@@ -96,9 +115,20 @@ class Curves:
     markerS = None
     fontS = None
 
-    xlimits = []
-    ylimits = []
-    zlimits = []
+    xlimits = None
+    ylimits = None
+    zlimits = None
+
+    xticks = np.nan
+    yticks = np.nan
+    xticks_labels = np.nan
+    yticks_labels = np.nan
+
+    legend_position = 'best'
+
+    def_colors = ['blue', 'red', 'green', 'grey', 'orange', 'navy', 'darkgreen']
+    flag_diff_styles = False
+    def_styles = ['-', ':', '--', '-.']
 
     def __init__(self):
         self.list_curves = []
@@ -114,8 +144,27 @@ class Curves:
         self.map_curves[name_curve] = new_curve.name(name_curve)
 
         new_curve.w(self.lineW).ms(self.markerS)
+        new_curve.col(self.new_color())
+
+        if self.flag_diff_styles:
+            new_curve.sty(self.new_style())
 
         return new_curve
+
+    def new_color(self):
+        if self.n_curves <= len(self.def_colors):
+            one_color = self.def_colors[self.n_curves - 1]
+        else:
+            one_color = ','.join('{}'.format(*k) for k in enumerate(np.random.rand(3, 1)))
+            one_color = 'rgb({})'.format(one_color)
+        return one_color
+
+    def new_style(self):
+        if self.n_curves <= len(self.def_colors):
+            one_style = self.def_styles[self.n_curves - 1]
+        else:
+            one_style = ':'
+        return one_style
 
     def xlab(self, v):
         self.xlabel = v
@@ -135,6 +184,14 @@ class Curves:
 
     def tit(self, v):
         self.title += v
+        return self
+
+    def titn(self, v):
+        self.title += '$\n$' + v
+        return self
+
+    def new_tit(self, v):
+        self.title = v
         return self
 
     def n(self):
@@ -157,10 +214,10 @@ class Curves:
         return self
 
     def set_work(self):
-        self.axisFS = 18
-        self.lineW = 4
-        self.markerS = 12
-        self.fontS = 18
+        self.axisFS = 22
+        self.lineW = 6
+        self.markerS = 14
+        self.fontS = 22
 
         for curve in self.list_curves:
             curve.w(self.lineW).ms(self.markerS)
@@ -186,3 +243,21 @@ class Curves:
             self.ylimits = [cr1.ys[0], cr1.ys[-1]]
         if cr1.zs is not None:
             self.zlimits = [cr1.zs[0], cr1.zs[-1]]
+
+    def set_diff_styles(self):
+        self.flag_diff_styles = True
+        return self
+
+    def leg_pos(self, v):
+        self.legend_position = v
+        return self
+
+    def xt(self, v, lab=np.nan):
+        self.xticks = v
+        self.xticks_labels = lab
+        return self
+
+    def yt(self, v, lab=np.nan):
+        self.yticks = v
+        self.yticks_labels = lab
+        return self

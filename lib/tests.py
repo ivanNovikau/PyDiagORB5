@@ -2,6 +2,7 @@ import Mix as mix
 import ymath
 import curve as crv
 import ControlPlot as cpr
+import zf_gam as zf
 import numpy as np
 import pyqtgraph.examples
 
@@ -12,6 +13,7 @@ def reload():
     mix.reload_module(ymath)
     mix.reload_module(crv)
     mix.reload_module(cpr)
+    mix.reload_module(zf)
 
 
 def test_curves():
@@ -144,12 +146,158 @@ def test_fft_gam_2d():
     return
 
 
+def test_vorbar_1d():
+    L = 0.25
+    k0 = 2 * np.pi / L
+    print(k0)
+    print(k0 / (2 * np.pi))
+
+    x = np.linspace(0, 0.4, 801)
+    yy = np.zeros([4, np.size(x)])
+    for ix in range(np.size(x)):
+        x1 = x[ix]
+        # yy[0, ix] = np.cos(k0 * x1)
+        # yy[1, ix] = np.cos(k0 * x1)
+        # yy[2, ix] = np.cos(k0 * x1)
+        # yy[3, ix] = np.cos(k0 * x1)
+        yy[0, ix] = x1**2 * np.cos(k0 * x1) + x1 * np.sin(3*k0*x1)
+        yy[1, ix] = x1**2 * np.cos(k0 * x1) + x1 * np.sin(3*k0*x1)
+        yy[2, ix] = x1**2 * np.cos(k0 * x1) + x1 * np.sin(3*k0*x1)
+        yy[3, ix] = x1**2 * np.cos(k0 * x1) + x1 * np.sin(3*k0*x1)
+
+    dd_test = {'phibar': {
+        't': [0, 1, 2, 3],
+        's': x,
+        'data': yy}}
+
+    zf.erbar(dd_test)
+    zf.vorbar(dd_test)
+
+    # # check
+    # x1 = 0.49
+    # id_x1, x1_check = mix.find(x, x1)
+    # erbar_num = dd_test['erbar']['data'][0, id_x1]
+    # erbar_check_x1 = k0 * np.sin(k0 * x1_check)
+    #
+    # print('x1 = {:0.3f}'.format(x1))
+    # print('x1_check = {:0.3f}'.format(x1_check))
+    #
+    # print('---')
+    # print(erbar_check_x1)
+    # print(erbar_num)
+    # print('---')
+
+    # initial signal
+    curves = crv.Curves().xlab('x').ylab('phibar')
+    curves.new('yy').XS(x).YS(yy[0, :])
+    cpr.plot_curves(curves)
+
+    # erbar
+    # erbar_check = k0 * np.sin(k0 * x)
+    erbar_check = - 2*x * np.cos(k0 * x) + k0*x**2*np.sin(k0*x)\
+                  - np.sin(3*k0*x) - 3*k0*x*np.cos(3*k0*x)
+
+    curves = crv.Curves().xlab('x').ylab('erbar')
+    curves.new('yy').XS(x).YS(dd_test['erbar']['data'][0, :]).leg('num')
+    curves.new('yy_check').XS(x).YS(erbar_check) \
+        .sty(':').col('red').leg('check')
+    cpr.plot_curves(curves)
+
+    # vorbar
+    # vorbar_check = k0 * np.sin(k0*x) / x + k0**2*np.cos(k0*x)
+    vorbar_check = - 4 * np.cos(k0*x) + 2*k0*x*np.sin(k0*x)\
+        + 3*k0*x*np.sin(k0*x) + k0**2 * x**2*np.cos(k0*x)\
+        - np.sin(3*k0*x)/x - 3*k0*np.cos(3*k0*x)\
+        - 6*k0*np.cos(3*k0*x) + 9*k0**2*x*np.sin(3*k0*x)
+
+    curves = crv.Curves().xlab('x').ylab('vorbar')
+    curves.new('yy').XS(x).YS(dd_test['vorbar']['data'][0, :]).leg('num')
+    curves.new('yy_check').XS(x).YS(vorbar_check)\
+        .sty(':').col('red').leg('check')
+    cpr.plot_curves(curves)
+
+
+def test_vorbar():
+    T = 1
+    w0 = 2 * np.pi / T
+    print(w0)
+    print(w0 / (2 * np.pi))
+
+    L = 0.25
+    k0 = 2 * np.pi / L
+    print(k0)
+    print(k0 / (2 * np.pi))
+
+    t = np.linspace(0, 1, 201)
+    x = np.linspace(0, 1, 801)
+    yy = np.zeros([np.size(t), np.size(x)])
+    for ix in range(np.size(x)):
+        for it in range(np.size(t)):
+            x1 = x[ix]
+            t1 = t[it]
+            yy[it, ix] = np.cos(w0 * t1) * np.cos(k0 * x1)
+
+    dd_test = {'phibar': {
+        't': t,
+        's': x,
+        'data': yy}}
+
+    zf.erbar(dd_test)
+    zf.vorbar(dd_test)
+
+    # check
+    x1 = 0.49
+    t1 = 0.83
+    id_t1, t1_ref = mix.find(t, t1)
+    id_x1, x1_ref = mix.find(x, x1)
+    erbar_num = dd_test['erbar']['data'][id_t1, id_x1]
+    erbar_check_t1_x1 = k0 * np.cos(w0 * t1_ref) * np.sin(k0 * x1_ref)
+
+    print('---')
+    print(erbar_check_t1_x1)
+    print(erbar_num)
+    print('---')
+
+    # initial signal
+    curves = crv.Curves().xlab('t').ylab('x').tit('phibar')
+    curves.new('yy').XS(t).YS(x).ZS(yy)
+    cpr.plot_curves_3d(curves)
+
+    # erbar
+    yy_check = np.zeros([np.size(t), np.size(x)])
+    for ix in range(np.size(x)):
+        for it in range(np.size(t)):
+            x1 = x[ix]
+            t1 = t[it]
+            yy_check[it, ix] = k0 * np.cos(w0 * t1) * np.sin(k0 * x1)
+
+    curves = crv.Curves().xlab('t').ylab('x').tit('erbar')
+    curves.new('yy').XS(t).YS(x).ZS(dd_test['erbar']['data'])\
+        .lev(30)
+    cpr.plot_curves_3d(curves)
+
+    curves = crv.Curves().xlab('t').ylab('x').tit('erbar-check')
+    curves.new('yy').XS(t).YS(x).ZS(yy_check)\
+        .lev(30)
+    cpr.plot_curves_3d(curves)
+
+    # vorbar
+    yy_check = np.zeros([np.size(t), np.size(x)])
+    for ix in range(np.size(x)):
+        for it in range(np.size(t)):
+            x1 = x[ix]
+            t1 = t[it]
+            yy_check[it, ix] = (k0 * np.sin(k0*x1) / x1
+                + k0**2*np.cos(k0*x1)) * np.cos(w0 * t1)
+
+    curves = crv.Curves().xlab('t').ylab('x').tit('vorbar')
+    curves.new('yy').XS(t).YS(x).ZS(dd_test['vorbar']['data']).lev(30)
+    cpr.plot_curves_3d(curves)
+
+    curves = crv.Curves().xlab('t').ylab('x').tit('vorbar-check')
+    curves.new('yy').XS(t).YS(x).ZS(yy_check).lev(30)
+    cpr.plot_curves_3d(curves)
+
+
 def test_pyqtgraph():
     pyqtgraph.examples.run()
-
-
-
-
-
-
-

@@ -2,9 +2,16 @@ import Mix as mix
 import curve as crv
 import matplotlib.pyplot as mpl
 from matplotlib import animation
+import matplotlib.ticker as ticker
 import numpy as np
 import plotly.offline as py
 import plotly.graph_objs as go
+
+FIG_SIZE_W = 14
+FIG_SIZE_H = 9.5
+
+# FIG_SIZE_W = 10
+# FIG_SIZE_H = 6
 
 
 def reload():
@@ -35,7 +42,8 @@ def plot_curves(curves, method=None):
         plot_curves_plotly(curves)
 
     if method is None:
-        plot_curves_plotly(curves)
+        # plot_curves_plotly(curves)
+        plot_curves_mat(curves)
 
 
 def plot_curves_mat(curves):
@@ -45,13 +53,21 @@ def plot_curves_mat(curves):
     ncurves = curves.n()
 
     # Build plots
-    fig, ax = mpl.subplots(figsize=(10, 6))
+    fig, ax = mpl.subplots(figsize=(FIG_SIZE_W, FIG_SIZE_H))
+
     for icrv in range(ncurves):
         curve = curves.list(icrv)
+
+        y_res = curve.ys
+        if curves.flag_norm:
+            y_res = y_res / np.max(np.abs(y_res))
         if curves.flag_semilogy:
-            ref_lines, = ax.semilogy(curve.xs, abs(curve.ys), curve.style)
+            y_res = abs(y_res)
+
+        if curves.flag_semilogy:
+            ref_lines, = ax.semilogy(curve.xs, abs(y_res), curve.style)
         else:
-            ref_lines, = ax.plot(curve.xs, curve.ys, curve.style)
+            ref_lines, = ax.plot(curve.xs, y_res, curve.style)
 
         # set legend
         ref_lines.set_label(r'$' + curve.legend + '$')
@@ -64,13 +80,34 @@ def plot_curves_mat(curves):
     mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
     mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=curves.fontS)
 
+    # axes ticks:
+    if curves.xticks_labels is np.nan:
+        mpl.xticks(curves.xticks) if curves.xticks is not np.nan else 0
+    else:
+        mpl.xticks(curves.xticks, curves.xticks_labels) if curves.xticks is not np.nan else 0
+
+    if curves.yticks_labels is np.nan:
+        mpl.yticks(curves.yticks) if curves.yticks is not np.nan else 0
+    else:
+        mpl.yticks(curves.yticks, curves.yticks_labels) if curves.yticks is not np.nan else 0
+
     # fontsize of axes ticks
     ax.xaxis.set_tick_params(labelsize=curves.fontS)
     ax.yaxis.set_tick_params(labelsize=curves.fontS)
 
-    ax.legend(fontsize=curves.fontS)
+    # format of axis labels
+    mpl.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
+    mpl.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+
+    # set legend
+    if ncurves > 1:
+        ax.legend(fontsize=curves.fontS, loc=curves.legend_position)
+
+    # set title
+    mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)
+
     mpl.grid(True)
-    # mpl.show()
+    mpl.show()
 
 
 def plot_curves_plotly(curves):
@@ -233,7 +270,7 @@ def plot_curves_3d_mat(curves):
     ncurves = curves.n()
 
     # inititialization of the figure
-    fig, ax = mpl.subplots(figsize=(10, 6))
+    fig, ax = mpl.subplots(figsize=(FIG_SIZE_W, FIG_SIZE_H))
 
     # data from the first curve, that has to be 3d plot
     curve_one = curves.list(0)
@@ -245,21 +282,36 @@ def plot_curves_3d_mat(curves):
         YY = curve_one.ys
 
     # build 3d plot
-    # colormaps: hot, jet, pink, bone, bwr, RdYlBu, RdYlGn, RdBu, ocean, seismic, RdGy
-    cs = ax.contourf(XX, YY, ZZ, cmap=curve_one.colormap)
-    fig.colorbar(cs, shrink=0.8, extend='both')
+    # -> colormaps: hot, jet, pink, bone, bwr, RdYlBu, RdYlGn, RdBu, ocean, seismic, RdGy
+    cs = ax.contourf(XX, YY, ZZ.T, levels=curve_one.levels, cmap=curve_one.colormap)
+
+    def fmt(x, pos):
+        if x == 0:
+            return r'${:0.2f}$'.format(x)
+        if 2 < np.log10(np.abs(x)) or np.log10(np.abs(x)) < -1:
+            return r'${:.2e}$'.format(x)
+        else:
+            return r'${:0.2f}$'.format(x)
+    cb = fig.colorbar(cs, shrink=0.8, extend='both', format=ticker.FuncFormatter(fmt))
+    cb.ax.tick_params(labelsize=curves.fontS)
 
     # data from other curves, that should be lines
     for icrv in range(1, ncurves):
         curve = curves.list(icrv)
-        ref_lines, = ax.plot(curve.xs, curve.ys, curve.style)
+
+        # ref_lines, = ax.plot(curve.xs, curve.ys, curve.style)
+        ref_lines = ax.errorbar(curve.xs, curve.ys,
+                yerr=curve.ys_err, xerr=curve.xs_err, fmt=curve.style,
+                elinewidth=curve.width/3, ecolor=curve.color)
 
         # set legend
         ref_lines.set_label(r'$' + curve.legend + '$')
 
         # set format for every line
-        mpl.setp(ref_lines, linewidth=curve.width,
-                 color=curve.color, markersize=curve.markersize)
+        mpl.setp(ref_lines[0], linewidth=curve.width/2,
+                 color=curve.color, markersize=curve.markersize,
+                 markerfacecolor=curve.markerfacecolor,
+                 markeredgewidth=curve.width/2)
 
     # set labels
     mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
@@ -269,9 +321,18 @@ def plot_curves_3d_mat(curves):
     ax.xaxis.set_tick_params(labelsize=curves.fontS)
     ax.yaxis.set_tick_params(labelsize=curves.fontS)
 
+    # format of axis labels
+    mpl.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
+
+    # set limits:
+    if curves.xlimits is not None:
+        ax.set_xlim(curves.xlimits[0], curves.xlimits[-1])
+    if curves.ylimits is not None:
+        ax.set_ylim(curves.ylimits[0], curves.ylimits[-1])
+
     # legend
     if ncurves > 1:
-        ax.legend(fontsize=curves.fontS)
+        ax.legend(fontsize=curves.fontS, loc=curves.legend_position)
 
     # set title
     mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)
@@ -283,7 +344,7 @@ def animation_curves_2d(curves):
     # number of curves
     ncurves = curves.n()
 
-    fig, (ax) = mpl.subplots(1, 1, figsize=(10, 6))
+    fig, (ax) = mpl.subplots(1, 1, figsize=(FIG_SIZE_W, FIG_SIZE_H))
     ax.set_xlim(curves.xlimits[0], curves.xlimits[-1])
     if curves.flag_norm:
         ax.set_ylim(0, 1)
@@ -309,18 +370,6 @@ def animation_curves_2d(curves):
                                    interval=100, blit=True)
     # anim.save('basic_animation.mp4', fps=30, extra_args=['-vcodec', 'libx264'])
     mpl.show()
-
-
-def animation_curves_3d(curves):
-    # -> curves - class crv.Curves
-
-    # number of curves
-    ncurves = curves.n()
-
-
-
-    mpl.axes
-
 
 
 

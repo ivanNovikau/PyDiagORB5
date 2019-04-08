@@ -3,6 +3,8 @@ import numpy as np
 import scipy.signal
 from scipy import stats
 from scipy.optimize import curve_fit
+from scipy import constants
+from scipy.fftpack import fft as sci_fft
 
 #-> avoid plotting here
 
@@ -134,24 +136,25 @@ def advanced_g(x_init, y_init, oo={}):
 
 def w_for_fft(x):
     nx = np.size(x)
+    nx2_ceil  = np.ceil(np.log2(nx))
+    nx = 2**nx2_ceil
+
     nx_half = np.int(np.floor(nx / 2.))
     dx = np.min(np.diff(x))
     freq_max = 1. / dx
     dfreq = freq_max / nx
 
     w = np.array([dfreq * i for i in range(nx_half+1)])
+
     w2 = []
-    return w, w2
+    return w, w2, nx
 
 
-def fft_y(y, axis=-1):
-    if axis == -1:
-        ny = np.size(y)
-    else:
-        n_shape  = np.shape(y)
-        ny = n_shape[axis]
+def fft_y(y, nw, axis=-1):
+    ny = int(nw)
     ny_half = np.int(np.floor(ny/2.))
-    f2 = np.fft.fft(y, axis=axis)  # two-sided FFT
+
+    f2 = np.fft.fft(y, n=ny, axis=axis)  # two-sided FFT
     f2 = np.abs(f2 / ny)
 
     if axis is -1:
@@ -167,6 +170,83 @@ def fft_y(y, axis=-1):
     f2 = []
 
     return f, f2
+
+
+def find_wc(B0, m, Z):
+    # B0 in Tesla, m in kg, T in J
+    wc = Z * constants.elementary_charge * B0 / m  # in rad/s
+    return wc
+
+
+def find_Te(Lx, a, B0, mf, Zf):
+    # find temperature Ti of a species i:
+    # tau_i = Ti / Te
+    # mf - mass of the first species
+    # Zf - charge (without e) of the first species
+    # Remark: in ORB5 tau_e = 1 always
+    wc = find_wc(B0, mf, Zf)
+    Te = (2*a*wc/Lx)**2 * mf  # in J
+    return Te
+
+
+def find_Ti(tau_i, Lx, a, B0, mf, Zf):
+    # find electron temperature Te:
+    # mf - mass of the first species
+    # Zf - charge (without e) of the first species
+    # Remark: in ORB5 tau_e = 1 always
+    Te = find_Te(Lx, a, B0, mf, Zf)
+    Ti = Te * tau_i
+    return Ti
+
+
+def find_Lx(a, Te, B0, mf, Zf):
+    # mf - mass of the first species (kg)
+    # Zf - charge (without e) of the first species
+    # Te - electron temperature (J)
+    # a - minor radius (m)
+    # B0 - magnetic field (T)
+    wc = find_wc(B0, mf, Zf)
+    cs = find_cs(Te, mf)
+    Lx = 2*a*wc / cs
+    return Lx
+
+
+def find_vt(T, m):
+    # m in kg, T in J
+    vt = np.sqrt(T/m)
+    return vt
+
+
+def find_cs(Te, m):
+    # m in kg, Te in J
+    cs = np.sqrt(Te/m)
+    return cs
+
+
+def find_k(krpert, Tf, B0, Lwork, mf, Zf):
+    # Find normalised radial wavenumber
+    # mf - mass of the first species (kg)
+    # Zf - charge (without e) of the first species
+    # Tf - temperature of the first species (J)
+    # B0 - magnetic field (Tesla)
+    # krpert - radial vector from an input file
+    rhoL = find_rhoL(Tf, B0, mf, Zf)
+    k = krpert * (np.pi / Lwork) * rhoL
+    return k
+
+
+def find_rhoL(T, B0, m, Z):
+    # Find a value of the Larmor radius
+    # m - mass of a species (kg)
+    # Z - charge (without e) of a species
+    # T - temperature of a species (J)
+    # B0 - magnetic field (Tesla)
+    wc = find_wc(B0, m, Z)
+    vt = find_vt(T, m)
+    rhoLarmor = np.sqrt(2) * vt / wc
+    return rhoLarmor
+
+
 
 
 

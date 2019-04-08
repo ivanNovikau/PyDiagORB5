@@ -121,4 +121,13 @@ def get_slice(x, ids1, ids2=None, ids3=None):
         return x[ids1[0]:ids1[-1]+1, ids2[0]:ids2[-1]+1, ids3[0]:ids3[-1]+1]
 
 
+def test_array(x, name_axis, format_axis=':0.3f'):
+    form = '{' + format_axis + '}'
+    line_x1 = form.format(x[0])
+    line_x2 = form.format(x[-1])
+    desc_line = name_axis + ' = [' + line_x1 + ', ' + line_x2 + ']'
+    return desc_line
+
+
+
 
