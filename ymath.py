@@ -22,6 +22,9 @@ def estimate_wg(x_init, y_init, oo={}):
 
     # find peaks of the signal
     ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
+    if np.size(ids_peaks) is 0:
+        return None
+
     x_peaks = x[ids_peaks]
     y_peaks = abs(y[ids_peaks])
 

@@ -7,11 +7,11 @@ import numpy as np
 import plotly.offline as py
 import plotly.graph_objs as go
 
-FIG_SIZE_W = 14
-FIG_SIZE_H = 9.5
+# FIG_SIZE_W = 14
+# FIG_SIZE_H = 9.5
 
-# FIG_SIZE_W = 10
-# FIG_SIZE_H = 6
+FIG_SIZE_W = 10
+FIG_SIZE_H = 6
 
 
 def reload():
@@ -97,7 +97,7 @@ def plot_curves_mat(curves):
 
     # format of axis labels
     mpl.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
-    mpl.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+    # mpl.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
 
     # set legend
     if ncurves > 1:

@@ -142,6 +142,7 @@ def fft_gam_s1(dd, ss, oo={}):
 def fft_gam_2d(dd, oo={}):
     sel_norm = oo.get('sel_norm', 'wci')  # -> 'wci', 'kHz', 'csa', 'csr'
     sel_r = oo.get('sel_r', 's')  # -> 's', 'psi'
+    sel_cmp = oo.get('sel_cmp', 'pink-r')  # -> 'jet', 'hot' etc.
 
     rd.phibar(dd)
     erbar(dd)
@@ -208,19 +209,20 @@ def fft_gam_2d(dd, oo={}):
         .xlim([r[0], r[-1]]).ylim([w[0], w[-1]])\
         .leg_pos('lower left')
 
-    curves_er.new('f').XS(r).YS(w).ZS(f_erbar.T).lev(20).cmp('pink_r')
-    curves_vor.new('f').XS(r).YS(w).ZS(f_vorbar.T).lev(20).cmp('pink_r')
+    curves_er.new('f').XS(r).YS(w).ZS(f_erbar.T).lev(20).cmp(sel_cmp)
+    curves_vor.new('f').XS(r).YS(w).ZS(f_vorbar.T).lev(20).cmp(sel_cmp)
 
     # analytical and experimental data:
-    oo_th = {'curves': curves_er, 'sel_norm': sel_norm, 'sel_r': sel_r, 's': r}
-    curves_er = exp_AUG20787(dd, oo_th)
+    oo_th = {'curves': curves_er, 'sel_norm': sel_norm,
+             'sel_r': sel_r, 's': r}
+    # curves_er = exp_AUG20787(dd, oo_th)
     curves_er = gam_theory.get_gao(dd, oo_th)
-    curves_er = gam_theory.get_gk_fit(dd, oo_th)
+    # curves_er = gam_theory.get_gk_fit(dd, oo_th)
 
     oo_th.update({'curves': curves_vor})
-    curves_vor = exp_AUG20787(dd, oo_th)
+    # curves_vor = exp_AUG20787(dd, oo_th)
     curves_vor = gam_theory.get_gao(dd, oo_th)
-    curves_vor = gam_theory.get_gk_fit(dd, oo_th)
+    # curves_vor = gam_theory.get_gk_fit(dd, oo_th)
 
     # plot curves
     cpr.plot_curves_3d(curves_er)
@@ -229,6 +231,7 @@ def fft_gam_2d(dd, oo={}):
     return
 
 
+# Zonal Er, Vorticity (s,t)
 def time_evol_st(dd, oo={}):
     vorbar(dd)
     t = dd['phibar']['t']
@@ -254,6 +257,175 @@ def time_evol_st(dd, oo={}):
     # cpr.plot_curves_3d(curves_phi)
     cpr.plot_curves_3d(curves_er)
     cpr.plot_curves_3d(curves_vor)
+
+
+# radial strcuture of zonal Phi, Er, Vorticity at different time points:
+def rad_structure(dd, oo={}):
+    vorbar(dd)
+    t = dd['phibar']['t']
+    s = dd['phibar']['s']
+
+    # radial interval
+    s, ids_s = mix.get_array_oo(oo, s, 's')
+
+    # time points:
+    ts = np.array(oo.get('t_points', [0.0]))
+    ids_t = np.zeros(np.size(ts))
+    for id_t in range(np.size(ts)):
+        t1 = ts[id_t]
+        ids_t[id_t], ts[id_t] = mix.find(t, t1)
+
+    # plotting
+    curves_phi = crv.Curves().xlab('s').ylab('\overline{\Phi}') \
+        .tit('\overline{\Phi}')
+    curves_er = crv.Curves().xlab('s').ylab('\overline{E}_r') \
+        .tit('\overline{E}_r')
+    curves_vor = crv.Curves().xlab('s').ylab('\overline{\Omega}_r') \
+        .tit('\overline{\Omega}_r')
+
+    for it in range(np.size(ids_t)):
+        id_t = int(ids_t[it])
+        curves_phi.new('{:d}'.format(it))\
+            .XS(s)\
+            .YS(dd['phibar']['data'][id_t, ids_s[0]:ids_s[-1]+1])\
+            .leg('t = {:0.3e}'.format(ts[it])).new_sty(it)
+        curves_er.new('{:d}'.format(it)) \
+            .XS(s) \
+            .YS(dd['erbar']['data'][id_t, ids_s[0]:ids_s[-1]+1]) \
+            .leg('t = {:0.3e}'.format(ts[it])).new_sty(it)
+        curves_vor.new('{:d}'.format(it)) \
+            .XS(s) \
+            .YS(dd['vorbar']['data'][id_t, ids_s[0]:ids_s[-1]+1]) \
+            .leg('t = {:0.3e}'.format(ts[it])).new_sty(it)
+
+    cpr.plot_curves(curves_phi)
+    cpr.plot_curves(curves_er)
+    cpr.plot_curves(curves_vor)
+
+
+# time evolution of zonal Phi, Er, Vorticity at different radial points:
+def t_evol(dd, oo={}):
+    sel_norm = oo.get('sel_norm', 'wci')
+
+    vorbar(dd)
+    t = dd['phibar']['t']
+    s = dd['phibar']['s']
+
+    # time normalization
+    if sel_norm == 'ms':
+        coef_norm = 1.e3 / dd['wc']
+        line_t = 't,\ ms'
+    if sel_norm == 'wci':
+        coef_norm = 1
+        line_t = 't[\omega_c^{-1}]'
+    if sel_norm == 'csa':
+        coef_norm = (dd['cs'] / dd['a0']) / dd['wc']
+        line_t = 't[a_0/c_s]'
+    if sel_norm == 'csr':
+        coef_norm = (dd['cs'] / dd['R0']) / dd['wc']
+        line_t = 't[R_0/c_s]'
+    t = t * coef_norm
+
+    # radial interval
+    t, ids_t = mix.get_array_oo(oo, t, 't')
+
+    # time points:
+    ss = np.array(oo.get('s_points', [0.5]))
+    ids_s = np.zeros(np.size(ss))
+    for id_s in range(np.size(ss)):
+        ids_s[id_s], ss[id_s] = mix.find(s, ss[id_s])
+
+    # plotting
+    curves_phi = crv.Curves().xlab(line_t).ylab('\overline{\Phi}') \
+        .tit('\overline{\Phi}')
+    curves_er = crv.Curves().xlab(line_t).ylab('\overline{E}_r') \
+        .tit('\overline{E}_r')
+    curves_vor = crv.Curves().xlab(line_t).ylab('\overline{\Omega}_r') \
+        .tit('\overline{\Omega}_r')
+
+    for count_s in range(np.size(ids_s)):
+        id_s = int(ids_t[count_s])
+        s1 = ss[count_s]
+        curves_phi.new('{:d}'.format(count_s)) \
+            .XS(t) \
+            .YS(dd['phibar']['data'][ids_t[0]:ids_t[-1] + 1, id_s]) \
+            .leg('s = {:0.3e}'.format(s1)).new_sty(count_s)
+        curves_er.new('{:d}'.format(count_s)) \
+            .XS(t) \
+            .YS(dd['erbar']['data'][ids_t[0]:ids_t[-1] + 1, id_s]) \
+            .leg('s = {:0.3e}'.format(s1)).new_sty(count_s)
+        curves_vor.new('{:d}'.format(count_s)) \
+            .XS(t) \
+            .YS(dd['vorbar']['data'][ids_t[0]:ids_t[-1] + 1, id_s]) \
+            .leg('s = {:0.3e}'.format(s1)).new_sty(count_s)
+
+    cpr.plot_curves(curves_phi)
+    cpr.plot_curves(curves_er)
+    cpr.plot_curves(curves_vor)
+
+
+# frequency(s) and dynamic rate(s) of zonal Er
+def wg_s(dd, oo={}):
+    sel_norm = oo.get('sel_norm', 'wci')  # -> 'wci', 'kHz', 'csa', 'csr'
+
+    rd.phibar(dd)
+    erbar(dd)
+    t = dd['phibar']['t']  # normalized to wc
+    s = dd['phibar']['s']
+
+    # time interval
+    t, ids_t = mix.get_array_oo(oo, t, 't')
+    line_t_wci = mix.test_array(t, 't[wci^{-1}]', ':0.2e')
+
+    # radial interval
+    s, ids_r = mix.get_array_oo(oo, s, 's')
+
+    # zonal radial electric field
+    erbar_st = mix.get_slice(dd['erbar']['data'], ids_t, ids_r)
+
+    ns = np.size(s)
+    ws, gs = np.zeros(ns), np.zeros(ns)
+    for id_s in range(ns):
+        out = ymath.estimate_wg(t, erbar_st[:, id_s])
+        if out is None:
+            ws[id_s] = np.NaN
+            gs[id_s] = np.NaN
+        else:
+            ws[id_s] = out['w']  # ~ 2pi / wc
+            gs[id_s] = out['g']  # ~ 1/wc
+
+    # normalization:
+    if sel_norm == 'khz':
+        coef_norm_w = 1. / (2 * np.pi * 1.e3)
+        coef_norm_g = 1. / 1.e3
+        line_w = '\omega,\ kHz'
+        line_g = '\gamma,\ 1e3/s'
+    if sel_norm == 'wci':
+        coef_norm_w = coef_norm_g = 1 / dd['wc']
+        line_w = '\omega[\omega_c]'
+        line_g = '\gamma[\omega_c]'
+    if sel_norm == 'csa':
+        coef_norm_w = coef_norm_g = 1 / (dd['cs'] / dd['a0'])
+        line_w = '\omega[c_s/a_0]'
+        line_g = '\gamma[c_s/a_0]'
+    if sel_norm == 'csr':
+        coef_norm_w = coef_norm_g = 1 / (dd['cs'] / dd['R0'])
+        line_w = '\omega[c_s/R_0]'
+        line_g = '\gamma[c_s/R_0]'
+    ws = ws * coef_norm_w
+    gs = gs * coef_norm_g
+
+    # plotting frequencies
+    curves_w = crv.Curves().xlab('s').ylab(line_w)\
+        .tit('\omega\ of\ \overline E_r:\ ' + line_t_wci)
+    curves_w.new('f').XS(s).YS(ws)
+    cpr.plot_curves(curves_w)
+
+    # plotting dynamic rate
+    curves_g = crv.Curves().xlab('s').ylab(line_g) \
+        .tit('\gamma\ of\ \overline E_r:\ ' + line_t_wci)
+    curves_g.new('f').XS(s).YS(gs)
+    cpr.plot_curves(curves_g)
 
 
 def heat_vorticity(species_name, dd, oo={}):

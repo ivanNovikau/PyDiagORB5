@@ -1,5 +1,6 @@
 import numpy as np
 import importlib as imp
+from scipy import signal
 
 
 def reload():
@@ -10,6 +11,13 @@ def reload():
 def reload_module(obj_module):
     imp.reload(obj_module)
     obj_module.reload()
+
+
+def get_attribute(ff, path):
+    list_attrs = ff[path].attrs
+    ids_attr = list(list_attrs)
+    list_attrs = [list_attrs[name].decode("utf-8") for name in ids_attr]
+    return list_attrs
 
 
 def find(x, x1):
@@ -127,6 +135,8 @@ def test_array(x, name_axis, format_axis=':0.3f'):
     line_x2 = form.format(x[-1])
     desc_line = name_axis + ' = [' + line_x1 + ', ' + line_x2 + ']'
     return desc_line
+
+
 
 
 

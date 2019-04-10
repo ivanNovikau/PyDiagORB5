@@ -20,6 +20,8 @@ class Species:
 
     tau = np.nan
 
+    nsel_profile = None
+
     nT_equil = np.nan
     nT_evol = np.nan
 
@@ -42,8 +44,16 @@ class Species:
     def nT(self, dd, f):
         if self.nT_equil is not np.nan:
             return
-        s = np.array(f['/equil/profiles/' + self.name + '/s_prof'])
-        psi = np.array(f['/equil/profiles/' + self.name + '/psi_prof'])
+
+        self.nsel_profile = mix.get_attribute(f, '/parameters/' + self.name + '/nsel_profile')
+        self.nsel_profile = self.nsel_profile[1]
+
+        if self.nsel_profile == '2':
+            s = np.array(f['/equil/profiles/generic/sgrid_eq'])
+            psi = s**2
+        else:
+            s = np.array(f['/equil/profiles/' + self.name + '/s_prof'])
+            psi = np.array(f['/equil/profiles/' + self.name + '/psi_prof'])
         n = np.array(f['/equil/profiles/' + self.name + '/n_pic'])
         T = np.array(f['/equil/profiles/' + self.name + '/t_pic'])
 

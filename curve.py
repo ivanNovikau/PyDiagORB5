@@ -68,6 +68,13 @@ class Curve:
         self.style = v
         return self
 
+    def new_sty(self, id0):
+        def_styles = ['-', ':', '--', '-.']
+        if id0>= len(def_styles):
+            id0 = np.mod(id0, len(def_styles))
+        self.style = def_styles[id0]
+        return self
+
     def w(self, v):
         self.width = v
         return self

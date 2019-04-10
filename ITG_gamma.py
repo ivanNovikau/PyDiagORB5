@@ -15,29 +15,69 @@ def reload():
     mix.reload_module(crv)
 
 
-def plot_t(dd, s1, s2, chi1, oo={}):
-    rd.phibar(dd)
+def plot_t(dd, oo={}):
+    rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     s = dd['potsc']['s']  # create a new reference
     chi = dd['potsc']['chi']  # create a new reference
 
-    # intervals
-    _, ids_s = mix.get_array(s, s1, s2)
+    # radial interval;
+    s_intervals  = oo.get('s_intervals', [[0.0, 1.0]])
+    ns_intervals = np.shape(s_intervals)[0]
+    ids_s_intervals, s_final_intervals = [], []
+    lines_s = []
+    for count_s in range(ns_intervals):
+        one_s, one_ids_s = mix.get_array(
+                s, s_intervals[count_s][0], s_intervals[count_s][-1]
+            )
+        s_final_intervals.append(one_s)
+        ids_s_intervals.append(one_ids_s)
+        lines_s.append('s = [{:.3f}, {:.3f}]'.format(
+            one_s[0], one_s[-1])
+        )
+    del one_s, one_ids_s, count_s
+
+    # time normalization
+    sel_norm = oo.get('sel_norm', 'wci')
+    if sel_norm == 'ms':
+        coef_norm = 1.e3 / dd['wc']
+        line_t = 't,\ ms'
+    if sel_norm == 'wci':
+        coef_norm = 1
+        line_t = 't[\omega_c^{-1}]'
+    if sel_norm == 'csa':
+        coef_norm = (dd['cs'] / dd['a0']) / dd['wc']
+        line_t = 't[a_0/c_s]'
+    if sel_norm == 'csr':
+        coef_norm = (dd['cs'] / dd['R0']) / dd['wc']
+        line_t = 't[R_0/c_s]'
+    t = t * coef_norm
+
+    # time interval
     t, ids_t = mix.get_array_oo(oo, t, 't')
-    id_chi, _ = mix.find(chi, chi1)
 
-    # non-zonal (at phi = 0) Phi in chosen intervals
-    pot_nz_chi = mix.get_slice(dd['potsc']['data'], ids_t, id_chi, ids_s)
+    # poloidal angle
+    chi1 = oo.get('chi1', 0.0)
+    id_chi, chi1 = mix.find(chi, chi1)
+    line_chi1 = '\chi = {:0.1f}'.format(chi1)
 
-    # averaging of the Phi on s
-    pot_nz = np.mean(pot_nz_chi, axis=1)
-
-    # plot data:
-    cpr.plot_x1(t, pot_nz)
+    # plotting:
+    line_Phi = '\Phi({:s})'.format(line_chi1)
+    curves = crv.Curves().xlab(line_t).ylab(line_Phi)
+    curves.flag_semilogy = True
+    for count_s in range(ns_intervals):
+        ids_s = ids_s_intervals[count_s]
+        Phi = np.mean(
+            dd['potsc']['data'][
+                ids_t[0]:ids_t[-1]+1, id_chi, ids_s[0]:ids_s[-1]+1
+            ], axis=1)
+        curves.new(str(count_s)).XS(t).YS(Phi)\
+            .leg(lines_s[count_s]).new_sty(count_s)
+    cpr.plot_curves(curves)
 
 
 def plot_schi(dd, t1, oo={}):
-    rd.phibar(dd)
+    rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     s = dd['potsc']['s']  # create a new reference
     chi = dd['potsc']['chi']  # create a new reference
@@ -58,7 +98,7 @@ def plot_schi(dd, t1, oo={}):
 
 
 def plot_rz(dd, t1, oo={}):
-    rd.phibar(dd)
+    rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     r = dd['potsc']['r']  # create a new reference
     z = dd['potsc']['z']  # create a new reference
@@ -77,7 +117,7 @@ def plot_rz(dd, t1, oo={}):
 
 
 def calc_gamma_chi0(dd, s1, s2, chi1, oo={}):
-    rd.phibar(dd)
+    rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     s = dd['potsc']['s']  # create a new reference
     chi = dd['potsc']['chi']  # create a new reference
@@ -136,7 +176,7 @@ def calc_gamma_chi0(dd, s1, s2, chi1, oo={}):
 
 
 def calc_gamma_chimax(dd, s1, s2, oo={}):
-    rd.phibar(dd)
+    rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     s = dd['potsc']['s']  # create a new reference
     chi = dd['potsc']['chi']  # create a new reference
@@ -187,7 +227,7 @@ def calc_gamma_chimax(dd, s1, s2, oo={}):
 
 def plot_schi_max_along_chi(dd, t1, oo={}):
     # plot max of phi on (s, chi) at a particular time step
-    rd.phibar(dd)
+    rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     s = dd['potsc']['s']  # create a new reference
     chi = dd['potsc']['chi']  # create a new reference
@@ -224,7 +264,7 @@ def plot_schi_max_along_chi(dd, t1, oo={}):
 
 
 def plot_rz_max_along_chi(dd, t1, oo={}):
-    rd.phibar(dd)
+    rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     r = dd['potsc']['r']  # create a new reference
     z = dd['potsc']['z']  # create a new reference
@@ -263,7 +303,7 @@ def plot_rz_max_along_chi(dd, t1, oo={}):
 
 
 def anim_st_chi0(dd, chi0, oo={}):
-    rd.phibar(dd)
+    rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     s = dd['potsc']['s']  # create a new reference
     chi = dd['potsc']['chi']  # create a new reference

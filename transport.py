@@ -70,7 +70,7 @@ def fft_chi(species_name, dd, oo={}):
     rho_star_inv = Lx / 2.
 
     # signals:
-    t = efluxw_rad['t'] # the same for all 1d signals
+    t = efluxw_rad['t']  # the same for all 1d signals
     s_flux  = efluxw_rad['s']
     s = dd[species_name].nT_evol['s']
     rad_flux = efluxw_rad['data']
