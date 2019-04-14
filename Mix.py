@@ -137,6 +137,22 @@ def test_array(x, name_axis, format_axis=':0.3f'):
     return desc_line
 
 
+def get_interval(x, x_intervals, name_x, format_x):
+    nx_intervals = np.shape(x_intervals)[0]
+    ids_x_intervals, x_final_intervals, lines_x = [], [], []
+    for count_x in range(nx_intervals):
+        if x_intervals[count_x] is None:
+            x_1, x_2 = x[0], x[-1]
+        else:
+            x_1, x_2 = x_intervals[count_x][0], x_intervals[count_x][-1]
+        one_x, one_ids_x = get_array(x, x_1, x_2)
+        x_final_intervals.append(one_x)
+        ids_x_intervals.append(one_ids_x)
+        line_format_x = '[{:' + format_x + '}, {:' + format_x + '}]';
+        lines_x.append(name_x + ' = ' + line_format_x.format(one_x[0], one_x[-1]))
+    return ids_x_intervals, x_final_intervals, lines_x
+
+
 
 
 

@@ -21,11 +21,15 @@ def reload():
 
 # ----------------------------------
 # --- TCV case ---
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/ref-results-43516/'
-path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/n128/'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/n80/'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/n40/'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/n60/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/ref-results-43516/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/n128/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/n80/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/n40/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/n60/'
+
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/n0/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/n0-Krook/'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/n0-k20/'
 
 dd = {
     'path': path_TCV,

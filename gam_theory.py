@@ -128,12 +128,15 @@ def get_gk_fit(dd, oo):
     curves = oo.get('curves', crv.Curves())
     sel_norm = oo.get('sel_norm', 'wci')  # -> 'wci', 'khz', 'csa', 'csr'
     sel_r = oo.get('sel_r', 's')  # -> 's', 'psi'
+    sel_res = oo.get('sel_res', 'w')  # -> 'w' (frequency), 'g' (damping rate)
+    col = oo.get('col', 'blue')
 
     # radial grid:
     r = oo.get('r', dd['pf'].nT_equil['s'])
 
     # assumption on the GAM wave-number
     kr = oo.get('kr', 2 * np.pi / (0.1 * dd['a0']))
+    line_k = 'k = {:0.3f}'.format(kr * dd['rhoL_speak'])
 
     # equilibrium profiles
     rd.q(dd)
@@ -157,7 +160,7 @@ def get_gk_fit(dd, oo):
     tau_i = dd['pf'].tau
 
     # radial profile of the GAM frequency
-    w_fit = np.zeros(np.size(r))
+    res = np.zeros(np.size(r))
     for id_s1 in range(np.size(r)):
         q1 = qs[id_s1]
         rhoL = ymath.find_rhoL(T_J[id_s1], dd['B0'], mf, Zf)
@@ -169,23 +172,25 @@ def get_gk_fit(dd, oo):
         vti = np.sqrt(T_J[id_s1]/mf)
         norm_vti = np.sqrt(2) * vti / dd['R0']
 
-        w_fit[id_s1] = fit['FIT-w'] * norm_vti
+        res[id_s1] = fit['FIT-' + sel_res] * norm_vti
 
     # chose normalization:
     if sel_norm == 'khz':
-        coef_norm = 1 / (1.e3 * 2 * np.pi)
+        coef_norm = 1 / 1.e3
+        if sel_res is 'w':
+            coef_norm = coef_norm / (2*np.pi)
     if sel_norm == 'wci':
         coef_norm = 1. / dd['wc']
     if sel_norm == 'csa':
         coef_norm = 1. / (dd['cs']/dd['a0'])
     if sel_norm == 'csr':
         coef_norm = 1. / (dd['cs']/dd['R0'])
-    w_fit = w_fit * coef_norm
+    res = res * coef_norm
 
     # result curve
-    curves.new('aug20787').XS(r).YS(w_fit) \
-        .leg('LIN.\ GK\ fit.') \
-        .sty(':').col('red')
+    curves.new('aug20787').XS(r).YS(res) \
+        .leg('LIN.\ GK\ fit.\ ' + line_k) \
+        .sty(':').col(col)
     return curves
 
 
@@ -194,12 +199,15 @@ def get_gao(dd, oo):
     curves = oo.get('curves', crv.Curves())
     sel_norm = oo.get('sel_norm', 'wci')  # -> 'wci', 'khz', 'csa', 'csr'
     sel_r = oo.get('sel_r', 's')  # -> 's', 'psi'
+    sel_res = oo.get('sel_res', 'w')  # -> 'w' (frequency), 'g' (damping rate)
+    col = oo.get('col', 'blue')
 
     # radial grid:
     r = oo.get('r', dd['pf'].nT_equil['s'])
 
     # assumption on the GAM wave-number
     kr = oo.get('kr', 2 * np.pi / (0.1 * dd['a0']))
+    line_k = 'k = {:0.3f}'.format(kr * dd['rhoL_speak'])
 
     # equilibrium profiles
     rd.q(dd)
@@ -223,7 +231,7 @@ def get_gao(dd, oo):
     tau_i = dd['pf'].tau
 
     # radial profile of the GAM frequency
-    w_fit = np.zeros(np.size(r))
+    res = np.zeros(np.size(r))
     for id_s1 in range(np.size(r)):
         q1 = qs[id_s1]
         rhoL = ymath.find_rhoL(T_J[id_s1], dd['B0'], mf, Zf)
@@ -234,21 +242,23 @@ def get_gao(dd, oo):
         vti = np.sqrt(T_J[id_s1]/mf)
         norm_vti = np.sqrt(2) * vti / dd['R0']
 
-        w_fit[id_s1] = th['Gao-w'] * norm_vti
+        res[id_s1] = th['Gao-' + sel_res] * norm_vti
 
     # chose normalization:
     if sel_norm == 'khz':
-        coef_norm = 1 / (1.e3 * 2 * np.pi)
+        coef_norm = 1 / 1.e3
+        if sel_res is 'w':
+            coef_norm = coef_norm / (2*np.pi)
     if sel_norm == 'wci':
         coef_norm = 1. / dd['wc']
     if sel_norm == 'csa':
         coef_norm = 1. / (dd['cs']/dd['a0'])
     if sel_norm == 'csr':
         coef_norm = 1. / (dd['cs']/dd['R0'])
-    w_fit = w_fit * coef_norm
+    res = res * coef_norm
 
     # result curve
-    curves.new('aug20787').XS(r).YS(w_fit) \
-        .leg('Gao\ 2010') \
-        .sty('--').col('blue')
+    curves.new('aug20787').XS(r).YS(res) \
+        .leg('Gao\ 2010\ ' + line_k) \
+        .sty('--').col(col)
     return curves

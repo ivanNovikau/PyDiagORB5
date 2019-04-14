@@ -5,6 +5,8 @@ import ymath
 import curve as crv
 import numpy as np
 
+from pylab import *
+
 
 def reload():
     # Important: put here all modules that you want to reload
@@ -16,13 +18,16 @@ def reload():
 
 
 def plot_t(dd, oo={}):
+    sel_norm = oo.get('sel_norm', 'wci')
+    s_intervals = oo.get('s_intervals', [[0.0, 1.0]])
+    chi1 = oo.get('chi1', 0.0)
+
     rd.potsc(dd)
-    t = dd['potsc']['t']  # create a new reference
-    s = dd['potsc']['s']  # create a new reference
-    chi = dd['potsc']['chi']  # create a new reference
+    t = dd['potsc']['t']
+    s = dd['potsc']['s']
+    chi = dd['potsc']['chi']
 
     # radial interval;
-    s_intervals  = oo.get('s_intervals', [[0.0, 1.0]])
     ns_intervals = np.shape(s_intervals)[0]
     ids_s_intervals, s_final_intervals = [], []
     lines_s = []
@@ -38,7 +43,6 @@ def plot_t(dd, oo={}):
     del one_s, one_ids_s, count_s
 
     # time normalization
-    sel_norm = oo.get('sel_norm', 'wci')
     if sel_norm == 'ms':
         coef_norm = 1.e3 / dd['wc']
         line_t = 't,\ ms'
@@ -57,7 +61,6 @@ def plot_t(dd, oo={}):
     t, ids_t = mix.get_array_oo(oo, t, 't')
 
     # poloidal angle
-    chi1 = oo.get('chi1', 0.0)
     id_chi, chi1 = mix.find(chi, chi1)
     line_chi1 = '\chi = {:0.1f}'.format(chi1)
 
@@ -116,63 +119,172 @@ def plot_rz(dd, t1, oo={}):
     cpr.plot_curves_3d(curves, 'mat')
 
 
-def calc_gamma_chi0(dd, s1, s2, chi1, oo={}):
+def calc_gamma_chi0(dd, oo={}):
+    # initial signal and grids
     rd.potsc(dd)
-    t = dd['potsc']['t']  # create a new reference
-    s = dd['potsc']['s']  # create a new reference
-    chi = dd['potsc']['chi']  # create a new reference
+    t = dd['potsc']['t']
+    s = dd['potsc']['s']
+    chi = dd['potsc']['chi']
 
-    # intervals
-    _, ids_s = mix.get_array(s, s1, s2)
-    t, ids_t = mix.get_array_oo(oo, t, 't')
-    id_chi, _ = mix.find(chi, chi1)
+    # parameters to treat the results
+    sel_norm = oo.get('sel_norm', 'wci')
+    s_intervals = oo.get('s_intervals', [[0.0, 1.0]])
+    t_intervals = oo.get('t_intervals', [[t[0], t[-1]]])  # taking into account sel_norm
+    filters = oo.get('filters', [None])
+    chi1 = oo.get('chi1', 0.0)
+    flag_est = oo.get('flag_est', True)
+    # flag_adv = oo.get('flag_adv', True)
 
-    # non-zonal (at phi = 0) Phi in chosen intervals
-    pot_nz_chi = mix.get_slice(dd['potsc']['data'], ids_t, id_chi, ids_s)
+    # number of t- and s- intervals has to be the same:
+    if np.shape(s_intervals)[0] != np.shape(t_intervals)[0]:
+        return None
+    if np.shape(s_intervals)[0] != np.shape(filters)[0]:
+        return None
 
-    # averaging of the Phi on s
-    pot_nz = np.mean(pot_nz_chi, axis=1)
+    # time normalization
+    coef_norm = None
+    line_t, line_w, line_g = None, None, None
+    if sel_norm == 'ms':
+        coef_norm = 1.e3 / dd['wc']
+        line_t, line_w, line_g = 't,\ ms', 'w(kHz) = ', 'g(1e3/s) = '
+    if sel_norm == 'wci':
+        coef_norm = 1
+        line_t, line_w, line_g = 't[\omega_c^{-1}]', 'w[wci] = ', 'g[wci] = '
+    if sel_norm == 'csa':
+        coef_norm = (dd['cs'] / dd['a0']) / dd['wc']
+        line_t, line_w, line_g = 't[a_0/c_s]', 'w[cs/a0] = ', 'g[cs/a0 ] = '
+    if sel_norm == 'csr':
+        coef_norm = (dd['cs'] / dd['R0']) / dd['wc']
+        line_t, line_w, line_g = 't[R_0/c_s]', 'w[cs/R0] = ', 'g[cs/R0] = '
 
-    # estimation:
-    wg_est = ymath.estimate_wg(t, pot_nz)
+    # form s and t intervals
+    n_intervals = np.shape(s_intervals)[0]
+    ids_s_intervals, _, lines_s = \
+        mix.get_interval(s, s_intervals, 's', '0.3f')
+    ids_t_intervals, t_final_intervals, lines_t = \
+        mix.get_interval(t * coef_norm, t_intervals, 't', '0.1e')
+    del s
 
-    # plotting: estimation: time evolution and peaks
-    curves_est = crv.Curves().xlab('t').ylab('\Phi')
-    curves_est.flag_semilogy = True
-    curves_est.new('init')\
-        .XS(t).YS(pot_nz).leg('init')
-    curves_est.new('peaks')\
-        .XS(wg_est['x_peaks']).YS(wg_est['y_peaks'])\
-        .leg('peaks').sty('o').col('green')
-    curves_est.new('fitting')\
-        .XS(t).YS(wg_est['y_fit'])\
-        .leg('fitting').col('red').sty('--')
-    cpr.plot_curves(curves_est)
+    # poloidal angle
+    id_chi, chi1 = mix.find(chi, chi1)
+    line_chi1 = '\chi = {:0.1f}'.format(chi1)
 
-    # print results of estimation
+    # signal description
+    line_Phi = '\Phi({:s})'.format(line_chi1)
+
+    # --- ESTIMATION ---
+    if not flag_est:
+        return
+
+    wg_est, Phis_init, Phis_filt, Phis_fft_init, Phis_fft_filt, w2_grids = \
+        {}, {}, {}, {}, {}, {}
+    filt, Phi, t_int, w_int, ids_s, ids_t = None, None, None, None, None, None
+    for id_int in range(n_intervals):
+        ids_s, ids_t = ids_s_intervals[id_int], ids_t_intervals[id_int]
+        t_int = t_final_intervals[id_int]
+        oo_filter = filters[id_int]
+
+        # averaging along s axis at a particular angle chi
+        # Phi = np.mean(
+        #     dd['potsc']['data'][
+        #         ids_t[0]:ids_t[-1] + 1, id_chi, ids_s[0]:ids_s[-1] + 1
+        #     ], axis=1)
+        Phi = np.mean(
+            dd['potsc']['data'][:, id_chi, ids_s[0]:ids_s[-1] + 1], axis=1)
+
+        # filtering
+        # filt = ymath.filtering(t_int, Phi, oo_filter)
+        filt = ymath.filtering(t, Phi, oo_filter)
+
+        Phis_init[str(id_int)] = Phi[ids_t[0]:ids_t[-1] + 1]
+        Phis_filt[str(id_int)] = filt['filt'][ids_t[0]:ids_t[-1] + 1]
+        Phis_fft_init[str(id_int)] = filt['fft_init_2']
+        Phis_fft_filt[str(id_int)] = filt['fft_filt_2']
+        w2_grids[str(id_int)] = filt['w2']
+
+        # estimation of the instability spectrum
+        Phi_work = Phis_filt[str(id_int)]
+        if Phi_work is None:
+            Phi_work = Phi
+        wg_est[str(id_int)] = ymath.estimate_wg(t_int, Phi_work)
+    del filt, Phi, t_int, w_int, ids_s, ids_t
+
+    # plot FFT
+    for id_int in range(n_intervals):
+        curves_est = crv.Curves().xlab(line_t).ylab('FFT:\ \Phi')\
+            .tit('FFT:\ ' + line_Phi + ':\ ' + lines_s[id_int])
+        curves_est.new('init') \
+            .XS(w2_grids[str(id_int)]) \
+            .YS(Phis_fft_init[str(id_int)]) \
+            .leg('init').col('grey')
+        curves_est.new('init') \
+            .XS(w2_grids[str(id_int)]) \
+            .YS(Phis_fft_filt[str(id_int)]) \
+            .leg('filt').col('blue').sty(':')
+        cpr.plot_curves(curves_est)
+
+    # plot time evolution
+    for id_int in range(n_intervals):
+        curves_est = crv.Curves().xlab(line_t).ylab('\Phi')\
+            .tit(line_Phi + ':\ ' + lines_s[id_int])
+        curves_est.flag_semilogy = True
+        curves_est.new('init')\
+            .XS(t_final_intervals[id_int])\
+            .YS(Phis_init[str(id_int)])\
+            .leg('init').col('grey')
+        curves_est.new('init') \
+            .XS(t_final_intervals[id_int]) \
+            .YS(Phis_filt[str(id_int)]) \
+            .leg('filt').col('blue').sty(':')
+        curves_est.new('peaks')\
+            .XS(wg_est[str(id_int)]['x_peaks'])\
+            .YS(wg_est[str(id_int)]['y_peaks'])\
+            .leg('peaks').sty('o').col('green')
+        curves_est.new('fitting')\
+            .XS(wg_est[str(id_int)]['x_fit'])\
+            .YS(wg_est[str(id_int)]['y_fit'])\
+            .leg('fitting').col('red').sty('--')
+        cpr.plot_curves(curves_est)
+
     print('--- Estimation ---')
-    print('w = {:0.3e}'.format(wg_est['w']))
-    print('g = {:0.3e}'.format(wg_est['g']))
+    for id_int in range(n_intervals):
+        print('E -> *** ' + lines_s[id_int] + ':\ ' + lines_t[id_int] + ' ***')
+        print('E -> ' + line_w + '{:0.3e}'.format(wg_est[str(id_int)]['w']))
+        print('E -> ' + line_g + '{:0.3e}'.format(wg_est[str(id_int)]['g']))
 
-    # advanced w,g calculation
-    ainf = {'est': wg_est,
-            'x_start': wg_est['x_peaks'][0],
-            'x_end': wg_est['x_peaks'][-1]
-            }
-    wg_adv = ymath.advanced_wg(t, pot_nz, ainf)
-    curves_adv = crv.Curves().xlab('t').ylab('\Phi')
-    curves_adv.flag_semilogy = True
-    curves_adv.new('init') \
-        .XS(t).YS(pot_nz).leg('init')
-    curves_adv.new('fitting') \
-        .XS(wg_adv['x_fit']).YS(wg_adv['y_fit'])\
-        .leg('adv. fitting').col('red').sty('--')
-    cpr.plot_curves(curves_adv)
-
-    # print results of the advanced plotting
-    print('--- Advanced ---')
-    print('w = {:0.3e}'.format(wg_adv['w']))
-    print('g = {:0.3e}'.format(wg_adv['g']))
+    # # ---  Advanced w,g calculation ---
+    # if not flag_adv:
+    #     return
+    #
+    # wg_adv = {}
+    # for id_int in range(n_intervals):
+    #     ainf = {'est':     wg_est[str(id_int)],
+    #             'x_start': wg_est[str(id_int)]['x_peaks'][0],
+    #             'x_end':   wg_est[str(id_int)]['x_peaks'][-1]
+    #             }
+    #     wg_adv[str(id_int)] = ymath.advanced_wg(
+    #         t_final_intervals[id_int], Phis[str(id_int)], ainf)
+    #
+    # for id_int in range(n_intervals):
+    #     curves_adv = crv.Curves().xlab(line_t).ylab('\Phi')\
+    #         .tit(line_Phi + ':\ ' + lines_s[id_int])
+    #     curves_adv.flag_semilogy = True
+    #     curves_adv.new('init') \
+    #         .XS(t_final_intervals[id_int])\
+    #         .YS(Phis[str(id_int)])\
+    #         .leg('init')
+    #     curves_adv.new('fitting') \
+    #         .XS(wg_adv[str(id_int)]['x_fit'])\
+    #         .YS(wg_adv[str(id_int)]['y_fit'])\
+    #         .leg('adv. fitting').col('red').sty('--')
+    #     cpr.plot_curves(curves_adv)
+    #
+    # # print results of the advanced plotting
+    # print('--- Advanced ---')
+    # for id_int in range(n_intervals):
+    #     print('A -> *** ' + lines_s[id_int] + ':\ ' + lines_t[id_int] + ' ***')
+    #     print('A -> ' + line_w + '{:0.3e}'.format(wg_adv[str(id_int)]['w']))
+    #     print('A -> ' + line_g + '{:0.3e}'.format(wg_adv[str(id_int)]['g']))
 
 
 def calc_gamma_chimax(dd, s1, s2, oo={}):
@@ -326,5 +438,17 @@ def anim_st_chi0(dd, chi0, oo={}):
     cpr.animation_curves_2d(curves)
 
 
+def smooth_demo2():
+    x = np.linspace(-4,6,100)
+    y = np.sin(x)
+    yn = y+randn(len(y))*0.1
+
+    yn_filt = ymath.smooth(yn, 15)
+
+    curves = crv.Curves().xlab('x').ylab('y')
+    curves.new('y').XS(x).YS(y).leg('init')
+    curves.new('yn').XS(x).YS(yn).leg('noisy').sty('o')
+    curves.new('yn_filt').XS(x).YS(yn_filt).leg('filt').sty(':')
+    cpr.plot_curves(curves)
 
 

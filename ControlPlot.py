@@ -59,6 +59,9 @@ def plot_curves_mat(curves):
         curve = curves.list(icrv)
 
         y_res = curve.ys
+        if y_res is None:
+            continue
+
         if curves.flag_norm:
             y_res = y_res / np.max(np.abs(y_res))
         if curves.flag_semilogy:
@@ -97,11 +100,12 @@ def plot_curves_mat(curves):
 
     # format of axis labels
     mpl.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
-    # mpl.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+
+    if curves.flag_semilogy is False:
+        mpl.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
 
     # set legend
-    if ncurves > 1:
-        ax.legend(fontsize=curves.fontS, loc=curves.legend_position)
+    ax.legend(fontsize=curves.fontS, loc=curves.legend_position)
 
     # set title
     mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)
@@ -309,7 +313,7 @@ def plot_curves_3d_mat(curves):
 
         # set format for every line
         mpl.setp(ref_lines[0], linewidth=curve.width/2,
-                 color=curve.color, markersize=curve.markersize,
+                 color=curve.color, markersize=curve.markersize/3,
                  markerfacecolor=curve.markerfacecolor,
                  markeredgewidth=curve.width/2)
 

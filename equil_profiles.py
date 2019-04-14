@@ -108,3 +108,15 @@ def nT_profs(dd):
             .YS(dd[sp_name].nT_equil['grad_logn']) \
             .leg(sp_name)
     cpr.plot_curves(curves_T)
+
+
+def vp_profs(dd):
+    # output equilibrium temperature from ORB5 as it is
+    curves_vp = crv.Curves().xlab('s').ylab('v_{\parallel}')\
+        .tit('species\ parallel\ velocity\ (ORB5\ output)').set_diff_styles()
+    for sp_name in dd['species_names']:
+        curves_vp.new(sp_name)\
+            .XS(dd[sp_name].nT_equil['s'])\
+            .YS(dd[sp_name].nT_equil['vp'])\
+            .leg(sp_name)
+    cpr.plot_curves(curves_vp)

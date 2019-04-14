@@ -158,6 +158,14 @@ class Curves:
 
         return new_curve
 
+    def load(self, curves_to_load):
+        if curves_to_load is None:
+            return
+        for one_curve in curves_to_load.list_curves:
+            self.n_curves += 1
+            self.list_curves.append(one_curve)
+            self.map_curves[one_curve.name] = one_curve
+
     def new_color(self):
         if self.n_curves <= len(self.def_colors):
             one_color = self.def_colors[self.n_curves - 1]

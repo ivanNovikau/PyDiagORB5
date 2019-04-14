@@ -94,7 +94,19 @@ def elongation(dd):
 def nT_evol(dd, species_name):
     path_to_file = dd['path'] + '/orb5_res.h5'
     f = h5.File(path_to_file, 'r')
-    dd['kin_species'][species_name].find_nT_evol(dd, f)
+    if species_name is 'pf':
+        dd['pf'].find_nT_evol(dd, f)
+    else:
+        dd['kin_species'][species_name].find_nT_evol(dd, f)
+
+
+def krpert(dd, species_name):
+    path_to_file = dd['path'] + '/orb5_res.h5'
+    f = h5.File(path_to_file, 'r')
+    if species_name is 'pf':
+        dd['pf'].find_krpert(dd, f)
+    else:
+        dd['kin_species'][species_name].find_krpert(dd, f)
 
 
 def init(dd):
@@ -117,6 +129,8 @@ def init(dd):
 
     # read basic parameters
     dd['Lx'] = f['/parameters/equil/lx'][0]
+    dd['sfmin'] = f['/parameters/fields/sfmin'][0]
+    dd['sfmax'] = f['/parameters/fields/sfmax'][0]
 
     # calculate basic variables:
     mass_pf = dd['pf'].mass
@@ -127,9 +141,15 @@ def init(dd):
     dd['wc'] = ymath.find_wc(B0, mass_pf, Z_pf)
     dd['cs'] = ymath.find_cs(Te_peak, mass_pf)
 
+    dd['Lwork'] = (dd['sfmax'] - dd['sfmin']) * dd['a0']
+
     # read profiles:
     for sp_name in dd['species_names']:
         dd[sp_name].nT(dd, f)
+
+    # T,n dependent variables:
+    dd['T_speak'] = dd['pf'].T_speak(dd)
+    dd['rhoL_speak'] = ymath.find_rhoL(dd['T_speak'], dd['B0'], dd['pf'].mass, dd['pf'].Z)
 
 
 # init ->

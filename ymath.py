@@ -32,7 +32,7 @@ def estimate_wg(x_init, y_init, oo={}):
     w = 2 * np.pi * 0.5 / np.mean(np.diff(x_peaks))
     g, b0,  r_value, p_value, std_err = stats.linregress(x_peaks, np.log(y_peaks))
 
-    x_fit = x
+    x_fit = x[ids_peaks[0]:ids_peaks[-1]+1]
     y_fit = np.cos(w * x_fit) * np.exp(b0 + g * x_fit)
 
     # results
@@ -149,16 +149,35 @@ def w_for_fft(x):
 
     w = np.array([dfreq * i for i in range(nx_half+1)])
 
-    w2 = []
+    int_shift = 0
+    if np.mod(nx, 2) == 0:
+        int_shift = 1
+    left_a  = -np.flipud(w)
+    right_a = w[2:np.size(w) + 1 - int_shift]
+    w2 = np.concatenate((left_a, right_a))
+
     return w, w2, nx
 
 
-def fft_y(y, nw, axis=-1):
+def prepare_y_for_fft(x, y, nw):
+    ny = int(nw)
+    if ny != np.size(y):
+        x_res = np.linspace(x[0], x[-1], ny)
+        y_res = np.interp(x_res, x, y)
+    else:
+        x_res = x
+        y_res = y
+    return y_res, x_res
+
+
+def fft_y(y, nw, axis=-1, oo={}):
+    flag_f2_arranged = oo.get('flag_f2_arranged', False)
+
     ny = int(nw)
     ny_half = np.int(np.floor(ny/2.))
 
-    f2 = np.fft.fft(y, n=ny, axis=axis)  # two-sided FFT
-    f2 = np.abs(f2 / ny)
+    f2_raw = np.fft.fft(y, n=ny, axis=axis)  # two-sided FFT
+    f2 = np.abs(f2_raw / ny)
 
     if axis is -1:
         f = f2[range(ny_half + 1)]
@@ -170,9 +189,167 @@ def fft_y(y, nw, axis=-1):
         f = f2[:, 0:ny_half + 1]
         f[:, 1:np.size(f) - 1] = 2 * f[:, 1:np.size(f) - 1]
 
-    f2 = []
+    if flag_f2_arranged:
+        left_a  = np.flipud(f2[0:ny_half+2])
+        right_a = np.flipud(f2[ny_half+2:np.size(f2) + 1])
+        f2_arranged = np.concatenate((left_a, right_a))
+        return f, f2_raw, f2_arranged
+    else:
+        return f, f2_raw
 
-    return f, f2
+
+def filtering(x, y, oo=None):
+    def res_None(x, y):
+        w, w2, nw = w_for_fft(x)
+        nw = int(nw)
+        y_int, x_int = prepare_y_for_fft(x, y, nw)
+        yw, yw2, yw2_arranged = fft_y(y_int, nw, oo={'flag_f2_arranged': True})
+        res = {'filt': y,
+               'fft_init': yw,
+               'fft_filt': None,
+               'fft_init_2': yw2_arranged,
+               'fft_filt_2': None,
+               'w': w, 'w2': w2}
+        return res
+
+    # no any filtering
+    out = None
+    if oo is None:
+        return res_None(x, y)
+
+    # determine a filter type
+    sel_filt = oo.get('sel_filt', 'rough')  # None, 'rough', 'smooth', 'fft_smooth'
+
+    # no any filtering
+    if sel_filt is None:
+        out = res_None(x, y)
+    if sel_filt is 'rough':
+        out = rough_filter(x, y, oo)
+    if sel_filt is 'smooth':
+        out = smooth_filter(x, y, oo)
+    if sel_filt is 'fft_smooth':
+        out = fft_smooth_filter(x, y, oo)
+    return out
+
+
+def rough_filter(x, y, oo):
+    w_interval = oo.get('w_interval', [0, 0])
+
+    w, w2, nw = w_for_fft(x)
+    nw = int(nw)
+    y_int, x_int = prepare_y_for_fft(x, y, nw)
+    yw, yw2, yw2_arranged = fft_y(y_int, nw, oo={'flag_f2_arranged': True})
+    nw2 = np.size(w2)
+
+    # modification of the spectrum
+    if w_interval is not None:
+        # filtering
+        if w_interval[-1] is 0:
+            yw2[0] = 0.0
+        else:
+            id_w1, _ = mix.find(w, w_interval[0])
+            id_w2, _ = mix.find(w, w_interval[-1])
+            yw2[id_w1:id_w2 + 1] = 0.0
+            yw2[nw2 - id_w2:nw2 - id_w1] = 0.0
+
+        # new signal and its FFT
+        y_new = np.fft.irfft(yw2, nw)
+        yw_new, _, yw2_arranged_new = fft_y(y_new, nw, oo={'flag_f2_arranged': True})
+
+        # build the new signal along the initial x-grid
+        if nw != np.size(y):
+            y_new = np.interp(x, x_int, y_new)
+
+        # results
+        out = {'filt': y_new,
+               'fft_init': yw,
+               'fft_filt': yw_new,
+               'fft_init_2': yw2_arranged,
+               'fft_filt_2': yw2_arranged_new,
+               'w': w, 'w2': w2}
+    else:
+        # results
+        out = {'filt': y,
+               'fft_init': yw,
+               'fft_filt': None,
+               'fft_init_2': yw2_arranged,
+               'fft_filt_2': None,
+               'w': w, 'w2': w2}
+    return out
+
+
+def smooth_filter(x, y, oo):
+    wind = int(oo.get('wind', 3))  # windows, which has to be an ODD number
+
+    # smoothing
+    y_filt = smooth(y, wind)
+
+    # find FFT
+    w, w2, nw = w_for_fft(x)
+    nw = int(nw)
+
+    y_int, x_int = prepare_y_for_fft(x, y, nw)
+    yw, _, yw2_arranged = fft_y(y_int, nw, oo={'flag_f2_arranged': True})
+
+    y_int, x_int = prepare_y_for_fft(x, y_filt, nw)
+    yw_filt, _, yw2_arranged_filt = fft_y(y_int, nw, oo={'flag_f2_arranged': True})
+
+    # results
+    out = {'filt': y_filt,
+           'fft_init': yw,
+           'fft_filt': yw_filt,
+           'fft_init_2': yw2_arranged,
+           'fft_filt_2': yw2_arranged_filt,
+           'w': w, 'w2': w2}
+    return out
+
+
+def fft_smooth_filter(x, y, oo):
+    w_interval = oo.get('w_interval', [0, 0])
+    wind = oo.get('wind', [0, 0])
+
+    w, w2, nw = w_for_fft(x)
+    nw = int(nw)
+    y_int, x_int = prepare_y_for_fft(x, y, nw)
+    yw, yw2, yw2_arranged = fft_y(y_int, nw, oo={'flag_f2_arranged': True})
+    nw2 = np.size(w2)
+
+    # smoothing of the filtering
+    id_w1, _ = mix.find(w, w_interval[0])
+    id_w2, _ = mix.find(w, w_interval[-1])
+    yw2[id_w1:id_w2 + 1] = smooth(yw2[id_w1:id_w2 + 1], wind)
+    yw2[nw2 - id_w2:nw2 - id_w1] = smooth(yw2[nw2 - id_w2:nw2 - id_w1], wind)
+
+    # new signal and its FFT
+    y_new = np.fft.irfft(yw2, nw)
+    yw_new, _, yw2_arranged_new = fft_y(y_new, nw, oo={'flag_f2_arranged': True})
+
+    # build the new signal along the initial x-grid
+    if nw != np.size(y):
+        y_new = np.interp(x, x_int, y_new)
+
+    # results
+    out = {'filt': y_new,
+           'fft_init': yw,
+           'fft_filt': yw_new,
+           'fft_init_2': yw2_arranged,
+           'fft_filt_2': yw2_arranged_new,
+           'w': w, 'w2': w2}
+    return out
+
+
+def smooth(a, WSZ):
+    # taken from
+    # https://stackoverflow.com/questions/40443020/matlabs-smooth-implementation-n-point-moving-average-in-numpy-python
+
+    # a: NumPy 1-D array containing the data to be smoothed
+    # WSZ: smoothing window size needs, which must be ODD number,
+    # as in the original MATLAB implementation
+    out0 = np.convolve(a, np.ones(WSZ, dtype=int), 'valid') / WSZ
+    r = np.arange(1, WSZ-1, 2)
+    start = np.cumsum(a[:WSZ-1])[::2]/r
+    stop = (np.cumsum(a[:-WSZ:-1])[::2]/r)[::-1]
+    return np.concatenate((start, out0, stop))
 
 
 def find_wc(B0, m, Z):
