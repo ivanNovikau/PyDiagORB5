@@ -23,6 +23,8 @@ def reload():
 
 # ----------------------------------
 # --- AUG20787 case ---
+    
+# --- LAPTOP ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s81/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
@@ -37,8 +39,8 @@ def reload():
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n0-k2-sin/'
 
-path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
-        'turbulence/AUG20787/adiab/linear/n10/'
+#path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#        'turbulence/AUG20787/adiab/linear/n10/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n30/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
@@ -48,6 +50,15 @@ path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'AUG20787/adiab/Krook/scan-rotation/pos/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'AUG20787/adiab/Krook/scan-rotation/neg/'
+    
+# --- DRACO ---
+#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n80'
+#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n70'
+#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n50'
+#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n40'
+#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n20'
+#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n1'
+path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n90'
 
 dd = {
     'path': path_AUG,
