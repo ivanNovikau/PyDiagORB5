@@ -2,27 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/ip_projects/aug_linear_scan_n.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/main_Xavier.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/Ivan.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/Ivan.xml" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AUG-gam.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/AUG-gam.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AUG-linear-gam.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/AUG-linear-gam.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AUG-linear-itg.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/AUG-linear-itg.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ControlPlot.py" beforeDir="false" afterPath="$PROJECT_DIR$/ControlPlot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ITG_gamma.py" beforeDir="false" afterPath="$PROJECT_DIR$/ITG_gamma.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mix.py" beforeDir="false" afterPath="$PROJECT_DIR$/Mix.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Species.py" beforeDir="false" afterPath="$PROJECT_DIR$/Species.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TCV-linear-gam.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/TCV-linear-gam.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/TCV-ref-scan-n.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/TCV-ref-scan-n.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/curve.py" beforeDir="false" afterPath="$PROJECT_DIR$/curve.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/equil_profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/equil_profiles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/gam_theory.py" beforeDir="false" afterPath="$PROJECT_DIR$/gam_theory.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ip_projects/aug_linear_scan_n.py" beforeDir="false" afterPath="$PROJECT_DIR$/ip_projects/aug_linear_scan_n.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_AUG20787.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_AUG20787.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_TCV.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_TCV.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/read_data.py" beforeDir="false" afterPath="$PROJECT_DIR$/read_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ymath.py" beforeDir="false" afterPath="$PROJECT_DIR$/ymath.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/zf_gam.py" beforeDir="false" afterPath="$PROJECT_DIR$/zf_gam.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -41,8 +24,8 @@
           <file leaf-file-name="aug_linear_scan_n.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/ip_projects/aug_linear_scan_n.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="590">
-                  <caret line="40" column="29" selection-start-line="40" selection-start-column="29" selection-end-line="40" selection-end-column="29" />
+                <state relative-caret-position="490">
+                  <caret line="35" column="37" selection-start-line="35" selection-start-column="37" selection-end-line="35" selection-end-column="37" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                   </folding>
@@ -53,34 +36,8 @@
           <file leaf-file-name="ITG_gamma.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ITG_gamma.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-428">
+                <state relative-caret-position="3160">
                   <caret line="165" column="8" selection-start-line="165" selection-start-column="8" selection-end-line="165" selection-end-column="8" />
-                  <folding>
-                    <element signature="e#139#332#0" />
-                    <element signature="e#362#2204#0" />
-                    <element signature="e#762#1057#0" />
-                    <element signature="e#1151#1204#0" />
-                    <element signature="e#1239#1288#0" />
-                    <element signature="e#1323#1397#0" />
-                    <element signature="e#1432#1506#0" />
-                    <element signature="e#1898#2176#0" />
-                    <element signature="e#2241#2874#0" />
-                    <element signature="e#2909#3440#0" />
-                    <element signature="e#4376#4473#0" />
-                    <element signature="e#4508#4599#0" />
-                    <element signature="e#4634#4755#0" />
-                    <element signature="e#4790#4910#0" />
-                    <element signature="e#7004#7041#0" />
-                    <element signature="e#8456#10170#0" />
-                    <element signature="e#9560#9687#0" />
-                    <element signature="e#10221#11386#0" />
-                    <element signature="e#10895#11133#0" />
-                    <element signature="e#11435#12588#0" />
-                    <element signature="e#11843#11865#0" />
-                    <element signature="e#12075#12341#0" />
-                    <element signature="e#12630#13314#0" />
-                    <element signature="e#15252#15589#0" />
-                  </folding>
                 </state>
               </provider>
             </entry>
@@ -89,11 +46,11 @@
       </split-first>
       <split-second>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file leaf-file-name="main_AUG20787.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="main_AUG20787.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/main_AUG20787.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="456">
-                  <caret line="47" column="54" selection-start-line="47" selection-start-column="54" selection-end-line="47" selection-end-column="54" />
+                <state relative-caret-position="420">
+                  <caret line="39" selection-start-line="39" selection-start-column="2" selection-end-line="40" selection-end-column="49" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                   </folding>
@@ -104,7 +61,7 @@
           <file leaf-file-name="zf_gam.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/zf_gam.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="692">
+                <state relative-caret-position="1400">
                   <caret line="486" column="31" selection-start-line="486" selection-start-column="31" selection-end-line="486" selection-end-column="31" />
                   <folding>
                     <element signature="e#224#451#0" />
@@ -136,7 +93,7 @@
           <file leaf-file-name="ymath.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ymath.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="266">
+                <state relative-caret-position="580">
                   <caret line="200" column="29" selection-start-line="200" selection-start-column="29" selection-end-line="200" selection-end-column="29" />
                   <folding>
                     <element signature="e#232#316#0" />
@@ -158,14 +115,6 @@
                     <element signature="e#4500#4584#0" />
                     <element signature="e#4611#4695#0" />
                     <element signature="e#4730#4919#0" />
-                    <element signature="e#4991#6090#0" />
-                    <element signature="e#6444#7802#0" />
-                    <element signature="e#7797#9367#0" />
-                    <element signature="e#5927#6033#0" />
-                    <element signature="e#6072#6338#0" />
-                    <element signature="e#6384#6612#0" />
-                    <element signature="e#6651#6921#0" />
-                    <element signature="e#6947#7000#0" />
                   </folding>
                 </state>
               </provider>
@@ -174,7 +123,7 @@
           <file leaf-file-name="ControlPlot.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ControlPlot.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="241">
+                <state relative-caret-position="600">
                   <caret line="62" column="20" selection-start-line="62" selection-start-column="20" selection-end-line="62" selection-end-column="20" />
                   <folding>
                     <element signature="e#306#417#0" />
@@ -183,26 +132,6 @@
                     <element signature="e#780#987#0" />
                     <element signature="e#927#987#0" />
                     <element signature="e#1023#1053#0" />
-                    <element signature="e#3012#5231#0" />
-                    <element signature="e#3012#3042#0" />
-                    <element signature="e#3165#4437#0" />
-                    <element signature="e#3403#3698#0" />
-                    <element signature="e#3770#3941#0" />
-                    <element signature="e#5279#5458#0" />
-                    <element signature="e#5500#6545#0" />
-                    <element signature="e#5500#5530#0" />
-                    <element signature="e#5662#5878#0" />
-                    <element signature="e#6584#9080#0" />
-                    <element signature="e#6584#6614#0" />
-                    <element signature="e#6978#7021#0" />
-                    <element signature="e#7027#7042#0" />
-                    <element signature="e#7248#7461#0" />
-                    <element signature="e#7690#8306#0" />
-                    <element signature="e#9120#10243#0" />
-                    <element signature="e#9120#9150#0" />
-                    <element signature="e#9505#9713#0" />
-                    <element signature="e#9538#9602#0" />
-                    <element signature="e#9719#9781#0" />
                   </folding>
                 </state>
               </provider>
@@ -252,11 +181,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="Mix.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="Mix.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/Mix.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="816">
-                  <caret line="151" column="25" selection-start-line="151" selection-start-column="25" selection-end-line="151" selection-end-column="25" />
+                <state relative-caret-position="790">
+                  <caret line="158" selection-start-line="158" selection-end-line="158" />
                   <folding>
                     <element signature="e#88#156#0" />
                     <element signature="e#276#430#0" />
@@ -344,11 +273,11 @@
         <option value="$PROJECT_DIR$/main_Xavier.py" />
         <option value="$PROJECT_DIR$/main_TCV.py" />
         <option value="$PROJECT_DIR$/zf_gam.py" />
-        <option value="$PROJECT_DIR$/main_AUG20787.py" />
         <option value="$PROJECT_DIR$/Mix.py" />
         <option value="$PROJECT_DIR$/ControlPlot.py" />
         <option value="$PROJECT_DIR$/ymath.py" />
         <option value="$PROJECT_DIR$/ITG_gamma.py" />
+        <option value="$PROJECT_DIR$/main_AUG20787.py" />
         <option value="$PROJECT_DIR$/ip_projects/aug_linear_scan_n.py" />
       </list>
     </option>
@@ -531,6 +460,7 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
+    <editor active="true" />
     <layout>
       <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.5770713" visible="true" weight="0.13751318" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32897604" />
@@ -737,30 +667,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="520">
           <caret line="29" column="15" selection-start-line="29" selection-start-column="15" selection-end-line="29" selection-end-column="15" />
-          <folding>
-            <element signature="e#165#335#0" />
-            <element signature="e#357#941#0" />
-            <element signature="e#828#941#0" />
-            <element signature="e#964#1339#0" />
-            <element signature="e#1277#1339#0" />
-            <element signature="e#1372#1575#0" />
-            <element signature="e#1593#1871#0" />
-            <element signature="e#1827#1871#0" />
-            <element signature="e#1891#2032#0" />
-            <element signature="e#2059#2228#0" />
-            <element signature="e#2266#2479#0" />
-            <element signature="e#2516#2727#0" />
-            <element signature="e#2748#3949#0" />
-            <element signature="e#2922#3012#0" />
-            <element signature="e#3986#4869#0" />
-            <element signature="e#4179#4285#0" />
-            <element signature="e#4561#4869#0" />
-            <element signature="e#4680#4770#0" />
-            <element signature="e#4935#5198#0" />
-            <element signature="e#5037#5198#0" />
-            <element signature="e#5089#5198#0" />
-            <element signature="e#5140#5198#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -789,32 +695,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="420">
           <caret line="23" column="20" lean-forward="true" selection-start-line="23" selection-start-column="20" selection-end-line="23" selection-end-column="20" />
-          <folding>
-            <element signature="e#139#332#0" />
-            <element signature="e#362#2204#0" />
-            <element signature="e#762#1057#0" />
-            <element signature="e#1151#1204#0" />
-            <element signature="e#1239#1288#0" />
-            <element signature="e#1323#1397#0" />
-            <element signature="e#1432#1506#0" />
-            <element signature="e#1898#2176#0" />
-            <element signature="e#2241#2874#0" />
-            <element signature="e#2909#3440#0" />
-            <element signature="e#4376#4473#0" />
-            <element signature="e#4508#4599#0" />
-            <element signature="e#4634#4755#0" />
-            <element signature="e#4790#4910#0" />
-            <element signature="e#7004#7041#0" />
-            <element signature="e#8456#10170#0" />
-            <element signature="e#9560#9687#0" />
-            <element signature="e#10221#11386#0" />
-            <element signature="e#10895#11133#0" />
-            <element signature="e#11435#12588#0" />
-            <element signature="e#11843#11865#0" />
-            <element signature="e#12075#12341#0" />
-            <element signature="e#12630#13314#0" />
-            <element signature="e#15252#15589#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -822,30 +702,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="600">
           <caret line="33" column="4" selection-start-line="33" selection-start-column="4" selection-end-line="33" selection-end-column="4" />
-          <folding>
-            <element signature="e#165#335#0" />
-            <element signature="e#357#941#0" />
-            <element signature="e#828#941#0" />
-            <element signature="e#964#1339#0" />
-            <element signature="e#1277#1339#0" />
-            <element signature="e#1372#1575#0" />
-            <element signature="e#1593#1871#0" />
-            <element signature="e#1827#1871#0" />
-            <element signature="e#1891#2032#0" />
-            <element signature="e#2059#2228#0" />
-            <element signature="e#2266#2479#0" />
-            <element signature="e#2516#2727#0" />
-            <element signature="e#2748#3949#0" />
-            <element signature="e#2922#3012#0" />
-            <element signature="e#3986#4869#0" />
-            <element signature="e#4179#4285#0" />
-            <element signature="e#4561#4869#0" />
-            <element signature="e#4680#4770#0" />
-            <element signature="e#4935#5198#0" />
-            <element signature="e#5037#5198#0" />
-            <element signature="e#5089#5198#0" />
-            <element signature="e#5140#5198#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -867,30 +723,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state>
           <caret lean-forward="true" selection-end-column="18" />
-          <folding>
-            <element signature="e#165#335#0" />
-            <element signature="e#357#941#0" />
-            <element signature="e#828#941#0" />
-            <element signature="e#964#1339#0" />
-            <element signature="e#1277#1339#0" />
-            <element signature="e#1372#1575#0" />
-            <element signature="e#1593#1871#0" />
-            <element signature="e#1827#1871#0" />
-            <element signature="e#1891#2032#0" />
-            <element signature="e#2059#2228#0" />
-            <element signature="e#2266#2479#0" />
-            <element signature="e#2516#2727#0" />
-            <element signature="e#2748#3949#0" />
-            <element signature="e#2922#3012#0" />
-            <element signature="e#3986#4869#0" />
-            <element signature="e#4179#4285#0" />
-            <element signature="e#4561#4869#0" />
-            <element signature="e#4680#4770#0" />
-            <element signature="e#4935#5198#0" />
-            <element signature="e#5037#5198#0" />
-            <element signature="e#5089#5198#0" />
-            <element signature="e#5140#5198#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1113,30 +945,6 @@
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="309">
           <caret line="109" selection-start-line="109" selection-end-line="109" />
-          <folding>
-            <element signature="e#165#335#0" />
-            <element signature="e#357#941#0" />
-            <element signature="e#828#941#0" />
-            <element signature="e#964#1339#0" />
-            <element signature="e#1277#1339#0" />
-            <element signature="e#1372#1575#0" />
-            <element signature="e#1593#1871#0" />
-            <element signature="e#1827#1871#0" />
-            <element signature="e#1891#2032#0" />
-            <element signature="e#2059#2228#0" />
-            <element signature="e#2266#2479#0" />
-            <element signature="e#2516#2727#0" />
-            <element signature="e#2748#3949#0" />
-            <element signature="e#2922#3012#0" />
-            <element signature="e#3986#4869#0" />
-            <element signature="e#4179#4285#0" />
-            <element signature="e#4561#4869#0" />
-            <element signature="e#4680#4770#0" />
-            <element signature="e#4935#5198#0" />
-            <element signature="e#5037#5198#0" />
-            <element signature="e#5089#5198#0" />
-            <element signature="e#5140#5198#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1166,7 +974,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/zf_gam.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="692">
+        <state relative-caret-position="1400">
           <caret line="486" column="31" selection-start-line="486" selection-start-column="31" selection-end-line="486" selection-end-column="31" />
           <folding>
             <element signature="e#224#451#0" />
@@ -1196,7 +1004,7 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ControlPlot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="241">
+        <state relative-caret-position="600">
           <caret line="62" column="20" selection-start-line="62" selection-start-column="20" selection-end-line="62" selection-end-column="20" />
           <folding>
             <element signature="e#306#417#0" />
@@ -1205,43 +1013,13 @@
             <element signature="e#780#987#0" />
             <element signature="e#927#987#0" />
             <element signature="e#1023#1053#0" />
-            <element signature="e#3012#5231#0" />
-            <element signature="e#3012#3042#0" />
-            <element signature="e#3165#4437#0" />
-            <element signature="e#3403#3698#0" />
-            <element signature="e#3770#3941#0" />
-            <element signature="e#5279#5458#0" />
-            <element signature="e#5500#6545#0" />
-            <element signature="e#5500#5530#0" />
-            <element signature="e#5662#5878#0" />
-            <element signature="e#6584#9080#0" />
-            <element signature="e#6584#6614#0" />
-            <element signature="e#6978#7021#0" />
-            <element signature="e#7027#7042#0" />
-            <element signature="e#7248#7461#0" />
-            <element signature="e#7690#8306#0" />
-            <element signature="e#9120#10243#0" />
-            <element signature="e#9120#9150#0" />
-            <element signature="e#9505#9713#0" />
-            <element signature="e#9538#9602#0" />
-            <element signature="e#9719#9781#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/main_AUG20787.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="456">
-          <caret line="47" column="54" selection-start-line="47" selection-start-column="54" selection-end-line="47" selection-end-column="54" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ymath.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="266">
+        <state relative-caret-position="580">
           <caret line="200" column="29" selection-start-line="200" selection-start-column="29" selection-end-line="200" selection-end-column="29" />
           <folding>
             <element signature="e#232#316#0" />
@@ -1263,55 +1041,21 @@
             <element signature="e#4500#4584#0" />
             <element signature="e#4611#4695#0" />
             <element signature="e#4730#4919#0" />
-            <element signature="e#4991#6090#0" />
-            <element signature="e#6444#7802#0" />
-            <element signature="e#7797#9367#0" />
-            <element signature="e#5927#6033#0" />
-            <element signature="e#6072#6338#0" />
-            <element signature="e#6384#6612#0" />
-            <element signature="e#6651#6921#0" />
-            <element signature="e#6947#7000#0" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ITG_gamma.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-428">
+        <state relative-caret-position="3160">
           <caret line="165" column="8" selection-start-line="165" selection-start-column="8" selection-end-line="165" selection-end-column="8" />
-          <folding>
-            <element signature="e#139#332#0" />
-            <element signature="e#362#2204#0" />
-            <element signature="e#762#1057#0" />
-            <element signature="e#1151#1204#0" />
-            <element signature="e#1239#1288#0" />
-            <element signature="e#1323#1397#0" />
-            <element signature="e#1432#1506#0" />
-            <element signature="e#1898#2176#0" />
-            <element signature="e#2241#2874#0" />
-            <element signature="e#2909#3440#0" />
-            <element signature="e#4376#4473#0" />
-            <element signature="e#4508#4599#0" />
-            <element signature="e#4634#4755#0" />
-            <element signature="e#4790#4910#0" />
-            <element signature="e#7004#7041#0" />
-            <element signature="e#8456#10170#0" />
-            <element signature="e#9560#9687#0" />
-            <element signature="e#10221#11386#0" />
-            <element signature="e#10895#11133#0" />
-            <element signature="e#11435#12588#0" />
-            <element signature="e#11843#11865#0" />
-            <element signature="e#12075#12341#0" />
-            <element signature="e#12630#13314#0" />
-            <element signature="e#15252#15589#0" />
-          </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/Mix.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="816">
-          <caret line="151" column="25" selection-start-line="151" selection-start-column="25" selection-end-line="151" selection-end-column="25" />
+        <state relative-caret-position="790">
+          <caret line="158" selection-start-line="158" selection-end-line="158" />
           <folding>
             <element signature="e#88#156#0" />
             <element signature="e#276#430#0" />
@@ -1326,10 +1070,20 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/main_AUG20787.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="420">
+          <caret line="39" selection-start-line="39" selection-start-column="2" selection-end-line="40" selection-end-column="49" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/ip_projects/aug_linear_scan_n.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="590">
-          <caret line="40" column="29" selection-start-line="40" selection-start-column="29" selection-end-line="40" selection-end-column="29" />
+        <state relative-caret-position="490">
+          <caret line="35" column="37" selection-start-line="35" selection-start-column="37" selection-end-line="35" selection-end-column="37" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
           </folding>

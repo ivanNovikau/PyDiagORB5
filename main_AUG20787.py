@@ -37,12 +37,14 @@ def reload():
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n0-k2-sin/'
 
-path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
-        'turbulence/AUG20787/adiab/linear/n10/'
+# path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#         'turbulence/AUG20787/adiab/linear/n10/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n30/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n60/'
+path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+        'turbulence/AUG20787/adiab/linear/n90/'
 
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'AUG20787/adiab/Krook/scan-rotation/pos/'
