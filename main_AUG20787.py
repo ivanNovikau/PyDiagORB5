@@ -8,6 +8,7 @@ import ITG_gamma as itg
 import matplotlib.pyplot as mpl
 import numpy as np
 from scipy import constants
+import aug_signals
 
 
 def reload():
@@ -19,12 +20,10 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(work_profiles)
     mix.reload_module(itg)
+    mix.reload_module(aug_signals)
 
 
-# ----------------------------------
-# --- AUG20787 case ---
-    
-# --- LAPTOP ---
+## --- NL SIMULATIONS ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s81/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
@@ -34,34 +33,27 @@ def reload():
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/flux4-s51-ns1024/'
 
+## --- LINEAR GAM ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n0-k2-cos/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n0-k2-sin/'
 
-
+## --- LINEAR ITG SCAN ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n10/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n30/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n60/'
-path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
-        'turbulence/AUG20787/adiab/linear/n90/'
+# path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#         'turbulence/AUG20787/adiab/linear/n90/'
 
+## --- NL SIMS WITH PARALLEL ROTATION ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'AUG20787/adiab/Krook/scan-rotation/pos/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'AUG20787/adiab/Krook/scan-rotation/neg/'
-    
-# --- DRACO ---
-#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n80'
-#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n70'
-#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n50'
-#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n40'
-#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n20'
-#path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n1'
-path_AUG = '/ptmp/ivannovi/turbulence/AUG20787/adiab/linear/n90'
 
 dd = {
     'path': path_AUG,

@@ -53,6 +53,16 @@ def nT_profs(dd):
     # output equilibrium density from ORB5 as it is
     curves_n = crv.Curves().xlab('s').ylab('norm.\ n') \
         .tit('species\ norm.\ density').set_diff_styles()
+    for sp_name in dd['species_names']:
+        curves_n.new(sp_name) \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['n']) \
+            .leg(sp_name)
+    cpr.plot_curves(curves_n)
+
+    # normalized equilibrium density from ORB5
+    curves_n = crv.Curves().xlab('s').ylab('norm.\ n') \
+        .tit('species\ norm.\ density').set_diff_styles()
     curves_n.flag_norm = True
     for sp_name in dd['species_names']:
         curves_n.new(sp_name) \

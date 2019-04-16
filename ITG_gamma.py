@@ -5,8 +5,6 @@ import ymath
 import curve as crv
 import numpy as np
 
-from pylab import *
-
 
 def reload():
     # Important: put here all modules that you want to reload
@@ -15,6 +13,36 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(ymath)
     mix.reload_module(crv)
+
+
+# radial derivative of the full potential at a particular chi:
+def ersc(dd, oo):
+    chi_s = oo.get('chi_s', [0.0])
+
+    rd.potsc(dd)
+    t   = dd['potsc']['t']
+    s   = dd['potsc']['s']
+    chi = dd['potsc']['chi']
+
+    nchi = np.size(chi_s)
+    names_ersc_chi = []
+    for count_chi in range(nchi):
+        one_chi = chi_s[count_chi]
+        name_ersc_chi = 'ersc-chi-' + '{:0.3f}'.format(one_chi)
+        names_ersc_chi.append(name_ersc_chi)
+
+        if name_ersc_chi in dd:
+            continue
+
+        id_chi, chi1 = mix.find(chi, one_chi)
+
+        data = - np.gradient(dd['potsc']['data'][:, id_chi, :], s, axis=2)
+        dd[name_ersc_chi] = {
+            't': t,
+            's': s,
+            'chi_1': chi1,
+            'data': data}
+    return names_ersc_chi
 
 
 def plot_t(dd, oo={}):
@@ -438,17 +466,6 @@ def anim_st_chi0(dd, chi0, oo={}):
     cpr.animation_curves_2d(curves)
 
 
-def smooth_demo2():
-    x = np.linspace(-4,6,100)
-    y = np.sin(x)
-    yn = y+randn(len(y))*0.1
 
-    yn_filt = ymath.smooth(yn, 15)
-
-    curves = crv.Curves().xlab('x').ylab('y')
-    curves.new('y').XS(x).YS(y).leg('init')
-    curves.new('yn').XS(x).YS(yn).leg('noisy').sty('o')
-    curves.new('yn_filt').XS(x).YS(yn_filt).leg('filt').sty(':')
-    cpr.plot_curves(curves)
 
 

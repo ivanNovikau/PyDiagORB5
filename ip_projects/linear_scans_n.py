@@ -34,7 +34,42 @@ def aug_scan_n():
     add_n(70, [2.732e-04], [8.455e-04])
     add_n(80, [4.500e-04], [9.582e-04])
     add_n(90, [6.900e-04], [1.027e-03])
+    add_n(100, [1.083e-04], [1.088e-03])
+    add_n(110, [2.380e-04], [1.240e-03])
+    add_n(120, [4.284e-04], [1.326e-03])
+    add_n(130, [6.363e-04], [1.364e-03])
 
+    plot_scan_n(ns, ws, gs)
+
+
+def tcv_scan_n():
+    # w, g normalized to wci
+    ns, ws, gs = [], [], []
+
+    # ws[i] and gs[i] should have the same size
+    def add_n(n, w, g):
+        ns.append(n)
+        ws.append(w)
+        gs.append(g)
+
+    # n10 - no frequency, just growth
+    # n128 - no growth
+
+    add_n(50,  [1.173e-03], [1.074e-03])
+    add_n(60,  [9.848e-05], [1.451e-03])
+    add_n(70,  [4.039e-04], [1.756e-03])
+    add_n(80,  [8.544e-04], [1.818e-03])
+    add_n(85,  [1.013e-03], [1.906e-03])
+    add_n(90,  [1.258e-03], [1.769e-03])
+    add_n(95,  [1.628e-03], [1.542e-03])
+    add_n(100, [1.958e-04], [1.268e-03])
+    add_n(105, [2.244e-03], [9.492e-04])
+    add_n(110, [2.398e-03], [5.436e-04])
+
+    plot_scan_n(ns, ws, gs)
+
+
+def plot_scan_n(ns, ws, gs):
     ns_plot, ws_plot, gs_plot = [], [], []
     for id_n in range(len(ns)):
         for id_wg in range(len(ws[id_n])):

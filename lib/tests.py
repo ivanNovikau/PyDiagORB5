@@ -5,6 +5,7 @@ import ControlPlot as cpr
 import zf_gam as zf
 import numpy as np
 import pyqtgraph.examples
+import pylab
 
 
 def reload():
@@ -299,5 +300,20 @@ def test_vorbar():
     cpr.plot_curves_3d(curves)
 
 
+def smooth_demo2():
+    x = np.linspace(-4,6,100)
+    y = np.sin(x)
+    yn = y + pylab.randn(len(y))*0.1
+
+    yn_filt = ymath.smooth(yn, 15)
+
+    curves = crv.Curves().xlab('x').ylab('y')
+    curves.new('y').XS(x).YS(y).leg('init')
+    curves.new('yn').XS(x).YS(yn).leg('noisy').sty('o')
+    curves.new('yn_filt').XS(x).YS(yn_filt).leg('filt').sty(':')
+    cpr.plot_curves(curves)
+
+
 def test_pyqtgraph():
     pyqtgraph.examples.run()
+

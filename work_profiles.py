@@ -139,6 +139,41 @@ def build_vpp_profile(path_to_read, path_to_write, file_names):
     write_profiles(path_to_write, file_names, res_profs)
 
 
+def build_new_profiles(path_to_read, path_to_write, file_names):
+    # read initial profiles
+    init_profs = read_profiles(path_to_read, file_names)
+
+    # modify profiles
+    res_profs = dict(init_profs)
+    for one_name in file_names:
+        prof = init_profs[one_name]
+
+        # # *** Flat profiles ***
+        # n_value, T_value, vp_value = 1, 1, 0
+        # prof['T']  = flat_profile(prof['ns'], T_value)
+        # prof['n']  = flat_profile(prof['ns'], n_value)
+        # prof['vp'] = flat_profile(prof['ns'], vp_value)
+
+        # # # *** Gaussian n-profile (edge) ***
+        # T_value, vp_value = 1, 0
+        # prof['T']  = flat_profile(prof['ns'], T_value)
+        # prof['vp'] = flat_profile(prof['ns'], vp_value)
+        #
+        # A0, mu, sig = 1.0, 0.8, 0.05
+        # prof['n'] = gaussian_profile(prof['psi'], A0, mu, sig)
+
+        # # *** Gaussian n-profile (center) ***
+        T_value, vp_value = 1, 0
+        prof['T'] = flat_profile(prof['ns'], T_value)
+        prof['vp'] = flat_profile(prof['ns'], vp_value)
+
+        A0, mu, sig = 1.0, 0.3, 0.09
+        prof['n'] = gaussian_profile(prof['psi'], A0, mu, sig)
+
+    # write result profiles
+    write_profiles(path_to_write, file_names, res_profs)
+
+
 def flat_profile(ns, value):
     res = np.array([value for i in range(ns)])
     return res
