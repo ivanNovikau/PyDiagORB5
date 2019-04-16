@@ -15,15 +15,9 @@ def reload():
     mix.reload_module(ymath)
 
 
-def create_open_file(dd):
-    path_to_write = dd['path_to_write']
-    ff = h5.File(path_to_write, 'w')
-    return ff
-
-
-def save_data(ff, name, data):
+def save_data(path_file, name, data):
+    ff = h5.File(path_file, 'w')
     ff.create_dataset(name, data=data)
-
-
-def close_file(ff):
     ff.close()
+
+

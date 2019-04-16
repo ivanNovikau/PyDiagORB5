@@ -37,10 +37,8 @@ def save_aug_signals(dd, oo):
     names_ersc = itg.ersc(dd, {'chi_s': chi_s})
 
     # open .h5 file
-    ff = wr.create_open_file(dd)
+    path_to_write = dd['path_to_write']
 
     # save radial points to the result file:
-    wr.save_data('s_points', s_points)
+    wr.save_data(path_to_write, 's_points', s_points)
 
-    # close .h5 file
-    wr.close_file(ff)

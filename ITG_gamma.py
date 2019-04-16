@@ -36,7 +36,7 @@ def ersc(dd, oo):
 
         id_chi, chi1 = mix.find(chi, one_chi)
 
-        data = - np.gradient(dd['potsc']['data'][:, id_chi, :], s, axis=2)
+        data = - np.gradient(dd['potsc']['data'][:, id_chi, :], s, axis=1)
         dd[name_ersc_chi] = {
             't': t,
             's': s,
