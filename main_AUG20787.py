@@ -26,8 +26,8 @@ def reload():
 ## --- NL SIMULATIONS ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s81/'
-# path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#            'turbulence/AUG20787/adiab/Krook/s51-ns1024/'  # <-- !!!
+path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/AUG20787/adiab/Krook/s51-ns1024/'  # <-- !!!
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s751-ns512/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \

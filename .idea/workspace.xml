@@ -2,24 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/aug_signals.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ip_projects/linear_scans_n.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/write_data.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/dictionaries/Ivan.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/dictionaries/Ivan.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/inspectionProfiles/Project_Default.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/AUG-gam.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/AUG-gam.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/AUG-linear-gam.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/AUG-linear-gam.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/AUG-linear-itg.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/AUG-linear-itg.ipynb" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ITG_gamma.py" beforeDir="false" afterPath="$PROJECT_DIR$/ITG_gamma.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/equil_profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/equil_profiles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ip_projects/aug_linear_scan_n.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/lib/tests.py" beforeDir="false" afterPath="$PROJECT_DIR$/lib/tests.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/aug_signals.py" beforeDir="false" afterPath="$PROJECT_DIR$/aug_signals.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/main_AUG20787.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_AUG20787.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_ITG.py" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/main_TCV.py" beforeDir="false" afterPath="$PROJECT_DIR$/main_TCV.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_itg.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/test_zf.ipynb" beforeDir="false" />
-      <change beforePath="$PROJECT_DIR$/work_profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/work_profiles.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -35,11 +21,11 @@
     <splitter split-orientation="horizontal" split-proportion="0.43150684">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
-          <file leaf-file-name="ITG_gamma.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="ITG_gamma.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ITG_gamma.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="320">
-                  <caret line="16" lean-forward="true" selection-start-line="16" selection-end-line="16" />
+                  <caret line="16" selection-start-line="16" selection-end-line="16" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                     <element signature="e#383#2225#0" />
@@ -155,11 +141,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="main_AUG20787.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="main_AUG20787.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/main_AUG20787.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="440">
-                  <caret line="22" column="34" selection-start-line="22" selection-start-column="34" selection-end-line="22" selection-end-column="34" />
+                <state relative-caret-position="260">
+                  <caret line="28" selection-start-line="28" selection-end-line="29" selection-end-column="67" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                   </folding>
@@ -174,8 +160,8 @@
           <file leaf-file-name="aug_signals.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/aug_signals.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="690">
-                  <caret line="42" column="4" selection-start-line="42" selection-start-column="4" selection-end-line="42" selection-end-column="4" />
+                <state relative-caret-position="520">
+                  <caret line="26" column="37" selection-start-line="26" selection-start-column="37" selection-end-line="26" selection-end-column="37" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                   </folding>
@@ -415,10 +401,10 @@
         <option value="$PROJECT_DIR$/main_TCV.py" />
         <option value="$PROJECT_DIR$/work_profiles.py" />
         <option value="$PROJECT_DIR$/lib/tests.py" />
-        <option value="$PROJECT_DIR$/main_AUG20787.py" />
         <option value="$PROJECT_DIR$/ITG_gamma.py" />
         <option value="$PROJECT_DIR$/write_data.py" />
         <option value="$PROJECT_DIR$/aug_signals.py" />
+        <option value="$PROJECT_DIR$/main_AUG20787.py" />
       </list>
     </option>
   </component>
@@ -1141,16 +1127,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/main_AUG20787.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="440">
-          <caret line="22" column="34" selection-start-line="22" selection-start-column="34" selection-end-line="22" selection-end-column="34" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ip_projects/linear_scans_n.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="530">
@@ -1295,7 +1271,7 @@
     <entry file="file://$PROJECT_DIR$/ITG_gamma.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="320">
-          <caret line="16" lean-forward="true" selection-start-line="16" selection-end-line="16" />
+          <caret line="16" selection-start-line="16" selection-end-line="16" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
             <element signature="e#383#2225#0" />
@@ -1331,6 +1307,16 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/main_AUG20787.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="260">
+          <caret line="28" selection-start-line="28" selection-end-line="29" selection-end-column="67" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/write_data.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="460">
@@ -1343,8 +1329,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/aug_signals.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="690">
-          <caret line="42" column="4" selection-start-line="42" selection-start-column="4" selection-end-line="42" selection-end-column="4" />
+        <state relative-caret-position="520">
+          <caret line="26" column="37" selection-start-line="26" selection-start-column="37" selection-end-line="26" selection-end-column="37" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
           </folding>

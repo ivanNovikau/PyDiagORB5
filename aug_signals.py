@@ -22,6 +22,7 @@ def reload():
 
 
 def save_aug_signals(dd, oo):
+    # oo['path_to_write']
     # radial points, where the signals will be considered
     s_points = oo.get('s_points', [0.5])
 
@@ -40,6 +41,6 @@ def save_aug_signals(dd, oo):
 
     # save radial points to the result file:
     wr.save_data('s_points', s_points)
-    
+
     # close .h5 file
     wr.close_file(ff)
