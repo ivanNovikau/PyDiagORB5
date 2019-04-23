@@ -15,9 +15,16 @@ def reload():
     mix.reload_module(ymath)
 
 
-def save_data(path_file, name, data):
+def create_file(path_file):
     ff = h5.File(path_file, 'w')
-    ff.create_dataset(name, data=data)
+    ff.close()
+
+
+def save_data(path_file, name, data, desc=''):
+    ff = h5.File(path_file, 'a')
+    if name not in ff:
+        ddata = ff.create_dataset(name, data=data)
+        ddata.attrs[u'descr'] = desc
     ff.close()
 
 

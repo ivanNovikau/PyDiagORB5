@@ -5,6 +5,7 @@ import equil_profiles as equ
 import ControlPlot as cpr
 import transport
 import work_profiles
+import ITG_gamma as itg
 import matplotlib.pyplot as mpl
 import numpy as np
 from scipy import constants
@@ -19,6 +20,7 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(transport)
     mix.reload_module(work_profiles)
+    mix.reload_module(itg)
 
 
 ## --- NL SIMULATIONS ---
@@ -29,20 +31,51 @@ def reload():
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/n60/'
 
 ## --- LINEAR GAM ---
-path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/n0/'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/n0-Krook/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/TCV/linear/scan-GAM/n0/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/TCV/linear/scan-GAM/n0-Krook/'
+
+## --- LINEAR ITG ---
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/TCV/linear/scan-ITG/more-precise/n58'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/TCV/linear/scan-ITG/more-precise/n60'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/TCV/linear/scan-ITG/more-precise/n62'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/TCV/linear/scan-ITG/more-precise/n80'
+
 
 ## --- LINEAR EGAM ---
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'TCV/linear/scan-EGAM/flat-v4'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'TCV/linear/scan-EGAM/flat-v8'
-path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
-           'TCV/linear/scan-EGAM/ge-v4-f01'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#            'TCV/linear/scan-EGAM/ge-v4-f01'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'TCV/linear/scan-EGAM/ge-v8-f01'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#             'TCV/linear/scan-EGAM/ge-v65-f02'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#            'TCV/linear/scan-EGAM/gc-v4-f02'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#            'TCV/linear/scan-EGAM/ge-v2-f02'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#            'TCV/linear/scan-EGAM/ge-v4-f02'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#            'TCV/linear/scan-EGAM/ge-vf4-T2'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#            'TCV/linear/scan-EGAM/ge-vf4-T4'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#            'TCV/linear/scan-EGAM/ge-v6-f02'  # <-- !!!
 path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
-           'TCV/linear/scan-EGAM/ge-v4-f02'
+            'TCV/linear/scan-EGAM/gc-v6-f02'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+            'TCV/linear/scan-EGAM/ge-v55-f02'
+
+
 
 dd = {
     'path': path_TCV,

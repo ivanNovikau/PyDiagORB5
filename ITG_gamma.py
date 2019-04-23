@@ -4,6 +4,7 @@ import ControlPlot as cpr
 import ymath
 import curve as crv
 import numpy as np
+from scipy import interpolate
 
 
 def reload():
@@ -16,10 +17,10 @@ def reload():
 
 
 # radial derivative of the full potential at a particular chi:
-def ersc(dd, oo):
+def ersc_old(dd, oo):
     chi_s = oo.get('chi_s', [0.0])
 
-    rd.potsc(dd)
+    rd.potsc_ref(dd, oo)
     t   = dd['potsc']['t']
     s   = dd['potsc']['s']
     chi = dd['potsc']['chi']
@@ -40,9 +41,101 @@ def ersc(dd, oo):
         dd[name_ersc_chi] = {
             't': t,
             's': s,
-            'chi_1': chi1,
+            'chi_1': chi1, 'id_chi_1': id_chi,
             'data': data}
     return names_ersc_chi
+
+
+# radial derivative of the full potential at a particular chi:
+def ersc(dd, oo):
+    chi_s = oo.get('chi_s', [0.0])
+
+    names_potsc = rd.potsc_chi(dd, oo)
+
+    nchi = np.size(chi_s)
+    names_ersc_chi = []
+    for count_chi in range(nchi):
+        one_chi       = chi_s[count_chi]
+        name_ersc_chi = 'ersc-chi-' + '{:0.3f}'.format(one_chi)
+        names_ersc_chi.append(name_ersc_chi)
+        if name_ersc_chi in dd:
+            continue
+
+        one_name_potsc = names_potsc[count_chi]
+        data = - np.gradient(
+            dd[one_name_potsc]['data'], dd['potsc_grids']['s'], axis=1)
+        dd[name_ersc_chi] = {
+            'chi_1':    dd[one_name_potsc]['chi_1'],
+            'id_chi_1': dd[one_name_potsc]['id_chi_1'],
+            'data': data}
+    return names_ersc_chi
+
+
+# phibar along potsc (t,s) grids:
+def phibar_interp(dd):
+    if 'phibar_interp' in dd:
+        return
+
+    rd.phibar(dd)
+    rd.potsc_grids(dd)
+
+    t = dd['phibar']['t']
+    s = dd['phibar']['s']
+
+    f_interp = interpolate.interp2d(t, s, dd['phibar']['data'].T)
+    dd['phibar_interp'] = {
+        'data': f_interp(dd['potsc_grids']['t'], dd['potsc_grids']['s']).T
+    }
+
+
+# non-zonal potential:
+def phinz(dd, oo):
+    chi_s = oo.get('chi_s', [0.0])
+
+    phibar_interp(dd)
+    names_potsc = rd.potsc_chi(dd, oo)
+
+    nchi = np.size(chi_s)
+    names_phinz_chi = []
+    for count_chi in range(nchi):
+        one_chi        = chi_s[count_chi]
+        name_phinz_chi = 'phinz-chi-' + '{:0.3f}'.format(one_chi)
+        names_phinz_chi.append(name_phinz_chi)
+        if name_phinz_chi in dd:
+            continue
+
+        one_name_potsc = names_potsc[count_chi]
+        data = dd[one_name_potsc]['data'] - dd['phibar_interp']['data']
+        dd[name_phinz_chi] = {
+            'chi_1':    dd[one_name_potsc]['chi_1'],
+            'id_chi_1': dd[one_name_potsc]['id_chi_1'],
+            'data': data}
+    return names_phinz_chi
+
+
+# non-zonal radial derivative of the full potential at a particular chi:
+def ernz(dd, oo):
+    chi_s = oo.get('chi_s', [0.0])
+
+    names_phinz = phinz(dd, oo)
+
+    nchi = np.size(chi_s)
+    names_ernz_chi = []
+    for count_chi in range(nchi):
+        one_chi       = chi_s[count_chi]
+        name_ernz_chi = 'ernz-chi-{:0.3f}'.format(one_chi)
+        names_ernz_chi.append(name_ernz_chi)
+        if name_ernz_chi in dd:
+            continue
+
+        one_name_phinz = names_phinz[count_chi]
+        data = - np.gradient(
+            dd[one_name_phinz]['data'], dd['potsc_grids']['s'], axis=1)
+        dd[name_ernz_chi] = {
+            'chi_1':    dd[one_name_phinz]['chi_1'],
+            'id_chi_1': dd[one_name_phinz]['id_chi_1'],
+            'data': data}
+    return names_ernz_chi
 
 
 def plot_t(dd, oo={}):
@@ -147,12 +240,12 @@ def plot_rz(dd, t1, oo={}):
     cpr.plot_curves_3d(curves, 'mat')
 
 
-def calc_gamma_chi0(dd, oo={}):
+def calc_gamma_chi0(dd, oo):
     # initial signal and grids
-    rd.potsc(dd)
-    t = dd['potsc']['t']
-    s = dd['potsc']['s']
-    chi = dd['potsc']['chi']
+    rd.potsc_grids(dd)
+    t = dd['potsc_grids']['t']
+    s = dd['potsc_grids']['s']
+    chi = dd['potsc_grids']['chi']
 
     # parameters to treat the results
     sel_norm = oo.get('sel_norm', 'wci')
@@ -168,6 +261,10 @@ def calc_gamma_chi0(dd, oo={}):
         return None
     if np.shape(s_intervals)[0] != np.shape(filters)[0]:
         return None
+
+    # full potential at a chosen poloidal angle
+    oo_phi = {'chi_s': [chi1]}
+    name_potsc = rd.potsc_chi(dd, oo_phi)[0]
 
     # time normalization
     coef_norm = None
@@ -213,15 +310,10 @@ def calc_gamma_chi0(dd, oo={}):
         oo_filter = filters[id_int]
 
         # averaging along s axis at a particular angle chi
-        # Phi = np.mean(
-        #     dd['potsc']['data'][
-        #         ids_t[0]:ids_t[-1] + 1, id_chi, ids_s[0]:ids_s[-1] + 1
-        #     ], axis=1)
         Phi = np.mean(
-            dd['potsc']['data'][:, id_chi, ids_s[0]:ids_s[-1] + 1], axis=1)
+            dd[name_potsc]['data'][:, ids_s[0]:ids_s[-1] + 1], axis=1)
 
         # filtering
-        # filt = ymath.filtering(t_int, Phi, oo_filter)
         filt = ymath.filtering(t, Phi, oo_filter)
 
         Phis_init[str(id_int)] = Phi[ids_t[0]:ids_t[-1] + 1]
@@ -313,6 +405,219 @@ def calc_gamma_chi0(dd, oo={}):
     #     print('A -> *** ' + lines_s[id_int] + ':\ ' + lines_t[id_int] + ' ***')
     #     print('A -> ' + line_w + '{:0.3e}'.format(wg_adv[str(id_int)]['w']))
     #     print('A -> ' + line_g + '{:0.3e}'.format(wg_adv[str(id_int)]['g']))
+
+
+def calc_wg(dd, oo):
+    # initial signal and grids
+    rd.potsc_grids(dd)
+    t = dd['potsc_grids']['t']
+    s = dd['potsc_grids']['s']
+    chi = dd['potsc_grids']['chi']
+
+    # parameters to treat the results
+    sel_norm = oo.get('sel_norm', 'wc')
+    oo_filter_g = oo.get('filter_g', {'sel_filt': None})
+    oo_filter_w = oo.get('filter_w', {'sel_filt': None})
+    chi1 = oo.get('chi1', 0.0)
+
+    # full potential at a chosen poloidal angle
+    oo_phi = {'chi_s': [chi1]}
+    name_potsc = rd.potsc_chi(dd, oo_phi)[0]
+
+    # time normalization
+    coef_norm_t, coef_norm_w = None, None
+    line_norm_t, line_norm_w, line_norm_g = None, None, None
+    label_norm_t, label_norm_w, label_norm_g = None, None, None
+    if sel_norm == 'khz':
+        coef_norm_t = 1.e3 / dd['wc']
+        coef_norm_w = 1
+        line_norm_t,  line_norm_w,  line_norm_g  = 't(ms)', 'w(kHz)', 'g(1e3/s)'
+        label_norm_t, label_norm_w, label_norm_g = \
+            't, ms', '\omega(kHz)', '\gamma(1e3/s)'
+    if sel_norm == 'wc':
+        coef_norm_t = 1
+        coef_norm_w = 2 * np.pi
+        line_norm_t, line_norm_w,   line_norm_g  = 't[1/wc]', 'w[wci]', 'g[wci]'
+        label_norm_t, label_norm_w, label_norm_g = \
+            't[\omega_c^{-1}]', '\omega[\omega_c]', '\gamma[\omega]'
+    if sel_norm == 'csa':
+        coef_norm_t = (dd['cs'] / dd['a0']) / dd['wc']
+        coef_norm_w = 2 * np.pi
+        line_norm_t, line_norm_w, line_norm_g = 't[a0/cs]', 'w[cs/a0]', 'g[cs/a0 ]'
+        label_norm_t, label_norm_w, label_norm_g = \
+            't[a_0/c_s]', '\omega[c_a/a_0]', '\gamma[c_s/a_0]'
+    if sel_norm == 'csr':
+        coef_norm_t = (dd['cs'] / dd['R0']) / dd['wc']
+        coef_norm_w = 2 * np.pi
+        line_norm_t, line_norm_w, line_norm_g = 't[R0/cs]', 'w[cs/R0]', 'g[cs/R0]'
+        label_norm_t, label_norm_w, label_norm_g = \
+            't[R_0/c_s]', '\omega[c_a/R_0]', '\gamma[c_s/R_0]'
+
+    oo_filter_g['norm_w'] = coef_norm_w
+    oo_filter_w['norm_w'] = coef_norm_w
+
+    # radial domain
+    s, ids_s = mix.get_array_oo(oo, s, 's')
+    line_s = 's = [{:0.3f}, {:0.3f}]'.format(s[0], s[-1])
+
+    # time renormalization
+    t_full = t * coef_norm_t
+    del t
+
+    # poloidal angle
+    id_chi, chi1 = mix.find(chi, chi1)
+    line_chi1 = '\chi = {:0.1f}'.format(chi1)
+
+    # signal description
+    line_Phi = '\Phi({:s})'.format(line_chi1)
+    line_Phi_w = '\Phi({:s}) \cdot \exp(-g t)'.format(line_chi1)
+
+    # averaging along s axis at a particular angle chi
+    Phi_init_g = np.mean(dd[name_potsc]['data'][:, ids_s[0]:ids_s[-1] + 1], axis=1)
+
+    # filtering of the growing signal
+    filt_g = ymath.filtering(t_full, Phi_init_g, oo_filter_g)
+
+    # information about the time domain, where the filtering of the growing signal
+    # has been performed
+    line_filt_tg = label_norm_t + ' = [{:0.3e}, {:0.3e}]' \
+        .format(filt_g['x'][0], filt_g['x'][-1])
+
+    # chose a time interval inside of the time domain
+    # where the filtering has been performed
+    tg, ids_tg = mix.get_array_oo(oo, filt_g['x'], 't')
+
+    # information about the time domain where the growth rate is estimated:
+    line_tg = line_norm_t + ' = [{:0.3e}, {:0.3e}]'.format(tg[0], tg[-1])
+    if filt_g['filt'] is None:
+        Phi_filt_g = None
+        Phi_work_g = Phi_init_g[ids_tg[0]:ids_tg[-1] + 1]
+    else:
+        Phi_filt_g = filt_g['filt']
+        Phi_work_g = Phi_filt_g[ids_tg[0]:ids_tg[-1] + 1]
+
+    # estimation of the instability growth rate
+    g_est = ymath.estimate_g(tg, Phi_work_g)
+
+    # get rid of the growth:
+    Phi_init_w = Phi_init_g * np.exp(- g_est['g'] * t_full)
+
+    # filtering of the oscillating signal
+    filt_w = ymath.filtering(t_full, Phi_init_w, oo_filter_w)
+
+    # information about the time domain, where the filtering of the oscillating signal
+    # has been performed
+    line_filt_tw = label_norm_t + ' = [{:0.3e}, {:0.3e}]' \
+        .format(filt_w['x'][0], filt_w['x'][-1])
+
+    # chose a time interval inside of the time domain
+    # where the filtering has been performed
+    tw, ids_tw = mix.get_array_oo(oo, filt_w['x'], 't')
+
+    # information about the time domain where the frequency is estimated:
+    line_tw = line_norm_t + ' = [{:0.3e}, {:0.3e}]'.format(tw[0], tw[-1])
+    if filt_w['filt'] is None:
+        Phi_filt_w = None
+        Phi_work_w = Phi_init_w[ids_tw[0]:ids_tw[-1] + 1]
+    else:
+        Phi_filt_w = filt_w['filt']
+        Phi_work_w = Phi_filt_w[ids_tw[0]:ids_tw[-1] + 1]
+
+    # estimation of the frequency:
+    w_est = ymath.estimate_w(tw, Phi_work_w)
+
+    # plot FFT
+    curves = crv.Curves().xlab(label_norm_w).ylab('FFT:\ \Phi')\
+        .tit('FFT:\ ' + line_Phi)\
+        .titn(line_s + ', ' + line_filt_tg)
+    curves.new() \
+        .XS(filt_g['w2']) \
+        .YS(filt_g['fft_init_2']) \
+        .leg('initial').col('grey')
+    curves.new() \
+        .XS(filt_g['w2']) \
+        .YS(filt_g['fft_filt_2']) \
+        .leg('filtered').col('blue').sty(':')
+    cpr.plot_curves(curves)
+
+    curves = crv.Curves().xlab(label_norm_w).ylab('FFT:\ \Phi') \
+        .tit('FFT:\ ' + line_Phi_w)\
+        .titn(line_s + ', ' + line_filt_tw)
+    curves.new() \
+        .XS(filt_w['w2']) \
+        .YS(filt_w['fft_init_2']) \
+        .leg('initial').col('grey')
+    curves.new() \
+        .XS(filt_w['w2']) \
+        .YS(filt_w['fft_filt_2']) \
+        .leg('filtered').col('blue').sty(':')
+    cpr.plot_curves(curves)
+
+    # plot filtered signals
+    curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi)\
+        .tit(line_Phi + '\ (-> G)\ VS\ ' + line_Phi_w + '\ (-> W)')\
+        .titn(line_s)
+    curves.flag_semilogy = True
+    curves.new() \
+        .XS(t_full) \
+        .YS(Phi_init_g) \
+        .leg('G:\ init.').col('grey')
+    curves.new() \
+        .XS(filt_g['x']) \
+        .YS(Phi_filt_g) \
+        .leg('G:\ filt.').col('blue').sty(':')
+    curves.new() \
+        .XS(t_full) \
+        .YS(Phi_init_w) \
+        .leg('W:\ init.').col('red')
+    curves.new() \
+        .XS(filt_w['x']) \
+        .YS(Phi_filt_w) \
+        .leg('W:\ filt.').col('green').sty(':')
+    cpr.plot_curves(curves)
+
+    # plot fitted signals
+    curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi) \
+        .tit(line_Phi + ':\ ' + line_s)\
+        .titn(label_norm_g + ' = {:0.3e}'.format(g_est['g']))
+    curves.flag_semilogy = True
+    curves.new() \
+        .XS(tg) \
+        .YS(Phi_work_g) \
+        .leg('signal').col('blue')
+    curves.new() \
+        .XS(g_est['x_peaks']) \
+        .YS(g_est['y_peaks']) \
+        .leg('peaks').sty('o').col('green')
+    curves.new() \
+        .XS(g_est['x_fit']) \
+        .YS(g_est['y_fit']) \
+        .leg('fitting').col('red').sty('--')
+    cpr.plot_curves(curves)
+
+    curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi) \
+        .tit(line_Phi_w + ':\ ' + line_s) \
+        .titn(label_norm_w + ' = {:0.3e}'.format(w_est['w']))
+    curves.flag_semilogy = True
+    curves.new() \
+        .XS(tw) \
+        .YS(Phi_work_w) \
+        .leg('signal').col('blue')
+    curves.new('peaks') \
+        .XS(w_est['x_peaks']) \
+        .YS(w_est['y_peaks']) \
+        .leg('peaks').sty('o').col('green')
+    curves.new('fitting') \
+        .XS(w_est['x_fit']) \
+        .YS(w_est['y_fit']) \
+        .leg('fitting').col('red').sty('--')
+    cpr.plot_curves(curves)
+
+    print('--- Estimation ---')
+    print('*** Growth rate: ' + line_s + ':\ ' + line_tg + ' ***')
+    print('E -> ' + line_norm_g + ' = {:0.3e}'.format(g_est['g']))
+    print('*** Frequency: '   + line_s + ':\ ' + line_tw + ' ***')
+    print('E -> ' + line_norm_w + ' = {:0.3e}'.format(w_est['w']))
 
 
 def calc_gamma_chimax(dd, s1, s2, oo={}):

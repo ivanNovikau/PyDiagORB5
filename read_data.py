@@ -37,6 +37,81 @@ def potsc(dd):
         'data': potsc_data}
 
 
+def potsc_grids(dd):
+    if 'potsc_grids' in dd:
+        return
+    path_to_file = dd['path'] + '/orb5_res.h5'
+    f = h5.File(path_to_file, 'r')
+    t = np.array(f['/data/var2d/generic/potsc/time'])
+    chi = np.array(f['/data/var2d/generic/potsc/coord2'])
+    s = np.array(f['/data/var2d/generic/potsc/coord1'])
+    r = np.array(f['/data/var2d/generic/potsc/rsc'])
+    z = np.array(f['/data/var2d/generic/potsc/zsc'])
+
+    dd['potsc_grids'] = {
+        't': t, 'chi': chi, 's': s, 'r': r, 'z': z
+    }
+    f.close()
+
+
+def potsc_chi(dd, oo):
+    potsc_grids(dd)
+    chi_s = oo.get('chi_s', [0.0])
+
+    path_to_file = dd['path'] + '/orb5_res.h5'
+    f = h5.File(path_to_file, 'r')
+
+    nchi = np.size(chi_s)
+    names_potsc_chi = []
+    for count_chi in range(nchi):
+        one_chi = chi_s[count_chi]
+        name_potsc_chi = 'potsc-chi-' + '{:0.3f}'.format(one_chi)
+        names_potsc_chi.append(name_potsc_chi)
+
+        if name_potsc_chi in dd:
+            continue
+
+        id_chi, chi1 = mix.find(dd['potsc_grids']['chi'], one_chi)
+
+        potsc_data = np.array(f['/data/var2d/generic/potsc/data'][:, id_chi, :])
+        dd[name_potsc_chi] = {
+            'chi_1': chi1, 'id_chi_1': id_chi,
+            'data': potsc_data}
+
+    f.close()
+
+    return names_potsc_chi
+
+
+def potsc_t(dd, oo):
+    potsc_grids(dd)
+    t_points = oo.get('t_points', [0.0])
+
+    path_to_file = dd['path'] + '/orb5_res.h5'
+    f = h5.File(path_to_file, 'r')
+
+    nt_points = np.size(t_points)
+    names_potsc_t = []
+    for count_t in range(nt_points):
+        one_t = t_points[count_t]
+        name_potsc_t = 'potsc-t-' + '{:0.3f}'.format(one_t)
+        names_potsc_t.append(name_potsc_t)
+
+        if name_potsc_t in dd:
+            continue
+
+        id_t, t_point = mix.find(dd['potsc_grids']['t'], one_t)
+
+        potsc_data = np.array(f['/data/var2d/generic/potsc/data'][id_t, :, :])
+        dd[name_potsc_t] = {
+            't_point': t_point, 'id_t_point': id_t,
+            'data': potsc_data}
+
+    f.close()
+
+    return names_potsc_t
+
+
 def phibar(dd):
     if 'phibar' in dd:
         return

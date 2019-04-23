@@ -19,7 +19,7 @@ class Curve:
     ws = None
     xlabel = ''
     ylabel = ''
-    legend = ''
+    legend = '\ '
     style = '-'
     width = None
     color = 'blue'

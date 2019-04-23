@@ -8,7 +8,7 @@ import ITG_gamma as itg
 import matplotlib.pyplot as mpl
 import numpy as np
 from scipy import constants
-import aug_signals
+import aug_signals as augs
 
 
 def reload():
@@ -20,14 +20,16 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(work_profiles)
     mix.reload_module(itg)
-    mix.reload_module(aug_signals)
+    mix.reload_module(augs)
 
 
 ## --- NL SIMULATIONS ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s81/'
 path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
-           'turbulence/AUG20787/adiab/Krook/s51-ns1024/'  # <-- !!!
+           'turbulence/AUG20787/adiab/Krook/s01-n80-ns2048/'  # <-- !!! (big project)
+# path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/AUG20787/adiab/Krook/s51-ns1024/'  # <-- !!!
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s751-ns512/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \

@@ -56,86 +56,66 @@ def vorbar(dd):
         'data': data}
 
 
-def fft_gam_s1(dd, ss, oo={}):
-    # Fourier spectra at different radial points ss:
-    rd.phibar(dd)
-    erbar(dd)
+# FFT of zonal radial electric field and vorticity at different radial points
+def fft_gam_s1(dd, oo):
+    s_points = oo.get('s_points', [0.5])
+    sel_norm = oo.get('sel_norm', 'wc')
+
+    ns_points = np.size(s_points)
+
     vorbar(dd)
-    t = dd['phibar']['t']
+    t, ids_t = mix.get_array_oo(oo, dd['phibar']['t'], 't')
     s = dd['phibar']['s']
 
-    # intervals
-    t, ids_t = mix.get_array_oo(oo, t, 't')
-
-    phibar_s = []
-    erbar_s = []
-    vorbar_s = []
-    for s1 in ss:
-        id_s1, _ = mix.find(s, s1)
-        phibar_s.append(mix.get_slice(dd['phibar']['data'], ids_t, id_s1))
-        erbar_s.append(mix.get_slice(dd['erbar']['data'], ids_t, id_s1))
+    erbar_s, vorbar_s, lines_s = [], [], []
+    for s1 in s_points:
+        id_s1, s1_res = mix.find(s, s1)
+        lines_s.append('s = {:0.3f}'.format(s1_res))
+        erbar_s.append(mix.get_slice(dd['erbar']['data'],   ids_t, id_s1))
         vorbar_s.append(mix.get_slice(dd['vorbar']['data'], ids_t, id_s1))
 
-    # change normalization of the time grid
-    cs = dd['cs']
-    wc = dd['wc']
-    a0 = dd['a0']
-    t = t * (cs / a0) / wc
+    # --- frequency grid ---
+    ffres = ymath.fft_y(t)
 
-    # find FFT of the signal:
-    w, _, nw = ymath.w_for_fft(t)
-    w = w * 2 * np.pi
+    coef_norm, line_w = None, ''
+    if sel_norm == 'khz':
+        coef_norm = dd['wc'] / 1.e3
+        line_w = '\omega,\ kHz'
+    if sel_norm == 'wc':
+        coef_norm = 2 * np.pi
+        line_w = '\omega[\omega_c]'
+    if sel_norm == 'csa':
+        coef_norm = 2 * np.pi * dd['wc'] / (dd['cs'] / dd['a0'])
+        line_w = '\omega[c_s/a_0]'
+    if sel_norm == 'csr':
+        coef_norm = 2 * np.pi * dd['wc']  / (dd['cs'] / dd['R0'])
+        line_w = '\omega[c_s/R_0]'
+    w = ffres['w'] * coef_norm
 
-    fs_phibar = []
-    fs_erbar = []
-    fs_vorbar = []
-    for id_s1 in range(len(ss)):
-        f_phibar, _ = ymath.fft_y(phibar_s[id_s1], nw)
-        f_erbar,  _ = ymath.fft_y(erbar_s[id_s1], nw)
-        f_vorbar, _ = ymath.fft_y(vorbar_s[id_s1], nw)
-        fs_phibar.append(f_phibar)
-        fs_erbar.append(f_erbar)
-        fs_vorbar.append(f_vorbar)
-    del f_phibar, f_erbar, f_vorbar
+    # --- FFT ---
+    fferbar, ffvorbar = [], []
+    for id_s1 in range(ns_points):
+        fferbar.append(ymath.fft_y(t, erbar_s[id_s1]))
+        ffvorbar.append(ymath.fft_y(t, vorbar_s[id_s1]))
 
     # intervals for the frequency:
     w, ids_w = mix.get_array_oo(oo, w, 'w')
-    for id_s1 in range(len(ss)):
-        fs_phibar[id_s1] = mix.get_slice(fs_phibar[id_s1], ids_w)
-        fs_erbar[id_s1]  = mix.get_slice(fs_erbar[id_s1],  ids_w)
-        fs_vorbar[id_s1] = mix.get_slice(fs_vorbar[id_s1], ids_w)
-
-    # initial signal
-    curves_phi = crv.Curves().xlab('t[a/cs]').ylab('\overline{\Phi}')
-    curves_er = crv.Curves().xlab('t[a/cs]').ylab('\overline{E}_r')
-    curves_vor = crv.Curves().xlab('t[a/cs]').ylab('\overline{\Omega}_r')
-    for id_s1 in range(len(ss)):
-        name_y = 'y{:d}'.format(id_s1)
-        leg_s1 = 's = {:0.3f}'.format(ss[id_s1])
-        curves_phi.new(name_y).XS(t).YS(phibar_s[id_s1])\
-            .leg('\overline{\Phi}' + '({})'.format(leg_s1))
-        curves_er.new(name_y).XS(t).YS(erbar_s[id_s1])\
-            .leg('\overline{E}_r' + '({})'.format(leg_s1))
-        curves_vor.new(name_y).XS(t).YS(vorbar_s[id_s1])\
-            .leg('\overline{\Omega}_r' + '({})'.format(leg_s1))
-    cpr.plot_curves(curves_phi)
-    cpr.plot_curves(curves_er)
-    cpr.plot_curves(curves_vor)
+    for id_s1 in range(ns_points):
+        fferbar[id_s1]['f']  = mix.get_slice(fferbar[id_s1]['f'], ids_w)
+        ffvorbar[id_s1]['f'] = mix.get_slice(ffvorbar[id_s1]['f'], ids_w)
 
     # fourier spectrum
-    curves_phi = crv.Curves().xlab('w[cs/a]').ylab('FFT:\ \overline{\Phi}')
-    curves_er = crv.Curves().xlab('w[cs/a]').ylab('FFT:\ \overline{E}_r')
-    curves_vor = crv.Curves().xlab('w[cs/a]').ylab('FFT:\ \overline{\Omega}_r')
-    for id_s1 in range(len(ss)):
-        name_y = 'fft:\ y{:d}'.format(id_s1)
-        leg_s1 = 's = {:0.3f}'.format(ss[id_s1])
-        curves_phi.new(name_y).XS(w).YS(fs_phibar[id_s1])\
-            .leg('FFT:\ \overline{\Phi}' + '({})'.format(leg_s1))
-        curves_er.new(name_y).XS(w).YS(fs_erbar[id_s1])\
-            .leg('FFT:\ \overline{E}_r' + '({})'.format(leg_s1))
-        curves_vor.new(name_y).XS(w).YS(fs_vorbar[id_s1])\
-            .leg('FFT:\ \overline{\Omega}_r' + '({})'.format(leg_s1))
-    cpr.plot_curves(curves_phi)
+    curves_er = crv.Curves().xlab(line_w).ylab('FFT:\ \overline{E}_r')
+    curves_vor = crv.Curves().xlab(line_w).ylab('FFT:\ \overline{\Omega}_r')
+    for id_s1 in range(ns_points):
+        curves_er.new()\
+            .XS(w)\
+            .YS(fferbar[id_s1]['f'])\
+            .leg(lines_s[id_s1])
+        curves_vor.new()\
+            .XS(w)\
+            .YS(ffvorbar[id_s1]['f']) \
+            .leg(lines_s[id_s1])
     cpr.plot_curves(curves_er)
     cpr.plot_curves(curves_vor)
 
@@ -147,8 +127,6 @@ def fft_gam_2d(dd, oo={}):
     sel_cmp = oo.get('sel_cmp', 'pink_r')  # -> 'jet', 'hot' etc.
     curves_to_load = oo.get('curves_to_load', None)
 
-    rd.phibar(dd)
-    erbar(dd)
     vorbar(dd)
     t = dd['phibar']['t']
     r = dd['phibar']['s']
@@ -157,9 +135,10 @@ def fft_gam_2d(dd, oo={}):
     t, ids_t = mix.get_array_oo(oo, t, 't')
 
     # radial coordinate and its normalization
+    line_r = ''
     if sel_r == 's':
         r = r
-        line_r = '\sqrt{\psi/\psi_{edge}}'
+        line_r = 's = \sqrt{\psi/\psi_{edge}}'
     if sel_r == 'psi':
         r = r**2
         line_r = '\psi/\psi_{edge}'
@@ -173,12 +152,18 @@ def fft_gam_2d(dd, oo={}):
 
     # information about the time-interval where FFT is found
     line_t_wci = mix.test_array(t, 't[wci^{-1}]', ':0.2e')
+    line_t_seconds = mix.test_array(t / dd['wc'], 't(seconds)', ':0.3e')
+    line_t = line_t_seconds
 
     # change normalization of the time grid -> seconds
     t = t / dd['wc']
 
-    # frequency grid with a chosen normalization
-    w, _, nw = ymath.w_for_fft(t)
+    # --- FIND FFT ---
+    fferbar  = ymath.fft_y(t, erbar_st,  oo={'axis': 0})
+    ffvorbar = ymath.fft_y(t, vorbar_st, oo={'axis': 0})
+
+    # frequency normalization
+    coef_norm, line_w = None, ''
     if sel_norm == 'khz':
         coef_norm = 1. / 1.e3
         line_w = '\omega,\ kHz'
@@ -191,24 +176,20 @@ def fft_gam_2d(dd, oo={}):
     if sel_norm == 'csr':
         coef_norm = 2 * np.pi / (dd['cs'] / dd['R0'])
         line_w = '\omega[c_s/R_0]'
-    w = w * coef_norm
-
-    # FFT of the signal
-    f_erbar,  _ = ymath.fft_y(erbar_st,  nw, 0)
-    f_vorbar, _ = ymath.fft_y(vorbar_st, nw, 0)
+    w = ffvorbar['w'] * coef_norm
 
     # intervals for the frequency:
     w, ids_w = mix.get_array_oo(oo, w, 'w')
-    f_erbar  = mix.get_slice(f_erbar,  ids_w)
-    f_vorbar = mix.get_slice(f_vorbar, ids_w)
+    f_erbar  = mix.get_slice(fferbar['f'],  ids_w)
+    f_vorbar = mix.get_slice(ffvorbar['f'], ids_w)
 
     # --- PLOTTING ---
     curves_er = crv.Curves().xlab(line_r).ylab(line_w)\
-        .tit('FFT:\ \overline{E}_r:\ ' + line_t_wci)\
+        .tit('FFT:\ \overline{E}_r:\ ' + line_t)\
         .xlim([r[0], r[-1]]).ylim([w[0], w[-1]]) \
         .leg_pos('lower left')
     curves_vor = crv.Curves().xlab(line_r).ylab(line_w)\
-        .tit('FFT:\ \overline{\Omega}_r:\ ' + line_t_wci)\
+        .tit('FFT:\ \overline{\Omega}_r:\ ' + line_t)\
         .xlim([r[0], r[-1]]).ylim([w[0], w[-1]])\
         .leg_pos('lower left')
 
@@ -223,7 +204,7 @@ def fft_gam_2d(dd, oo={}):
     curves_er = gam_theory.get_gao(dd, oo_th)
     curves_er = gam_theory.get_gk_fit(dd, oo_th)
 
-    oo_th.update({'curves': curves_vor}) # !!!
+    oo_th.update({'curves': curves_vor})
     curves_vor = exp_AUG20787(dd, oo_th)
     curves_vor = gam_theory.get_gao(dd, oo_th)
     curves_vor = gam_theory.get_gk_fit(dd, oo_th)
@@ -449,57 +430,41 @@ def wg_s(dd, oo={}):
         # dd['saved_data'][save_name + '-g'] = curves_g
 
 
+# w,g in several s-points:
+def wg_several_s1(dd, oo):
+    s_points = oo.get('s_points', [0.5])
+
+    oo_points = dict(oo)
+    oo_points['flag_output'] = True
+    out_s = []
+    for s_point in s_points:
+        oo_points['s_point'] = s_point
+        out_s.append(wg_s1(dd, oo_points))
+
+    print('--- RESULTS ---')
+    for out_s1 in out_s:
+        print('-- ' + out_s1['line_s'] + ', ' + out_s1['line_t'] + ' --')
+        print('E -> ' + out_s1['line_w_pr'] +
+              '{:0.3e}'.format(out_s1['w-est']))
+        print('E -> ' + out_s1['line_g_pr'] +
+              '{:0.3e}'.format(out_s1['g-est']))
+        print('A -> ' + out_s1['line_w_pr'] +
+              '{:0.3e}'.format(out_s1['w-adv']))
+        print('A -> ' + out_s1['line_g_pr'] +
+              '{:0.3e}'.format(out_s1['g-adv']))
+
+
 # frequency and dynamic rate of zonal Er at a radial point s1
 def wg_s1(dd, oo={}):
     sel_norm = oo.get('sel_norm', 'wci')  # -> 'wci', 'kHz', 'csa', 'csr'
-    s_point = oo.get('s_point', 0.5)
-    w_interval = oo.get('w_interval', None)
     flag_output = oo.get('flag_output', False)
     flag_print = oo.get('flag_print', True)
+    s_point = oo.get('s_point', 0.5)
+    oo_filter = oo.get('filter', [None])
 
     erbar(dd)
     t = dd['phibar']['t']  # normalized to wc
     s = dd['phibar']['s']
-
-    # radial interval
-    ids_s1, s_point = mix.find(s, s_point)
-    line_s1 = 's = {:0.3f}'.format(s_point)
-
-    # radial wavelength:
-    rd.krpert(dd, 'pf')
-    kr = dd['pf'].krpert * np.pi / dd['Lwork']
-    line_k = 'k = {:0.3f}'.format(kr * dd['rhoL_speak'])
-
-    # filtering of the signal:
-    t_filt, ids_t_filt = mix.get_array_oo(oo, t, 't_filt')
-    erbar_s1 = mix.get_slice(dd['erbar']['data'], ids_t_filt, ids_s1)
-    filt = None
-    if w_interval is not None:
-        filt = ymath.rough_filter(t_filt, erbar_s1, {'w_interval': w_interval})
-        erbar_s1_filt = filt['filt']
-    else:
-        erbar_s1_filt = erbar_s1
-    del ids_t_filt, ids_s1, t
-
-    # plot filtered signals:
-    if flag_print and w_interval is not None:
-        curves = crv.Curves().xlab('t[1/wci]').ylab('\overline{E}_r')
-        curves.new('y').XS(t_filt).YS(erbar_s1).leg('init')
-        curves.new('filt').XS(t_filt).YS(erbar_s1_filt) \
-            .leg('filt').sty(':')
-        cpr.plot_curves(curves)
-
-        curves = crv.Curves().xlab('w[wci]').ylab('FFT:\ \overline{E}_r')
-        curves.new('y').XS(filt['w2']).YS(filt['fft_init_2']).leg('init')
-        curves.new('filt').XS(filt['w2']).YS(filt['fft_filt_2']) \
-            .leg('filt').sty(':')
-        cpr.plot_curves(curves)
-
-    # chose time domain to calculate the frequency and damping rate:
-    t_work, ids_t = mix.get_array_oo(oo, t_filt, 't')
-    line_t_wci = mix.test_array(t_work, 't[1/wci]', ':0.2e')
-    erbar_s1_work = erbar_s1_filt[ids_t[0]:ids_t[-1]+1]
-    del erbar_s1_filt, t_filt, ids_t
 
     # normalization:
     coef_norm_w, coef_norm_g = np.NaN, np.NaN
@@ -522,6 +487,56 @@ def wg_s1(dd, oo={}):
         coef_norm_w = coef_norm_g = dd['wc'] / (dd['cs'] / dd['R0'])
         line_w, line_w_pr = '\omega[c_s/R_0]', 'w[cs/R0] = '
         line_g, line_g_pr = '\gamma[c_s/R_0]', 'g[cs/R0] = '
+
+    # radial interval
+    ids_s1, s_point = mix.find(s, s_point)
+    line_s1 = 's = {:0.3f}'.format(s_point)
+
+    # zonal radial electric field at the chosen radial point:
+    erbar_s1 = dd['erbar']['data'][:, ids_s1]
+
+    # radial wavelength:
+    rd.krpert(dd, 'pf')
+    kr = dd['pf'].krpert * np.pi / dd['Lwork']
+    line_k = 'k = {:0.3f}'.format(kr * dd['rhoL_speak'])
+
+    # filtering of the signal:
+    filt = ymath.filtering(t, erbar_s1, oo_filter)
+
+    # plot filtered signals:
+    if flag_print:
+        curves = crv.Curves()\
+            .xlab('t[\omega_c^{-1}]')\
+            .ylab('\overline{E}_r')\
+            .tit('\overline{E}_r:\ ' + line_s1)
+        curves.new()\
+            .XS(t)\
+            .YS(erbar_s1)\
+            .leg('initial')
+        curves.new()\
+            .XS(filt['x'])\
+            .YS(filt['filt']) \
+            .leg('filtered').sty(':')
+        cpr.plot_curves(curves)
+
+        curves = crv.Curves()\
+            .xlab(line_w)\
+            .ylab('FFT:\ \overline{E}_r')\
+            .tit('FFT:\ \overline{E}_r:\ ' + line_s1)
+        curves.new('y')\
+            .XS(2 * np.pi * filt['w2'] * coef_norm_w)\
+            .YS(filt['fft_init_2'])\
+            .leg('initial')
+        curves.new('filt')\
+            .XS(2 * np.pi * filt['w2'] * coef_norm_w)\
+            .YS(filt['fft_filt_2']) \
+            .leg('filtered').sty(':')
+        cpr.plot_curves(curves)
+
+    # chose time domain to calculate the frequency and damping rate:
+    t_work, ids_t = mix.get_array_oo(oo, t, 't')
+    line_t_wci = 't = [{:0.2e}, {:0.2e}]'.format(t_work[0], t_work[-1])
+    erbar_s1_work = filt['filt'][ids_t[0]:ids_t[-1]+1]
 
     # --------------------------------------------------------------
     # --- ESTIMATION ---
@@ -553,7 +568,7 @@ def wg_s1(dd, oo={}):
         cpr.plot_curves(curves)
 
         # print the results
-        print('--- ESTIMATION ' + line_t_wci + '---')
+        print('--- ESTIMATION: ' + line_t_wci + ', ' + line_s1 + '---')
         print(line_w_pr + '{:0.3e}'.format(w_est))
         print(line_g_pr + '{:0.3e}'.format(g_est))
 
@@ -587,7 +602,7 @@ def wg_s1(dd, oo={}):
         cpr.plot_curves(curves)
 
         # print the results
-        print('--- ADVANCED FITTING ' + line_t_wci + '---')
+        print('--- ADVANCED FITTING: ' + line_t_wci + ', ' + line_s1 + '---')
         print(line_w_pr + '{:0.3e}'.format(w_adv))
         print(line_g_pr + '{:0.3e}'.format(g_adv))
 
@@ -595,7 +610,9 @@ def wg_s1(dd, oo={}):
     if flag_output:
         out = {'w-est': w_est, 'g-est': g_est,
                'w-adv': w_adv, 'g-adv': g_adv,
-               'line_w': line_w, 'line_g': line_g}
+               'line_w': line_w, 'line_g': line_g,
+               'line_w_pr': line_w_pr, 'line_g_pr': line_g_pr,
+               'line_s': line_s1, 'line_t': line_t_wci}
         return out
 
 
