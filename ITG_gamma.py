@@ -372,40 +372,6 @@ def calc_gamma_chi0(dd, oo):
         print('E -> ' + line_w + '{:0.3e}'.format(wg_est[str(id_int)]['w']))
         print('E -> ' + line_g + '{:0.3e}'.format(wg_est[str(id_int)]['g']))
 
-    # # ---  Advanced w,g calculation ---
-    # if not flag_adv:
-    #     return
-    #
-    # wg_adv = {}
-    # for id_int in range(n_intervals):
-    #     ainf = {'est':     wg_est[str(id_int)],
-    #             'x_start': wg_est[str(id_int)]['x_peaks'][0],
-    #             'x_end':   wg_est[str(id_int)]['x_peaks'][-1]
-    #             }
-    #     wg_adv[str(id_int)] = ymath.advanced_wg(
-    #         t_final_intervals[id_int], Phis[str(id_int)], ainf)
-    #
-    # for id_int in range(n_intervals):
-    #     curves_adv = crv.Curves().xlab(line_t).ylab('\Phi')\
-    #         .tit(line_Phi + ':\ ' + lines_s[id_int])
-    #     curves_adv.flag_semilogy = True
-    #     curves_adv.new('init') \
-    #         .XS(t_final_intervals[id_int])\
-    #         .YS(Phis[str(id_int)])\
-    #         .leg('init')
-    #     curves_adv.new('fitting') \
-    #         .XS(wg_adv[str(id_int)]['x_fit'])\
-    #         .YS(wg_adv[str(id_int)]['y_fit'])\
-    #         .leg('adv. fitting').col('red').sty('--')
-    #     cpr.plot_curves(curves_adv)
-    #
-    # # print results of the advanced plotting
-    # print('--- Advanced ---')
-    # for id_int in range(n_intervals):
-    #     print('A -> *** ' + lines_s[id_int] + ':\ ' + lines_t[id_int] + ' ***')
-    #     print('A -> ' + line_w + '{:0.3e}'.format(wg_adv[str(id_int)]['w']))
-    #     print('A -> ' + line_g + '{:0.3e}'.format(wg_adv[str(id_int)]['g']))
-
 
 def calc_wg(dd, oo):
     # initial signal and grids
@@ -419,6 +385,14 @@ def calc_wg(dd, oo):
     oo_filter_g = oo.get('filter_g', {'sel_filt': None})
     oo_filter_w = oo.get('filter_w', {'sel_filt': None})
     chi1 = oo.get('chi1', 0.0)
+
+    oo_w_fft = oo.get('w_fft', None)
+    n_max_w_fft = None
+    if oo_w_fft is None:
+        flag_w_fft = False
+    else:
+        flag_w_fft = True
+        n_max_w_fft = oo_w_fft.get('n_max', 1)
 
     # full potential at a chosen poloidal angle
     oo_phi = {'chi_s': [chi1]}
@@ -524,6 +498,9 @@ def calc_wg(dd, oo):
         Phi_work_w = Phi_filt_w[ids_tw[0]:ids_tw[-1] + 1]
 
     # estimation of the frequency:
+    if flag_w_fft:
+        w_est_fft = ymath.estimate_w_max_fft(filt_w['w'],
+                                             filt_w['fft_filt'], {'n_max': n_max_w_fft})
     w_est = ymath.estimate_w(tw, Phi_work_w)
 
     # plot FFT
@@ -552,6 +529,20 @@ def calc_wg(dd, oo):
         .YS(filt_w['fft_filt_2']) \
         .leg('filtered').col('blue').sty(':')
     cpr.plot_curves(curves)
+
+    if flag_w_fft:
+        curves = crv.Curves().xlab(label_norm_w).ylab('FFT:\ \Phi') \
+            .tit('FFT:\ ' + line_Phi_w) \
+            .titn(line_s + ', ' + line_filt_tw)
+        curves.new() \
+            .XS(filt_w['w']) \
+            .YS(filt_w['fft_filt']) \
+            .leg('filtered').col('blue').sty('-')
+        curves.new() \
+            .XS(w_est_fft['w_max']) \
+            .YS(w_est_fft['f_max']) \
+            .leg('chosen\ fft\ peaks').col('orange').sty('o')
+        cpr.plot_curves(curves)
 
     # plot filtered signals
     curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi)\
@@ -595,29 +586,42 @@ def calc_wg(dd, oo):
         .leg('fitting').col('red').sty('--')
     cpr.plot_curves(curves)
 
-    curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi) \
-        .tit(line_Phi_w + ':\ ' + line_s) \
-        .titn(label_norm_w + ' = {:0.3e}'.format(w_est['w']))
+    if w_est is not None:
+        curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi) \
+            .tit(line_Phi_w + ':\ ' + line_s) \
+            .titn(label_norm_w + ' = {:0.3e}'.format(w_est['w']))
+    else:
+        curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi) \
+            .tit(line_Phi_w + ':\ ' + line_s)
     curves.flag_semilogy = True
     curves.new() \
         .XS(tw) \
         .YS(Phi_work_w) \
         .leg('signal').col('blue')
-    curves.new('peaks') \
-        .XS(w_est['x_peaks']) \
-        .YS(w_est['y_peaks']) \
-        .leg('peaks').sty('o').col('green')
-    curves.new('fitting') \
-        .XS(w_est['x_fit']) \
-        .YS(w_est['y_fit']) \
-        .leg('fitting').col('red').sty('--')
+    if w_est is not None:
+        curves.new('peaks') \
+            .XS(w_est['x_peaks']) \
+            .YS(w_est['y_peaks']) \
+            .leg('peaks').sty('o').col('green')
+        curves.new('fitting') \
+            .XS(w_est['x_fit']) \
+            .YS(w_est['y_fit']) \
+            .leg('fitting').col('red').sty('--')
     cpr.plot_curves(curves)
 
     print('--- Estimation ---')
     print('*** Growth rate: ' + line_s + ':\ ' + line_tg + ' ***')
     print('E -> ' + line_norm_g + ' = {:0.3e}'.format(g_est['g']))
-    print('*** Frequency: '   + line_s + ':\ ' + line_tw + ' ***')
-    print('E -> ' + line_norm_w + ' = {:0.3e}'.format(w_est['w']))
+    if w_est is not None:
+        print('*** Frequency: '   + line_s + ':\ ' + line_tw + ' ***')
+        print('E -> ' + line_norm_w + ' = {:0.3e}'.format(w_est['w']))
+    if flag_w_fft:
+        for i_w_fft in range(n_max_w_fft):
+            print(
+                    'w_fft(id_max = {:d}) = {:0.3e},   max(id_max = {:d}) = {:0.3e}'
+                        .format(i_w_fft, w_est_fft['w_max'][i_w_fft],
+                                i_w_fft, w_est_fft['f_max'][i_w_fft])
+                  )
 
 
 def calc_gamma_chimax(dd, s1, s2, oo={}):

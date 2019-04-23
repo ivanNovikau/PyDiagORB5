@@ -37,14 +37,38 @@ def reload():
 #            'turbulence/TCV/linear/scan-GAM/n0-Krook/'
 
 ## --- LINEAR ITG ---
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#            'turbulence/TCV/linear/scan-ITG/more-precise/n58'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#            'turbulence/TCV/linear/scan-ITG/more-precise/n60'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#            'turbulence/TCV/linear/scan-ITG/more-precise/n62'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#            'turbulence/TCV/linear/scan-ITG/more-precise/n80'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n40'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n45'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n50'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n55'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n58'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n60'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n62'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n65'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n75'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n78'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n80'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n82'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n95'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n98'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n100'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/TCV/linear/scan-ITG/more-precise/n102'
 
 
 ## --- LINEAR EGAM ---
@@ -70,10 +94,10 @@ def reload():
 #            'TCV/linear/scan-EGAM/ge-vf4-T4'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'TCV/linear/scan-EGAM/ge-v6-f02'  # <-- !!!
-path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
-            'TCV/linear/scan-EGAM/gc-v6-f02'
-path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
-            'TCV/linear/scan-EGAM/ge-v55-f02'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#             'TCV/linear/scan-EGAM/gc-v6-f02'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#             'TCV/linear/scan-EGAM/ge-v55-f02'
 
 
 

@@ -7,11 +7,11 @@ import numpy as np
 import plotly.offline as py
 import plotly.graph_objs as go
 
-# FIG_SIZE_W = 14
-# FIG_SIZE_H = 9.5
+FIG_SIZE_W = 14
+FIG_SIZE_H = 9.5
 
-FIG_SIZE_W = 10
-FIG_SIZE_H = 6
+# FIG_SIZE_W = 10
+# FIG_SIZE_H = 6
 
 
 def reload():
@@ -99,13 +99,14 @@ def plot_curves_mat(curves):
     ax.yaxis.set_tick_params(labelsize=curves.fontS)
 
     # format of axis labels
-    mpl.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
+    mpl.ticklabel_format(axis='x', style=curves.x_style, scilimits=(-2, 2))
 
     if curves.flag_semilogy is False:
-        mpl.ticklabel_format(axis='y', style='sci', scilimits=(-2, 2))
+        mpl.ticklabel_format(axis='y', style=curves.y_style, scilimits=(-2, 2))
 
     # set legend
-    ax.legend(fontsize=curves.fontS, loc=curves.legend_position)
+    if curves.flag_legend:
+        ax.legend(fontsize=curves.fontS, loc=curves.legend_position)
 
     # set title
     mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)

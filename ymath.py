@@ -42,6 +42,72 @@ def estimate_w(x_init, y_init, oo={}):
     return out
 
 
+def estimate_g(x_init, y_init, oo={}):
+    # additional parameters
+    _, ids_x = mix.get_array_oo(oo, x_init, 'x')
+    x = np.array(mix.get_slice(x_init, ids_x))
+    y = np.array(mix.get_slice(y_init, ids_x))
+
+    # initialize output:
+    out = {}
+
+    # find peaks of the signal
+    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
+    if len(ids_peaks) > 1:
+        x_peaks = x[ids_peaks]
+        y_peaks = abs(y[ids_peaks])
+        g, b0, r_value, p_value, std_err = stats.linregress(
+                                            x_peaks - x_peaks[0],
+                                            np.log(y_peaks)
+                                        )
+        out['x_peaks'] = x_peaks
+        out['y_peaks'] = y_peaks
+
+        x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
+        y_fit = np.exp(b0 + g * x_fit)
+        x_fit += x[ids_peaks[0]]
+    else:
+        out['x_peaks'] = None
+        out['y_peaks'] = None
+
+        g, b0, r_value, p_value, std_err = stats.linregress(
+                                                    x - x[0],
+                                                    np.log(y)
+                                                )
+        x_fit = x - x[0]
+        y_fit = np.exp(b0 + g * x_fit)
+        x += x[0]
+
+    # results
+    out['g'] = g
+    out['y_fit'] = y_fit
+    out['x_fit'] = x_fit
+
+    return out
+
+
+def estimate_w_max_fft(w, f, oo={}):
+    n_max = oo.get('n_max', 1)
+
+    ids_peaks, _ = scipy.signal.find_peaks(f, height=0)
+    f_peaks = f[ids_peaks]
+    w_peaks = w[ids_peaks]
+    ids_sort = np.argsort(f_peaks)
+
+    w_max, f_max = np.zeros(n_max), np.zeros(n_max)
+    nf = np.size(f_peaks)
+    for count_max in range(n_max):
+        id_sort = ids_sort[nf - 1 - count_max]
+        w_max[count_max] = w_peaks[id_sort]
+        f_max[count_max] = f_peaks[id_sort]
+
+    out = {
+        'w_max': w_max,
+        'f_max': f_max
+    }
+    return out
+
+
 def estimate_wg(x_init, y_init, oo={}):
     # additional parameters
     _, ids_x = mix.get_array_oo(oo, x_init, 'x')
@@ -103,50 +169,6 @@ def advanced_wg(x_init, y_init, oo={}):
     return out
 
 
-def estimate_g(x_init, y_init, oo={}):
-    # additional parameters
-    _, ids_x = mix.get_array_oo(oo, x_init, 'x')
-    x = np.array(mix.get_slice(x_init, ids_x))
-    y = np.array(mix.get_slice(y_init, ids_x))
-
-    # initialize output:
-    out = {}
-
-    # find peaks of the signal
-    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
-    if len(ids_peaks) is not 0:
-        x_peaks = x[ids_peaks]
-        y_peaks = abs(y[ids_peaks])
-        g, b0, r_value, p_value, std_err = stats.linregress(
-                                            x_peaks - x_peaks[0],
-                                            np.log(y_peaks)
-                                        )
-        out['x_peaks'] = x_peaks
-        out['y_peaks'] = y_peaks
-
-        x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
-        y_fit = np.exp(b0 + g * x_fit)
-        x_fit += x[ids_peaks[0]]
-    else:
-        out['x_peaks'] = None
-        out['y_peaks'] = None
-
-        g, b0, r_value, p_value, std_err = stats.linregress(
-                                                    x - x[0],
-                                                    np.log(y)
-                                                )
-        x_fit = x - x[0]
-        y_fit = np.exp(b0 + g * x_fit)
-        x += x[0]
-
-    # results
-    out['g'] = g
-    out['y_fit'] = y_fit
-    out['x_fit'] = x_fit
-
-    return out
-
-
 def advanced_g(x_init, y_init, oo={}):
     # additional parameters
     _, ids_x = mix.get_array_oo(oo, x_init, 'x')
@@ -177,70 +199,6 @@ def advanced_g(x_init, y_init, oo={}):
     return out
 
 
-# def w_for_fft(x):
-#     nx = np.size(x)
-#     nx2_ceil  = np.ceil(np.log2(nx))
-#     nx = 2**nx2_ceil
-#
-#     nx_half = np.int(nx / 2)
-#
-#     x_new = np.linspace(x[0], x[-1], nx)
-#     dx = np.min(np.diff(x_new))
-#     freq_max = 1. / dx
-#     dfreq = freq_max / nx
-#
-#     w = np.array([dfreq * i for i in range(nx_half+1)])
-#
-#     int_shift = 0
-#     if np.mod(nx, 2) == 0:
-#         int_shift = 1
-#     left_a  = -np.flipud(w)
-#     right_a = w[2:np.size(w) + 1 - int_shift]
-#     w2 = np.concatenate((left_a, right_a))
-#
-#     return w, w2, nx
-#
-#
-# def prepare_y_for_fft(x, y, nw, axis=0):
-#     ny = int(nw)
-#     if ny != np.shape(y)[axis]:
-#         x_res = np.linspace(x[0], x[-1], ny)
-#         f_interp = interpolate.interp1d(x, y, axis=axis)
-#         y_res = f_interp(x_res)
-#     else:
-#         x_res = x
-#         y_res = y
-#     return y_res, x_res
-#
-#
-# def fft_y_old(y, nw, axis=-1, oo={}):
-#     flag_f2_arranged = oo.get('flag_f2_arranged', False)
-#
-#     ny = int(nw)
-#     ny_half = np.int(np.floor(ny/2.))
-#
-#     f2_raw = np.fft.fft(y, n=ny, axis=axis)  # two-sided FFT
-#     f2 = np.abs(f2_raw / ny)
-#
-#     if axis is -1:
-#         f = f2[range(ny_half + 1)]
-#         f[1:np.size(f)-1] = 2 * f[1:np.size(f)-1]
-#     if axis is 0:
-#         f = f2[0:ny_half + 1, :]
-#         f[1:np.size(f) - 1, :] = 2 * f[1:np.size(f) - 1, :]
-#     if axis is 1:
-#         f = f2[:, 0:ny_half + 1]
-#         f[:, 1:np.size(f) - 1] = 2 * f[:, 1:np.size(f) - 1]
-#
-#     if flag_f2_arranged:
-#         left_a  = np.flipud(f2[0:ny_half+1])
-#         right_a = np.flipud(f2[ny_half+1:np.size(f2) + 1])
-#         f2_arranged = np.concatenate((left_a, right_a))
-#         return f, f2_raw, f2_arranged
-#     else:
-#         return f, f2_raw
-
-
 def fft_y(x, y=None, oo={}):
     # for a 1d or 2d signal y
 
@@ -265,8 +223,10 @@ def fft_y(x, y=None, oo={}):
     w = np.array([dfreq * i for i in range(nx_half + 1)])
 
     left_a  = - np.flipud(w)
-    right_a = w[2:np.size(w)]
+    right_a = w[1:np.size(w)-1]
     w2 = np.concatenate((left_a, right_a))
+
+    w2_ref = np.fft.fftfreq(nx, dx)  # to check in debuging the structure of the f2_raw
 
     # first part of results
     res = {
@@ -297,8 +257,8 @@ def fft_y(x, y=None, oo={}):
         f[:, 1:np.size(f) - 1] = 2 * f[:, 1:np.size(f) - 1]
 
     if flag_f2_arranged:
-        left_a = np.flipud(f2[0:nx_half + 1])
-        right_a = np.flipud(f2[nx_half + 1:np.size(f2) + 1])
+        left_a = np.flipud(f2[0:nx_half+1])
+        right_a = np.flipud(f2[nx_half+1:np.size(f2)])
         f2_arranged = np.concatenate((left_a, right_a))
 
         # update results

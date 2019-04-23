@@ -131,11 +131,15 @@ class Curves:
     xticks_labels = np.nan
     yticks_labels = np.nan
 
+    flag_legend = True
     legend_position = 'best'
 
     def_colors = ['blue', 'red', 'green', 'grey', 'orange', 'navy', 'darkgreen']
     flag_diff_styles = False
     def_styles = ['-', ':', '--', '-.']
+
+    x_style = 'sci'  # 'sci', 'plain'
+    y_style = 'sci'  # 'sci', 'plain'
 
     def __init__(self):
         self.list_curves = []
@@ -275,4 +279,12 @@ class Curves:
     def yt(self, v, lab=np.nan):
         self.yticks = v
         self.yticks_labels = lab
+        return self
+
+    def xsty(self, v):  # 'sci', 'plain'
+        self.x_style = v
+        return self
+
+    def ysty(self, v):  # 'sci', 'plain'
+        self.y_style = v
         return self
