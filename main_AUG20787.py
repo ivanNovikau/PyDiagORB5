@@ -26,14 +26,16 @@ def reload():
 ## --- NL SIMULATIONS ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s81/'
-path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
-           'turbulence/AUG20787/adiab/Krook/s01-n80-ns2048/'  # <-- !!! (big project)
+# path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/AUG20787/adiab/Krook/s01-n80-ns2048/'  # <-- !!! (big project)
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s51-ns1024/'  # <-- !!!
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/s751-ns512/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/flux4-s51-ns1024/'
+path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+           'turbulence/AUG20787/adiab/Krook/n200-s51/'
 
 ## --- LINEAR GAM ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \

@@ -61,6 +61,93 @@ def chi(species_name, dd, oo={}):
     cpr.plot_curves_3d(curves)
 
 
+def chi_aver_st(species_name, dd, oo={}):
+    project_name = oo.get('project_name', '')
+    flag_save = oo.get('flag_save', False)
+    save_name = oo.get('save_name', None)
+    list_curves_load_avs = oo.get('list_curves_load_avs', {None})
+    list_curves_load_avt = oo.get('list_curves_load_avt', {None})
+
+    # read heat flux
+    rd.radial_heat_flux(dd)
+    rd.nT_evol(dd, species_name)
+    efluxw_rad = dd[species_name].efluxw_rad
+    Lx = dd['Lx']
+    rho_star_inv = Lx / 2.
+
+    # signals:
+    t = efluxw_rad['t']  # the same for all 1d signals
+    s_flux = efluxw_rad['s']
+    rad_flux = efluxw_rad['data']
+
+    s = dd[species_name].nT_evol['s']
+    n = dd[species_name].nT_evol['n']
+    gradT = dd[species_name].nT_evol['gradT']
+
+    func_rad_flux_interp = \
+        interpolate.interp1d(s_flux, rad_flux, axis=1)
+    rad_flux = func_rad_flux_interp(s)
+
+    chi = - rad_flux / (n * gradT)
+    chi_norm = chi * rho_star_inv ** 2
+
+    # intervals
+    t_int, ids_t_int = mix.get_array_oo(oo, t, 't')
+    s_int, ids_s_int = mix.get_array_oo(oo, s, 's')
+
+    # time evolution in different radial domains:
+    ns_av = oo.get('ns_av', 1)
+
+    data_s_av, lines_s_av = {}, {}
+    for is_av in range(ns_av):
+        s_av, ids_s_av = mix.get_array_oo(oo, s, 's_av{:d}'.format(is_av + 1))
+        temp = mix.get_slice(chi_norm, ids_t_int, ids_s_av)
+        data_s_av[is_av]  = np.mean(temp, axis=1)
+        lines_s_av[is_av] = mix.test_array(s_av, 's', ':0.3f')
+
+    curves_avs = crv.Curves().xlab('t[wci^{-1}]').tit(species_name + '\ <chi/chi_B>_s')
+    for is_av in range(ns_av):
+        curves_avs.new() \
+            .XS(t_int)\
+            .YS(data_s_av[is_av])\
+            .leg(project_name + ':\ ' + lines_s_av[is_av])
+    for curves_load_avs in list_curves_load_avs:
+        curves_avs.load(curves_load_avs)
+    curves_avs.set_colors_styles()
+    cpr.plot_curves(curves_avs)
+
+    # average in time
+    t_av_wci, ids_t_av = mix.get_array_oo(oo, t, 't_av')
+    data_av = mix.get_slice(chi_norm, ids_t_av, ids_s_int)
+    data_av = np.mean(data_av, axis=0)
+
+    ## FOR NORMALIZATION
+    # data_av[np.isnan(data_av)] = -np.inf
+    # data_av[np.isinf(data_av)] = -np.inf
+    # data_av = data_av / np.max(data_av)
+    # data_av[np.isinf(data_av)] = np.nan
+
+    line_t_av_wci = mix.test_array(t_av_wci, 't[wci^{-1}]', ':0.2e')
+
+    curves_avt = crv.Curves().xlab('s') \
+        .tit(species_name + ':\ <chi/chi_B>_t:\ ')
+    curves_avt.new()\
+        .XS(s_int)\
+        .YS(data_av)\
+        .leg(project_name + ':\ ' + line_t_av_wci)
+    for curves_load_avt in list_curves_load_avt:
+        curves_avt.load(curves_load_avt)
+    curves_avt.set_colors_styles()
+    cpr.plot_curves(curves_avt)
+
+    # save data
+    if flag_save:
+        if 'saved_data' not in dd:
+            dd['saved_data'] = {}
+        dd['saved_data'][save_name + '-avs'] = curves_avs
+        dd['saved_data'][save_name + '-avt'] = curves_avt
+
+
 def fft_chi(species_name, dd, oo={}):
     # read heat flux
     rd.radial_heat_flux(dd)

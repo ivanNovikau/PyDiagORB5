@@ -5,6 +5,7 @@ import ymath
 import curve as crv
 import numpy as np
 from scipy import interpolate
+import h5py as h5
 
 
 def reload():
@@ -52,7 +53,7 @@ def nT_profs(dd):
 
     # output equilibrium density from ORB5 as it is
     curves_n = crv.Curves().xlab('s').ylab('norm.\ n') \
-        .tit('species\ norm.\ density').set_diff_styles()
+        .tit('species\ density').set_diff_styles()
     for sp_name in dd['species_names']:
         curves_n.new(sp_name) \
             .XS(dd[sp_name].nT_equil['s']) \
@@ -130,3 +131,45 @@ def vp_profs(dd):
             .YS(dd[sp_name].nT_equil['vp'])\
             .leg(sp_name)
     cpr.plot_curves(curves_vp)
+
+
+def B_equil(dd):
+    # --- read name of the equilibrium .h5 file ---
+    path_to_file = dd['path'] + '/orb5_res.h5'
+    f = h5.File(path_to_file, 'r')
+
+    equ_file = f['/parameters/equil/fname'].attrs
+    ids_attr = list(equ_file)
+    equ_file = [equ_file[name].decode("utf-8")
+                           for name in ids_attr[1:len(ids_attr)]]
+    equ_file = equ_file[0]
+
+    f.close()
+
+    # --- read parameters from the equilibrium file ---
+    path_to_equ_file = dd['path'] + '/' + equ_file
+    ff = h5.File(path_to_equ_file, 'r')
+
+    chi = np.array(ff['/data/grid/CHI'])
+    psi = np.array(ff['/data/grid/PSI'])
+    B = np.array(ff['/data/var2d/B'])
+    R = np.array(ff['/data/var2d/R'])
+    Z = np.array(ff['/data/var2d/Z'])
+
+    chi = np.append(chi, 2 * np.pi)
+
+    nChi = np.shape(B)[0]
+    nR = np.shape(B)[1]
+    B_new = np.zeros([np.size(chi), np.size(psi)])
+    Z_new = np.zeros([np.size(chi), np.size(psi)])
+    R_new = np.zeros([np.size(chi), np.size(psi)])
+    for i in range(nR):
+        B_new[:, i] = np.append(B[:, i], B[0, i])
+        Z_new[:, i] = np.append(Z[:, i], Z[0, i])
+        R_new[:, i] = np.append(R[:, i], R[0, i])
+
+    curves = crv.Curves().xlab('R').ylab('Z').tit('|B|')
+    curves.new().XS(R_new).YS(Z_new).ZS(B_new.T).lev(60)
+    cpr.plot_curves_3d(curves)
+
+    f.close()

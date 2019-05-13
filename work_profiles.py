@@ -51,6 +51,26 @@ def read_profiles(path_to_read, file_names):
     return res
 
 
+def save_profiles_from_project(dd, path_to_write):
+    file_names = []
+    profs = {}
+    for sp_name in dd['species_names']:
+        file_names.append(sp_name + '_profiles.dat')
+        psi = dd[sp_name].nT_equil['s']**2
+        ns = np.size(psi)
+        T = dd[sp_name].nT_equil['T']
+        n = dd[sp_name].nT_equil['n']
+        vp = dd[sp_name].nT_equil['vp']
+        profs[file_names[-1]] = {
+            'ns': ns,
+            'psi': psi,
+            'T': T,
+            'n': n,
+            'vp': vp
+        }
+    write_profiles(path_to_write, file_names, profs)
+
+
 def write_profiles(path_to_write, file_names, profs):
     # open/create files to write data to
     ff = []
@@ -107,6 +127,80 @@ def plot_profiles(path_to_read, file_names):
     cpr.plot_curves(curves_n)
     cpr.plot_curves(curves_vp)
 
+    # curves_T = crv.Curves().xlab('s').ylab('T')
+    curves_n = crv.Curves().xlab('s').ylab('n')
+    # curves_vp = crv.Curves().xlab('s').ylab('v_\parallel')
+    id_curve = -1
+    for one_name in file_names:
+        id_curve += 1
+        prof = profs[one_name]
+        leg_name = '\_'.join(one_name.split('_'))
+        # curves_T.new(one_name).XS(prof['psi']).YS(prof['T']) \
+        #     .leg(leg_name).new_sty(id_curve)
+        curves_n.new(one_name).XS(np.sqrt(prof['psi'])).YS(prof['n']) \
+            .leg(leg_name).new_sty(id_curve)
+        # curves_vp.new(one_name).XS(prof['psi']).YS(prof['vp']) \
+        #     .leg(leg_name).new_sty(id_curve)
+    # cpr.plot_curves(curves_T)
+    cpr.plot_curves(curves_n)
+    # cpr.plot_curves(curves_vp)
+
+
+def compare_profiles_project_files(dd, path_to_files):
+    # function searches for species_profiles.dat files
+    # (such as deuterium_profiles.dat etc) and compare profiles
+    # from these files to the profiles from the project dd:
+
+    # read profiles from files
+    file_names = []
+    for sp_name in dd['species_names']:
+        file_names.append(sp_name + '_profiles.dat')
+    profs_files = read_profiles(path_to_files, file_names)
+
+    # plot profiles:
+    count_file = -1
+    for sp_name in dd['species_names']:
+        count_file = count_file + 1
+        file_name = file_names[count_file]
+        proff = profs_files[file_name]
+        leg_name_proj = 'project:\ ' + sp_name
+        leg_name_file = '\_'.join(file_name.split('_'))
+
+        curves_T  = crv.Curves().xlab('s').ylab('T')
+        curves_n  = crv.Curves().xlab('s').ylab('n')
+        curves_vp = crv.Curves().xlab('s').ylab('v_\parallel')
+
+        curves_T.new() \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['T']) \
+            .leg(leg_name_proj).new_sty(0)
+        curves_T.new()\
+            .XS(np.sqrt(proff['psi']))\
+            .YS(proff['T']) \
+            .leg(leg_name_file).new_sty(1)
+
+        curves_n.new() \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['n']) \
+            .leg(leg_name_proj).new_sty(0)
+        curves_n.new() \
+            .XS(np.sqrt(proff['psi'])) \
+            .YS(proff['n']) \
+            .leg(leg_name_file).new_sty(1)
+
+        curves_vp.new() \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['vp']) \
+            .leg(leg_name_proj).new_sty(0)
+        curves_vp.new() \
+            .XS(np.sqrt(proff['psi'])) \
+            .YS(proff['vp']) \
+            .leg(leg_name_file).new_sty(1)
+
+        cpr.plot_curves(curves_T)
+        cpr.plot_curves(curves_n)
+        cpr.plot_curves(curves_vp)
+
 
 def build_vpp_profile(path_to_read, path_to_write, file_names):
     # read initial profiles
@@ -148,30 +242,97 @@ def build_new_profiles(path_to_read, path_to_write, file_names):
     for one_name in file_names:
         prof = init_profs[one_name]
 
-        # # *** Flat profiles ***
+        # region *** Flat profiles ***
         # n_value, T_value, vp_value = 1, 1, 0
         # prof['T']  = flat_profile(prof['ns'], T_value)
         # prof['n']  = flat_profile(prof['ns'], n_value)
         # prof['vp'] = flat_profile(prof['ns'], vp_value)
 
-        # # # *** Gaussian n-profile (edge) ***
-        # T_value, vp_value = 1, 0
-        # prof['T']  = flat_profile(prof['ns'], T_value)
-        # prof['vp'] = flat_profile(prof['ns'], vp_value)
-        #
+        # endregion
+
+        # region *** Gaussian n-profiles (edge) for fast species ***
+
+        # # * edge *
         # A0, mu, sig = 1.0, 0.8, 0.05
         # prof['n'] = gaussian_profile(prof['psi'], A0, mu, sig)
 
-        # # *** Gaussian n-profile (center) ***
-        T_value, vp_value = 1, 0
-        prof['T'] = flat_profile(prof['ns'], T_value)
-        prof['vp'] = flat_profile(prof['ns'], vp_value)
+        # # * center *
+        # A0, mu, sig = 1.0, 0.3, 0.09
+        # prof['n'] = gaussian_profile(prof['psi'], A0, mu, sig)
 
-        A0, mu, sig = 1.0, 0.3, 0.09
-        prof['n'] = gaussian_profile(prof['psi'], A0, mu, sig)
+        # # * s = 0.8 *
+        # A0, mu, sig, Ab = 1.0, 0.64, 0.05, 1e-3
+        # prof['n'] = gaussian_profile_WITH_background(
+        #     prof['psi'], A0, mu, sig, Ab)
+
+        # # * s = 0.8, ds = 2 *
+        # A0, mu, sig, Ab = 1.0, 0.64, 0.1, 1e-3
+        # prof['n'] = gaussian_profile_WITH_background(
+        #     prof['psi'], A0, mu, sig, Ab)
+
+        # # * s = 0.75, ds = 0.25 *
+        # A0, mu, sig, Ab = 1.0, 0.5625, 0.15, 1e-3
+        # prof['n'] = gaussian_profile_WITH_background(
+        #     prof['psi'], A0, mu, sig, Ab)
+
+        # # * s = 0.7, ds = 0.3 *
+        # A0, mu, sig, Ab = 1.0, 0.49, 0.19, 1e-3
+        # prof['n'] = gaussian_profile_WITH_background(
+        #     prof['psi'], A0, mu, sig, Ab)
+
+        # # * s = 0.4, ds = 0.6 *
+        # # A0, mu, sigL, sigR, Ab = 1.0, 0.36, 0.12, 0.2, 1e-3
+        # A0, mu, sigL, sigR, Ab = 1.0, 0.16, 0.07, 0.3, 1e-3
+        # prof['n'] = gaussian_profile_asym(prof['psi'], A0, mu, sigL, sigR, Ab)
+
+        # # * s = 0.35 *
+        # A0, mu, sig, Ab = 1.0, 0.1225, 0.04, 1e-3
+        # prof['ns'] = 201
+        # prof['psi'] = rescale_psi(prof['ns'])
+        # prof['n'] = gaussian_profile_WITH_background(
+        #     prof['psi'], A0, mu, sig, Ab)
+
+        # # * s = 0.45 *
+        # A0, mu, sig, Ab = 1.0, 0.2025, 0.05, 1e-3
+        # prof['ns'] = 121
+        # prof['psi'] = rescale_psi(prof['ns'])
+        # prof['n'] = gaussian_profile_WITH_background(
+        #     prof['psi'], A0, mu, sig, Ab)
+        #
+        # # and flat T, vp profiles
+        # T_value, vp_value = 1, 0
+        # prof['T'] = flat_profile(prof['ns'], T_value)
+        # prof['vp'] = flat_profile(prof['ns'], vp_value)
+
+        # endregion
+
+        # region *** Modify T at the edge ***
+        s_edge = 0.98
+        coef_mod = 50
+
+        prof['ns'] = 256
+        psi_init = prof['psi']
+        prof['psi'] = rescale_psi(prof['ns'])
+        prof['T']  = np.interp(prof['psi'], psi_init, prof['T'])
+        prof['n']  = np.interp(prof['psi'], psi_init, prof['n'])
+        prof['vp'] = np.interp(prof['psi'], psi_init, prof['vp'])
+
+        psi_edge = s_edge ** 2
+        for id_psi1 in range(prof['ns']):
+            if prof['psi'][id_psi1] >= psi_edge:
+                # prof['T'][id_psi1] = prof['T'][id_psi1]\
+                #     * np.exp((psi_edge - prof['psi'][id_psi1]) * coef_mod)
+                prof['T'][id_psi1] = prof['T'][id_psi1] + \
+                    (psi_edge - prof['psi'][id_psi1])**2 * coef_mod
+        # endregion
 
     # write result profiles
     write_profiles(path_to_write, file_names, res_profs)
+
+
+def rescale_psi(npsi_new):
+    psi_new = np.linspace(0, 1, npsi_new)
+    return psi_new
 
 
 def flat_profile(ns, value):
@@ -186,6 +347,25 @@ def gaussian_profile(psi, A0, mu, sig):
     return res
 
 
+def gaussian_profile_WITH_background(psi, A0, mu, sig, Ab):
+    def gaussian(x, mu, sig):
+        return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
+    res = np.array([Ab + A0 * gaussian(one_psi, mu, sig)
+                    for one_psi in psi])
+    return res
+
+
+def gaussian_profile_asym(psi, A0, mu, sig1, sig2, Ab):
+    def gaussian(x, mu, sig1, sig2):
+        if x <= mu:
+            return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig1, 2.)))
+        if x > mu:
+            return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig2, 2.)))
+    res = np.array([Ab + A0 * gaussian(one_psi, mu, sig1, sig2)
+                    for one_psi in psi])
+    return res
+
+
 def double_gaussian_profile(psi, A1, mu1, sig1, A2, mu2, sig2):
     def gaussian(x, mu, sig):
         return np.exp(-np.power(x - mu, 2.) / (2 * np.power(sig, 2.)))
@@ -194,3 +374,4 @@ def double_gaussian_profile(psi, A1, mu1, sig1, A2, mu2, sig2):
         for one_psi in psi
     ])
     return res
+

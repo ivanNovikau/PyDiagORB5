@@ -89,6 +89,7 @@ class Curve:
 
     def mfc(self, v):
         self.markerfacecolor = v
+        return self
 
     def name(self, v):
         self.name = v
@@ -133,6 +134,7 @@ class Curves:
 
     flag_legend = True
     legend_position = 'best'
+    legend_fcol = 'grey'
 
     def_colors = ['blue', 'red', 'green', 'grey', 'orange', 'navy', 'darkgreen']
     flag_diff_styles = False
@@ -169,6 +171,26 @@ class Curves:
             self.n_curves += 1
             self.list_curves.append(one_curve)
             self.map_curves[one_curve.name] = one_curve
+
+    def set_colors_styles(self):
+        count_curve = -1
+        for one_curve in self.list_curves:
+            count_curve = count_curve + 1
+
+            # color
+            if count_curve + 1 <= len(self.def_colors):
+                one_color = self.def_colors[count_curve]
+            else:
+                one_color = ','.join('{}'.format(*k) for k in enumerate(np.random.rand(3, 1)))
+                one_color = 'rgb({})'.format(one_color)
+
+            # style
+            if count_curve + 1 <= len(self.def_colors):
+                one_style = self.def_styles[count_curve]
+            else:
+                one_style = ':'
+
+            one_curve.col(one_color).sty(one_style)
 
     def new_color(self):
         if self.n_curves <= len(self.def_colors):

@@ -7,11 +7,11 @@ import numpy as np
 import plotly.offline as py
 import plotly.graph_objs as go
 
-FIG_SIZE_W = 14
-FIG_SIZE_H = 9.5
+# FIG_SIZE_W = 14
+# FIG_SIZE_H = 9.5
 
-# FIG_SIZE_W = 10
-# FIG_SIZE_H = 6
+FIG_SIZE_W = 10
+FIG_SIZE_H = 6
 
 
 def reload():
@@ -77,7 +77,10 @@ def plot_curves_mat(curves):
 
         # set format for every line
         mpl.setp(ref_lines, linewidth=curve.width,
-                 color=curve.color, markersize=curve.markersize)
+                 color=curve.color,
+                 markersize=curve.markersize,
+                 markerfacecolor=curve.markerfacecolor,
+                 markeredgewidth=curve.width/2)
 
     # set labels:
     mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
@@ -97,6 +100,8 @@ def plot_curves_mat(curves):
     # fontsize of axes ticks
     ax.xaxis.set_tick_params(labelsize=curves.fontS)
     ax.yaxis.set_tick_params(labelsize=curves.fontS)
+    ax.xaxis.get_offset_text().set_fontsize(curves.fontS)
+    ax.yaxis.get_offset_text().set_fontsize(curves.fontS)
 
     # format of axis labels
     mpl.ticklabel_format(axis='x', style=curves.x_style, scilimits=(-2, 2))
@@ -104,9 +109,15 @@ def plot_curves_mat(curves):
     if curves.flag_semilogy is False:
         mpl.ticklabel_format(axis='y', style=curves.y_style, scilimits=(-2, 2))
 
+    # set limits:
+    if curves.xlimits is not None:
+        ax.set_xlim(curves.xlimits[0], curves.xlimits[-1])
+    if curves.ylimits is not None:
+        ax.set_ylim(curves.ylimits[0], curves.ylimits[-1])
+
     # set legend
     if curves.flag_legend:
-        ax.legend(fontsize=curves.fontS, loc=curves.legend_position)
+        ax.legend(fontsize=curves.fontS, loc=curves.legend_position, facecolor=curves.legend_fcol)
 
     # set title
     mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)

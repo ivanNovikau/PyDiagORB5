@@ -127,6 +127,10 @@ def fft_gam_2d(dd, oo={}):
     sel_cmp = oo.get('sel_cmp', 'pink_r')  # -> 'jet', 'hot' etc.
     curves_to_load = oo.get('curves_to_load', None)
 
+    flag_gao = oo.get('flag_gao', True)
+    flag_gk_fit = oo.get('flag_gk_fit', False)
+    flag_aug20787 = oo.get('flag_aug20787', False)
+
     vorbar(dd)
     t = dd['phibar']['t']
     r = dd['phibar']['s']
@@ -134,7 +138,7 @@ def fft_gam_2d(dd, oo={}):
     # time interval
     t, ids_t = mix.get_array_oo(oo, t, 't')
 
-    # radial coordinate and its normalization
+    # radial coordinate normalization
     line_r = ''
     if sel_r == 's':
         r = r
@@ -153,7 +157,7 @@ def fft_gam_2d(dd, oo={}):
     # information about the time-interval where FFT is found
     line_t_wci = mix.test_array(t, 't[wci^{-1}]', ':0.2e')
     line_t_seconds = mix.test_array(t / dd['wc'], 't(seconds)', ':0.3e')
-    line_t = line_t_seconds
+    line_t = line_t_wci
 
     # change normalization of the time grid -> seconds
     t = t / dd['wc']
@@ -200,14 +204,20 @@ def fft_gam_2d(dd, oo={}):
     oo_th = {'curves': curves_er, 'sel_norm': sel_norm,
              'sel_r': sel_r, 's': r, 'col': 'red'}
 
-    curves_er = exp_AUG20787(dd, oo_th)
-    curves_er = gam_theory.get_gao(dd, oo_th)
-    curves_er = gam_theory.get_gk_fit(dd, oo_th)
+    if flag_aug20787:
+        curves_er = exp_AUG20787(dd, oo_th)
+    if flag_gao:
+        curves_er = gam_theory.get_gao(dd, oo_th)
+    if flag_gk_fit:
+        curves_er = gam_theory.get_gk_fit(dd, oo_th)
 
     oo_th.update({'curves': curves_vor})
-    curves_vor = exp_AUG20787(dd, oo_th)
-    curves_vor = gam_theory.get_gao(dd, oo_th)
-    curves_vor = gam_theory.get_gk_fit(dd, oo_th)
+    if flag_aug20787:
+        curves_vor = exp_AUG20787(dd, oo_th)
+    if flag_gao:
+        curves_vor = gam_theory.get_gao(dd, oo_th)
+    if flag_gk_fit:
+        curves_vor = gam_theory.get_gk_fit(dd, oo_th)
 
     # load saved data:
     curves_er.load(curves_to_load)
