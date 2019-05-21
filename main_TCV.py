@@ -6,6 +6,8 @@ import ControlPlot as cpr
 import transport
 import work_profiles
 import ITG_gamma as itg
+import general
+import common
 import matplotlib.pyplot as mpl
 import numpy as np
 from scipy import constants
@@ -21,6 +23,8 @@ def reload():
     mix.reload_module(transport)
     mix.reload_module(work_profiles)
     mix.reload_module(itg)
+    mix.reload_module(general)
+    mix.reload_module(common)
 
 
 # region --- NL SIMULATIONS ---
@@ -32,12 +36,18 @@ def reload():
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/n128/'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/adhoc-n80/'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT6-mun3/n80'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v6-s35'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v6-s45'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/n80-modT/'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT6-mun5/n80/'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/scan-nptot-n80/n1e8/'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/scan-nptot-n80/n3e8/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/scan-nptot-n80/n4e8/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/scan-nptot-n80/n5e8/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/scan-dt-n80/dt15/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/scan-dt-n80/dt25/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/n100-heavy/'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v6-s35'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v6-s45'
+path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v55-s8'
 # endregion
 
 # region --- LINEAR GAM ---
@@ -102,14 +112,11 @@ def reload():
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/TCV/linear/scan-ITG/muT12-mun3/n110'
 
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#             'turbulence/TCV/linear/scan-ITG/muT6-mun5/n10'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#             'turbulence/TCV/linear/scan-ITG/muT6-mun5/n20'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#             'turbulence/TCV/linear/scan-ITG/muT6-mun5/n30'
-# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
-#             'turbulence/TCV/linear/scan-ITG/muT6-mun5/n40'
+
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/scan-ITG/muT6-mun5/n10'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/scan-ITG/muT6-mun5/n20'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/scan-ITG/muT6-mun5/n30'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/linear/scan-ITG/muT6-mun5/n40'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/TCV/linear/scan-ITG/muT6-mun5/n50'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/' \

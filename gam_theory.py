@@ -179,7 +179,7 @@ def get_gk_fit(dd, oo):
         coef_norm = 1 / 1.e3
         if sel_res is 'w':
             coef_norm = coef_norm / (2*np.pi)
-    if sel_norm == 'wci':
+    if sel_norm == 'wc':
         coef_norm = 1. / dd['wc']
     if sel_norm == 'csa':
         coef_norm = 1. / (dd['cs']/dd['a0'])
@@ -249,7 +249,7 @@ def get_gao(dd, oo):
         coef_norm = 1 / 1.e3
         if sel_res is 'w':
             coef_norm = coef_norm / (2*np.pi)
-    if sel_norm == 'wci':
+    if sel_norm == 'wc':
         coef_norm = 1. / dd['wc']
     if sel_norm == 'csa':
         coef_norm = 1. / (dd['cs']/dd['a0'])

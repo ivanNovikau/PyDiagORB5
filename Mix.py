@@ -153,6 +153,101 @@ def get_interval(x, x_intervals, name_x, format_x):
     return ids_x_intervals, x_final_intervals, lines_x
 
 
+# averaging in space:
+def find_avs(oo):
+    vvars = oo.get('vars', [])  # signals (t, s) to average
+    ts = oo.get('ts', [])  # time grids
+    ss = oo.get('ss', [])  # space grids
+    ns_av = oo.get('ns_av', 1)  # number of intervals to average in space
+    label_s = oo.get('label_s', 's')  # describe space coordinate
+
+    n_vars = len(vvars)  # number of signals
+
+    opts_av = oo.get('opts_av', [])  # mean, rms
+    def_opt_av = 'mean'
+    if len(opts_av) == 0:
+        for ivar in range(n_vars):
+            opts_av.append(def_opt_av)
+
+    # intervals
+    vars_avs = []
+    line_av = ''
+    for ivar in range(n_vars):
+        var, t, s = vvars[ivar], ts[ivar], ss[ivar]
+        t_int, ids_t_int = get_array_oo(oo, t, 't')
+        opt_av = opts_av[ivar]
+
+        data_s_av, lines_s_av = {}, {}
+        for is_av in range(ns_av):
+            s_av, ids_s_av = get_array_oo(oo, s, 's_av{:d}'.format(is_av + 1))
+            temp = get_slice(var, ids_t_int, ids_s_av)
+            if opt_av == 'mean':
+                data_s_av[is_av]  = np.mean(temp, axis=1)
+                line_av = 'mean_s:\ '
+            if opt_av == 'rms':
+                data_s_av[is_av]  = np.sqrt(np.mean(temp**2, axis=1))
+                line_av = 'rms_s:\ '
+            line_av = line_av + test_array(s_av, label_s, ':0.3f')
+            lines_s_av[is_av] = line_av
+
+        res = {'data': data_s_av, 't': t_int, 'lines_avs': lines_s_av}
+        vars_avs.append(res)
+    return vars_avs
+
+
+# averaging in time:
+def find_avt(oo):
+    vvars = oo.get('vars', [])  # signals (t, s) to average
+    ts = oo.get('ts', [])  # time grids
+    ss = oo.get('ss', [])  # space grids
+    nt_av = oo.get('nt_av', 1)  # number of intervals to average in time
+    label_t = oo.get('label_t', 't[wci^{-1}]')  # describe time normalization
+
+    n_vars = len(vvars)  # number of signals
+
+    opts_av = oo.get('opts_av', [])  # mean, rms
+    def_opt_av = 'mean'
+    if len(opts_av) == 0:
+        for ivar in range(n_vars):
+            opts_av.append(def_opt_av)
+
+    # intervals
+    vars_avs = []
+    data_av, line_av = np.nan, ''
+    for ivar in range(n_vars):
+        var, t, s = vvars[ivar], ts[ivar], ss[ivar]
+        s_int, ids_s_int = get_array_oo(oo, s, 's')
+        opt_av = opts_av[ivar]
+
+        data_t_av, lines_t_av = {}, {}
+        for it_av in range(nt_av):
+            t_av, ids_t_av = get_array_oo(oo, t, 't_av{:d}'.format(it_av + 1))
+            temp = get_slice(var, ids_t_av, ids_s_int)
+            if opt_av == 'mean':
+                data_av  = np.mean(temp, axis=0)
+                line_av = 'mean_t:\ '
+            if opt_av == 'rms':
+                data_av  = np.sqrt(np.mean(temp**2, axis=0))
+                line_av = 'rms_t:\ '
+            line_av = line_av + test_array(t_av, label_t, ':0.2e')
+            lines_t_av[it_av] = line_av
+
+            # ## FOR NORMALIZATION
+            # data_av[np.isnan(data_av)] = -np.inf
+            # data_av[np.isinf(data_av)] = -np.inf
+            # data_av = data_av / np.max(np.abs(data_av))
+            # data_av[np.isinf(data_av)] = np.nan
+
+            data_t_av[it_av] = data_av
+
+        res = {'data': data_t_av, 's': s_int, 'lines_avt': lines_t_av}
+        vars_avs.append(res)
+    return vars_avs
+
+
+
+
+
 
 
 

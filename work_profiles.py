@@ -146,7 +146,7 @@ def plot_profiles(path_to_read, file_names):
     # cpr.plot_curves(curves_vp)
 
 
-def compare_profiles_project_files(dd, path_to_files):
+def compare_profiles_project_files(dd, path_to_files, oo):
     # function searches for species_profiles.dat files
     # (such as deuterium_profiles.dat etc) and compare profiles
     # from these files to the profiles from the project dd:
@@ -157,14 +157,17 @@ def compare_profiles_project_files(dd, path_to_files):
         file_names.append(sp_name + '_profiles.dat')
     profs_files = read_profiles(path_to_files, file_names)
 
+    project_name = dd.get('project_name', 'project1')
+    project_file_name = oo.get('project_file_name', 'project2')
+
     # plot profiles:
     count_file = -1
     for sp_name in dd['species_names']:
         count_file = count_file + 1
         file_name = file_names[count_file]
         proff = profs_files[file_name]
-        leg_name_proj = 'project:\ ' + sp_name
-        leg_name_file = '\_'.join(file_name.split('_'))
+        leg_name_proj = project_name + ':\ ' + sp_name
+        leg_name_file = project_file_name + ':\ ' + sp_name
 
         curves_T  = crv.Curves().xlab('s').ylab('T')
         curves_n  = crv.Curves().xlab('s').ylab('n')

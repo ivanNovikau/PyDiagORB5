@@ -5,6 +5,7 @@ import equil_profiles as equ
 import ControlPlot as cpr
 import work_profiles
 import ITG_gamma as itg
+import general
 import matplotlib.pyplot as mpl
 import numpy as np
 from scipy import constants
@@ -21,6 +22,7 @@ def reload():
     mix.reload_module(work_profiles)
     mix.reload_module(itg)
     mix.reload_module(augs)
+    mix.reload_module(general)
 
 
 ## --- NL SIMULATIONS ---

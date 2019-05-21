@@ -61,7 +61,7 @@ def save_aug_signals(dd, oo):
     # --- Non-zonal Phi and Er
     oo_phi = {'chi_s': chi_points}
     names_phinz = itg.phinz(dd, oo_phi)
-    names_ernz  = itg.ernz(dd, oo_phi)
+    names_ernz  = itg.ernz_r(dd, oo_phi)
 
     chi_points_res = []
     for one_name in names_ersc:

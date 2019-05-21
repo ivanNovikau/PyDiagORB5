@@ -65,7 +65,7 @@ def estimate_g(x_init, y_init, oo={}):
 
         x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
         y_fit = np.exp(b0 + g * x_fit)
-        x_fit += x[ids_peaks[0]]
+        # x_fit += x[ids_peaks[0]]
     else:
         out['x_peaks'] = None
         out['y_peaks'] = None
@@ -495,6 +495,12 @@ def find_rhoL(T, B0, m, Z):
     vt = find_vt(T, m)
     rhoLarmor = np.sqrt(2) * vt / wc
     return rhoLarmor
+
+
+def find_norm(y):
+    abs_y = np.abs(y)
+    y_norm = y / np.nanmax(abs_y[abs_y != np.inf])
+    return y_norm
 
 
 

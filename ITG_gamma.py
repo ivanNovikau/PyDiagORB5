@@ -3,8 +3,16 @@ import read_data as rd
 import ControlPlot as cpr
 import ymath
 import curve as crv
+import zf_gam as zf
+import general as gn
+import write_data as wr
+import transport
+from scipy.fftpack import next_fast_len
+from polycoherence import _plot_signal, polycoherence, plot_polycoherence
 import numpy as np
 from scipy import interpolate
+import h5py as h5
+from scipy.signal import correlate
 
 
 def reload():
@@ -14,36 +22,10 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(ymath)
     mix.reload_module(crv)
-
-
-# radial derivative of the full potential at a particular chi:
-def ersc_old(dd, oo):
-    chi_s = oo.get('chi_s', [0.0])
-
-    rd.potsc_ref(dd, oo)
-    t   = dd['potsc']['t']
-    s   = dd['potsc']['s']
-    chi = dd['potsc']['chi']
-
-    nchi = np.size(chi_s)
-    names_ersc_chi = []
-    for count_chi in range(nchi):
-        one_chi = chi_s[count_chi]
-        name_ersc_chi = 'ersc-chi-' + '{:0.3f}'.format(one_chi)
-        names_ersc_chi.append(name_ersc_chi)
-
-        if name_ersc_chi in dd:
-            continue
-
-        id_chi, chi1 = mix.find(chi, one_chi)
-
-        data = - np.gradient(dd['potsc']['data'][:, id_chi, :], s, axis=1)
-        dd[name_ersc_chi] = {
-            't': t,
-            's': s,
-            'chi_1': chi1, 'id_chi_1': id_chi,
-            'data': data}
-    return names_ersc_chi
+    mix.reload_module(zf)
+    mix.reload_module(gn)
+    mix.reload_module(wr)
+    mix.reload_module(transport)
 
 
 # radial derivative of the full potential at a particular chi:
@@ -71,7 +53,7 @@ def ersc(dd, oo):
     return names_ersc_chi
 
 
-# phibar along potsc (t,s) grids:
+# phibar along potsc grids:
 def phibar_interp(dd):
     if 'phibar_interp' in dd:
         return
@@ -88,7 +70,7 @@ def phibar_interp(dd):
     }
 
 
-# non-zonal potential:
+# non-zonal potential at some poloidal angles
 def phinz(dd, oo):
     chi_s = oo.get('chi_s', [0.0])
 
@@ -113,17 +95,43 @@ def phinz(dd, oo):
     return names_phinz_chi
 
 
-# non-zonal radial derivative of the full potential at a particular chi:
-def ernz(dd, oo):
+# non-zonal potential at a time point
+def phinz_t(dd, oo):
+    names_potsc = rd.potsc_t(dd, oo)
+    phibar_interp(dd)
+
+    t_points = oo.get('t_points', [0.0])
+    nt_points = np.size(t_points)
+
+    names = []
+    for count_t in range(nt_points):
+        one_t = t_points[count_t]
+        var_name = 'phinz-t-' + '{:0.3e}'.format(one_t)
+        names.append(var_name)
+        if var_name in dd:
+            continue
+
+        data = {}
+        one_name_potsc = names_potsc[count_t]
+        data['id_t_point'], data['t_point'] = mix.find(dd['potsc_grids']['t'], one_t)
+        phibar_t1   = dd['phibar_interp']['data'][data['id_t_point'], :]
+        data['data'] = dd[one_name_potsc]['data'] - phibar_t1[None, :]
+        dd[var_name] = data
+    return names
+
+
+#  radial derivative of the non-zonal potential at a particular chi:
+def ernz_r(dd, oo):
     chi_s = oo.get('chi_s', [0.0])
 
     names_phinz = phinz(dd, oo)
 
     nchi = np.size(chi_s)
     names_ernz_chi = []
+
     for count_chi in range(nchi):
         one_chi       = chi_s[count_chi]
-        name_ernz_chi = 'ernz-chi-{:0.3f}'.format(one_chi)
+        name_ernz_chi = 'ernz_r-chi-{:0.3f}'.format(one_chi)
         names_ernz_chi.append(name_ernz_chi)
         if name_ernz_chi in dd:
             continue
@@ -138,7 +146,312 @@ def ernz(dd, oo):
     return names_ernz_chi
 
 
-def plot_t(dd, oo={}):
+# poloidal derivative of the non-zonal potential at a particular chi:
+def ernz_chi(dd, oo):
+    phibar_interp(dd)
+
+    chi_s = oo.get('chi_s', [0.0])
+    nchi_points = np.size(chi_s)
+    t, s, chi = dd['potsc_grids']['t'], dd['potsc_grids']['s'], dd['potsc_grids']['chi']
+    nt, ns, nchi = np.size(t), np.size(s), np.size(chi)
+
+    # number of radial points to read at once
+    max_allowed_size = dd['max_size_Gb'] * 1024 ** 3  # in bytes
+    float_size = 8  # in bytes
+    id_s_step = int( round( max_allowed_size / (float_size * nt * nchi) ) )
+
+    names = []
+    for count_chi in range(nchi_points):
+        one_chi       = chi_s[count_chi]
+        var_name = 'ernz_chi-chi-{:0.3f}'.format(one_chi)
+        names.append(var_name)
+        if var_name in dd:
+            continue
+
+        data = rd.read_signal(dd['path_ext'], var_name)
+        if data is None:
+            data = {}
+
+            # --- calculate data ---
+            f = h5.File(dd['path_orb'], 'r')
+            data['data'] = np.zeros([ns, nt])  # transposed w.r.t final matrix
+            data['id_chi_1'], data['chi_1'] = mix.find(chi, one_chi)
+            line_read = '/data/var2d/generic/potsc/data'
+            id_s_end = 0
+            while id_s_end < ns:
+                # read Phi at several points along s: Phi(t,chi,ids_current)
+                id_s_begin = id_s_end
+                id_s_end  += id_s_step
+                if id_s_end >= ns:
+                    id_s_end = ns
+                ids_current = [i for i in range(id_s_begin, id_s_end)]
+                potsc_s1 = np.array(f[line_read][:, :, ids_current])
+
+                # find non-zonal Phi(t,chi,ids_current)
+                phibar_s1 = dd['phibar_interp']['data'][:, ids_current]
+                phinz_s1 = potsc_s1 - phibar_s1[:, None, :]
+                del potsc_s1
+
+                # chi-derivative of the non-zonal Phi(t,chi,ids_current)
+                loc = np.gradient(phinz_s1, chi, axis=1)
+                del phinz_s1
+
+                # save non-zonal poloidal electric field E_chi(t,chi1,ids_current)
+                count_id_s = -1
+                for id_s_loc in ids_current:
+                    count_id_s += 1
+                    data['data'][id_s_loc] = \
+                        - loc[:, data['id_chi_1'], count_id_s] / s[id_s_loc]
+                del loc
+            f.close()
+
+            # for the sake of generality, transpose data (ns,nt) -> (nt,ns)
+            data['data'] = data['data'].T
+
+            # save the data to an external file
+            desc = 'non-zonal poloidal electric field at chi = {:0.3f}'.format(data['chi_1'])
+            wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
+
+        # --- save data to the structure ---
+        dd[var_name] = data
+    return names
+
+
+def choose_var(dd, oo):
+    chi_point = oo.get('chi_point', 0.0)
+    oo_var = {'chi_s': [chi_point]}
+    opt_var = oo.get('opt_var', 'ernz_r')
+    var_name, tit_var = '', ''
+    if opt_var == 'phinz':
+        var_name = phinz(dd, oo_var)[0]
+        tit_var = '(\Phi - \overline{\Phi}):\ '
+    if opt_var == 'ernz_r':
+        var_name = ernz_r(dd, oo_var)[0]
+        tit_var = '-\partial_s(\Phi - \overline{\Phi}):\ '
+    if opt_var == 'ernz_chi':
+        var_name = ernz_chi(dd, oo_var)[0]
+        tit_var = '-s^{-1}\partial_{\chi}(\Phi - \overline{\Phi}):\ '
+    vvar = dd[var_name]['data']
+    s = dd['potsc_grids']['s']
+    t = dd['potsc_grids']['t']
+    line_chi = '\chi = {:0.3f}'.format(dd[var_name]['chi_1'])
+    tit_var = tit_var + line_chi
+
+    res = {
+        'var': vvar,
+        's': s,
+        't': t,
+        'tit': tit_var
+    }
+
+    return res
+
+
+def choose_var_t(dd, oo):
+    t_point = oo.get('t_point', 0.0)
+    oo_var = {'t_points': [t_point]}
+    opt_var = oo.get('opt_var', 'potsc_t')
+    var_name, tit_var = '', ''
+    if opt_var == 'potsc':
+        var_name = rd.potsc_t(dd, oo_var)[0]
+        tit_var = '\Phi:\ '
+    if opt_var == 'phinz':
+        var_name = phinz_t(dd, oo_var)[0]
+        tit_var = '(\Phi - \overline{\Phi}):\ '
+    vvar = dd[var_name]['data']
+    s   = dd['potsc_grids']['s']
+    chi = dd['potsc_grids']['chi']
+    line_chi = 't[\omega_{ci}^{-1}]' + ' = {:0.3e}'.format(dd[var_name]['t_point'])
+    tit_var = tit_var + line_chi
+
+    res = {
+        'var': vvar,
+        's': s,
+        'chi': chi,
+        'tit': tit_var
+    }
+
+    return res
+
+
+def plot_st(dd, oo):
+    out = choose_var(dd, oo)
+
+    oo_st = dict(oo)
+    oo_st.update(out)
+    gn.plot_st(dd, oo_st)
+
+
+def plot_aver_st(dd, oo):
+    out = choose_var(dd, oo)
+    vvar = out['var']
+    s = out['s']
+    t = out['t']
+    tit_var = out['tit']
+
+    # # --- averaging in time ---
+    # oo_avt = dict(oo)
+    # oo_avt.update({
+    #     'vars': [vvar, vvar],
+    #     'ts': [t, t], 'ss': [s, s],
+    #     'opts_av': ['rms', 'mean'],
+    #     'tit': tit_var, 'vars_names': ['', '']
+    # })
+    # gn.plot_avt(dd, oo_avt)
+
+    # --- averaging in space ---
+    oo_avs = oo
+    oo_avs.update({
+        'vars': [vvar], 'ts': [t], 'ss': [s],
+        'opts_av': ['rms'],
+        'tit': tit_var, 'vars_names': ['']
+    })
+    gn.plot_avs(dd, oo_avs)
+
+
+def plot_fft(dd, oo):
+    sel_r = oo.get('sel_r', 's')  # -> 's', 'psi'
+
+    out = choose_var(dd, oo)
+    vvar = out['var']
+    r = out['s']
+    t = out['t']
+    tit_var = out['tit']
+
+    # radial coordinate normalization
+    line_r = ''
+    if sel_r == 's':
+        r = r
+        line_r = 's = \sqrt{\psi/\psi_{edge}}'
+    if sel_r == 'psi':
+        r = r ** 2
+        line_r = '\psi/\psi_{edge}'
+
+    # plotting
+    oo_fft = dict(oo)
+    oo_fft.update({
+        'var': vvar, 't_wci': t, 'r': r,
+        'tit': tit_var,
+        'labr': line_r
+    })
+    gn.plot_fft(dd, oo_fft)
+
+
+def plot_fft_1d(dd, oo):
+    out = choose_var(dd, oo)
+    vvar = out['var']
+    s = out['s']
+    t = out['t']
+    tit_var = out['tit']
+
+    # plotting
+    oo_fft = dict(oo)
+    oo_fft.update({
+        'vars': [vvar], 'ts_wci': [t], 'ss': [s],
+        'tit': tit_var,
+        'vars_names': ['']
+    })
+    gn.plot_fft_1d(dd, oo_fft)
+
+
+def compare_nz_var_aver_st(dd, oo):
+    # compare NZ signal with some other signal
+
+    # --- non-zonal signal ---
+    oo_nz = dict(oo)
+    oo_nz['opt_var'] = oo['opt_var_nz']
+    out = choose_var(dd, oo_nz)
+    varnz, s_nz, t_nz, tit_varnz = out['var'], out['s'], out['t'], out['tit']
+
+    # --- signal to compare with ---
+    var_type = oo.get('var_type', 'zonal')
+    oo_var = dict(oo)
+    oo_var['opt_var'] = oo['opt_var']
+
+    if var_type == 'zonal':
+        out = zf.choose_var(dd, oo_var)
+    if var_type == 'transport':
+        out = transport.choose_var(dd, oo_var)
+    if var_type == 'nonzonal':
+        out = choose_var(dd, oo_var)
+    vvar, s, t, tit_var = out['var'], out['s'], out['t'], out['tit']
+
+    # preliminary parameters
+    oo_av = dict(oo)
+    oo_av.update({
+        'vars': [vvar, varnz],
+        'ts': [t, t_nz],
+        'ss': [s, s_nz],
+        'vars_names': [tit_var, tit_varnz]
+    })
+
+    # --- averaging in time ---
+    oo_av.update({
+        'opts_av': ['rms', 'rms'],
+        'tit': 'averaging\ in\ time',
+    })
+    gn.plot_avt(dd, oo_av)
+
+    # --- averaging in space ---
+    oo_avs = dict(oo)
+    oo_avs.update({
+        'opts_av': ['mean', 'mean'],
+        'tit': 'averaging\ in\ space',
+    })
+    gn.plot_avs(dd, oo_av)
+
+
+def compare_nz_var_fft_1d(dd, oo):
+    # compare NZ signal with some other signal
+
+    # --- non-zonal signal ---
+    oo_nz = dict(oo)
+    oo_nz['opt_var'] = oo['opt_var_nz']
+    out = choose_var(dd, oo_nz)
+    varnz, s_nz, t_nz, tit_varnz = out['var'], out['s'], out['t'], out['tit']
+
+    # --- signal to compare with ---
+    var_type = oo.get('var_type', 'zonal')
+    oo_var = dict(oo)
+    oo_var['opt_var'] = oo['opt_var']
+
+    if var_type == 'zonal':
+        out = zf.choose_var(dd, oo_var)
+    if var_type == 'transport':
+        out = transport.choose_var(dd, oo_var)
+    if var_type == 'nonzonal':
+        out = choose_var(dd, oo_var)
+    vvar, s, t, tit_var = out['var'], out['s'], out['t'], out['tit']
+
+    # plotting
+    oo_fft = dict(oo)
+    oo_fft.update({
+        'vars': [varnz, vvar],
+        'ts_wci': [t_nz, t],
+        'ss': [s_nz, s],
+        'tit': 'FFT',
+        'vars_names': [tit_varnz, tit_var]
+    })
+    gn.plot_fft_1d(dd, oo_fft)
+
+    return
+
+
+def find_gamma(dd, oo):
+    out = choose_var(dd, oo)
+    vvar, s, t, tit_var = out['var'], out['s'], out['t'], out['tit']
+
+    oo_gamma = oo  # oo must have some 'opt_av'
+    oo_gamma.update({
+        'var': vvar, 't': t, 's': s,
+        'tit': tit_var, 'var_name': ''
+    })
+    gn.find_gamma(dd, oo_gamma)
+
+    return
+
+
+def plot_t(dd, oo):
     sel_norm = oo.get('sel_norm', 'wci')
     s_intervals = oo.get('s_intervals', [[0.0, 1.0]])
     chi1 = oo.get('chi1', 0.0)
@@ -200,7 +513,7 @@ def plot_t(dd, oo={}):
     cpr.plot_curves(curves)
 
 
-def plot_schi(dd, t1, oo={}):
+def plot_schi(dd, t1, oo):
     rd.potsc(dd)
     t = dd['potsc']['t']  # create a new reference
     s = dd['potsc']['s']  # create a new reference
@@ -221,23 +534,19 @@ def plot_schi(dd, t1, oo={}):
     cpr.plot_curves_3d(curves, 'mat')
 
 
-def plot_rz(dd, t1, oo={}):
-    rd.potsc(dd)
-    t = dd['potsc']['t']  # create a new reference
-    r = dd['potsc']['r']  # create a new reference
-    z = dd['potsc']['z']  # create a new reference
-
-    # intervals
-    id_t1, _ = mix.find(t, t1)
-
-    # signal in the chosen intervals
-    pot_nz = np.array(dd['potsc']['data'][id_t1, :, :])  # actually copy data
+def plot_rz(dd, oo):
+    res = choose_var_t(dd, oo)
+    r = dd['potsc_grids']['r']  # create a new reference
+    z = dd['potsc_grids']['z']  # create a new reference
 
     # form 3d curve:
-    curves = crv.Curves().xlab('r').ylab('z').tit('\Phi')
-    curves.new('Phi_schi').XS(r).YS(z).ZS(pot_nz) \
-        .leg('\Phi').cmp('jet')
-    cpr.plot_curves_3d(curves, 'mat')
+    curves = crv.Curves().xlab('r').ylab('z').tit(res['tit'])
+    curves.new('Phi_schi')\
+        .XS(r)\
+        .YS(z)\
+        .ZS(res['var'].T)\
+        .cmp('jet')
+    cpr.plot_curves_3d(curves)
 
 
 def calc_gamma_chi0(dd, oo):
@@ -624,56 +933,6 @@ def calc_wg(dd, oo):
                   )
 
 
-def calc_gamma_chimax(dd, s1, s2, oo={}):
-    rd.potsc(dd)
-    t = dd['potsc']['t']  # create a new reference
-    s = dd['potsc']['s']  # create a new reference
-    chi = dd['potsc']['chi']  # create a new reference
-
-    # intervals
-    _, ids_s = mix.get_array(s, s1, s2)
-    t, ids_t = mix.get_array_oo(oo, t, 't')
-    chi, ids_chi = mix.get_array_oo(oo, chi, 'chi')
-
-    # non-zonal Phi in chosen intervals
-    pot_chi = mix.get_slice(dd['potsc']['data'], ids_t, ids_chi, ids_s)
-
-    # averaging on s
-    pot_aver_s = np.mean(pot_chi, axis=2)
-
-    # maximums along chi:
-    pot_max = np.amax(np.abs(pot_aver_s), axis=1)
-
-    # gamma calculation
-    wg_est = ymath.estimate_g(t, pot_max)
-    wg_adv = ymath.advanced_g(t, pot_max, {'est': wg_est})
-
-    # plotting: estimation: time evolution and peaks
-    curves = crv.Curves().xlab('t').ylab('\Phi')\
-        .tit('Estimation:\                g = {:0.3e}'.format(wg_est['g']))\
-        .tit('\\\\Full\ signal\ fitting:\ g = {:0.3e}'.format(wg_adv['g']))
-    curves.flag_semilogy = True
-    curves.new('max') \
-        .XS(t).YS(pot_max).leg('max.\ along\ \chi')
-    if 'x_peaks' in wg_est:
-        curves.new('peaks') \
-            .XS(wg_est['x_peaks']).YS(wg_est['y_peaks']) \
-            .leg('peaks').sty('o').col('grey')
-    curves.new('fitting') \
-        .XS(t).YS(wg_est['y_fit']) \
-        .leg('estimation').col('red').sty('--')
-    curves.new('fitting') \
-        .XS(wg_adv['x_fit']).YS(wg_adv['y_fit']) \
-        .leg('full\ signal\ fitting').col('green').sty(':')
-    cpr.plot_curves(curves)
-
-    # print results (keep it to have from screen)
-    print('--- Estimation ---')
-    print('g = {:0.3e}'.format(wg_est['g']))
-    print('--- Advanced ---')
-    print('g = {:0.3e}'.format(wg_adv['g']))
-
-
 def plot_schi_max_along_chi(dd, t1, oo={}):
     # plot max of phi on (s, chi) at a particular time step
     rd.potsc(dd)
@@ -773,6 +1032,49 @@ def anim_st_chi0(dd, chi0, oo={}):
 
     # animation:
     cpr.animation_curves_2d(curves)
+
+
+def test_correlation(dd):
+    Nt = 401
+    t_min = 1.0
+    t_max = 4.3
+    t = np.linspace(t_min, t_max, Nt)
+
+    delta_t = 0.05
+    T1, T2 = 0.25, 0.25
+    w1, w2 = 2*np.pi/T1, 2*np.pi/T2
+    y1, y2 = np.sin(w1 * t), np.sin(w1 * (t + delta_t))
+
+    oo_dt = {
+        'var1': y1, 'var2': y2,
+        'grid_t1': t, 'grid_t2': t,
+        'vars_names': ['y1', 'y2']
+    }
+    gn.find_time_delay(dd, oo_dt)
+
+
+def test1_bicoherence():
+    N = 5001
+    t = np.linspace(0, 100, N)
+    fs = 1 / (t[1] - t[0])
+    s1 = np.cos(2 * np.pi * 4 * t + 0.2)
+    s2 = 3 * np.cos(2 * np.pi * 5 * t + 0.5)
+    np.random.seed(0)
+    noise = 5 * np.random.normal(0, 1, N)
+    signal = s1 + s2 + 0.5 * s1 * s2 + noise
+    _plot_signal(t, signal)
+
+    kw = dict(nperseg=N // 10, noverlap=N // 20, nfft=next_fast_len(N // 2))
+    freq1, freq2, bicoh = polycoherence(signal, fs, **kw)
+    plot_polycoherence(freq1, freq2, bicoh)
+
+    freq1, fre2, bispec = polycoherence(signal, fs, norm=None, **kw)
+    plot_polycoherence(freq1, fre2, bispec)
+
+    # freq1, freq2, bicoh = polycoherence(signal, fs, flim1=(0, 30), flim2=(0, 30), **kw)
+    # plot_polycoherence(freq1, freq2, bicoh)
+
+
 
 
 

@@ -64,6 +64,10 @@ class Curve:
         self.legend = v
         return self
 
+    def legn(self, v):
+        self.legend += '$\n$' + v
+        return self
+
     def sty(self, v):
         self.style = v
         return self
@@ -138,7 +142,7 @@ class Curves:
 
     def_colors = ['blue', 'red', 'green', 'grey', 'orange', 'navy', 'darkgreen']
     flag_diff_styles = False
-    def_styles = ['-', ':', '--', '-.']
+    def_styles = ['-', '--', ':', '-.']
 
     x_style = 'sci'  # 'sci', 'plain'
     y_style = 'sci'  # 'sci', 'plain'
@@ -185,7 +189,7 @@ class Curves:
                 one_color = 'rgb({})'.format(one_color)
 
             # style
-            if count_curve + 1 <= len(self.def_colors):
+            if count_curve + 1 <= len(self.def_styles):
                 one_style = self.def_styles[count_curve]
             else:
                 one_style = ':'

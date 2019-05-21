@@ -1,4 +1,5 @@
 import Mix as mix
+import ymath
 import curve as crv
 import matplotlib.pyplot as mpl
 from matplotlib import animation
@@ -7,17 +8,18 @@ import numpy as np
 import plotly.offline as py
 import plotly.graph_objs as go
 
-# FIG_SIZE_W = 14
-# FIG_SIZE_H = 9.5
+FIG_SIZE_W = 14
+FIG_SIZE_H = 9.5
 
-FIG_SIZE_W = 10
-FIG_SIZE_H = 6
+# FIG_SIZE_W = 10
+# FIG_SIZE_H = 6
 
 
 def reload():
     # Important: put here all modules that you want to reload
     mix.reload_module(mix)
     mix.reload_module(crv)
+    mix.reload_module(ymath)
 
 
 def plot_x1x2(x, y, z, oo={}):
@@ -63,7 +65,7 @@ def plot_curves_mat(curves):
             continue
 
         if curves.flag_norm:
-            y_res = y_res / np.max(np.abs(y_res))
+            y_res = ymath.find_norm(y_res)
         if curves.flag_semilogy:
             y_res = abs(y_res)
 
@@ -83,8 +85,10 @@ def plot_curves_mat(curves):
                  markeredgewidth=curve.width/2)
 
     # set labels:
-    mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
-    mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=curves.fontS)
+    if len(curves.xlabel) is not 0:
+        mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
+    if len(curves.ylabel) is not 0:
+        mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=curves.fontS)
 
     # axes ticks:
     if curves.xticks_labels is np.nan:
@@ -330,12 +334,16 @@ def plot_curves_3d_mat(curves):
                  markeredgewidth=curve.width/2)
 
     # set labels
-    mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
-    mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=curves.fontS)
+    if len(curves.xlabel) is not 0:
+        mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
+    if len(curves.ylabel) is not 0:
+        mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=curves.fontS)
 
     # font size of axes ticks
     ax.xaxis.set_tick_params(labelsize=curves.fontS)
     ax.yaxis.set_tick_params(labelsize=curves.fontS)
+    ax.xaxis.get_offset_text().set_fontsize(curves.fontS)
+    ax.yaxis.get_offset_text().set_fontsize(curves.fontS)
 
     # format of axis labels
     mpl.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
@@ -348,7 +356,10 @@ def plot_curves_3d_mat(curves):
 
     # legend
     if ncurves > 1:
-        ax.legend(fontsize=curves.fontS, loc=curves.legend_position)
+        # ax.legend(fontsize=curves.fontS, loc=curves.legend_position,
+        #           framealpha=1, facecolor='grey')
+        ax.legend(fontsize=curves.fontS, loc='upper left',
+                  framealpha=1, facecolor='grey')
 
     # set title
     mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)

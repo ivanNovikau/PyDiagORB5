@@ -1,10 +1,13 @@
 <component name="ProjectDictionaryState">
   <dictionary name="Ivan">
     <words>
+      <w>adiab</w>
       <w>ainf</w>
       <w>cdot</w>
       <w>coef</w>
       <w>dataset</w>
+      <w>ddata</w>
+      <w>descr</w>
       <w>dfreq</w>
       <w>efluxw</w>
       <w>egam</w>
@@ -14,13 +17,18 @@
       <w>fferbar</w>
       <w>ffres</w>
       <w>ffvorbar</w>
+      <w>ffvvar</w>
+      <w>ffvvars</w>
       <w>filt</w>
       <w>fres</w>
       <w>khat</w>
       <w>krook</w>
+      <w>labr</w>
+      <w>labx</w>
       <w>namesp</w>
       <w>nchi</w>
       <w>nonzonal</w>
+      <w>nvars</w>
       <w>overline</w>
       <w>phibar</w>
       <w>phinz</w>
@@ -32,7 +40,11 @@
       <w>semilogy</w>
       <w>sqrt</w>
       <w>sugama</w>
+      <w>varnz</w>
+      <w>varz</w>
       <w>vorbar</w>
+      <w>vvar</w>
+      <w>vvars</w>
       <w>watanabe</w>
     </words>
   </dictionary>
