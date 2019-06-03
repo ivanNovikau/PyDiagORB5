@@ -171,6 +171,110 @@ def tcv_scan_n(oo={}):
     plot_several_scans(data_plot, sel_norm)
 
 
+def itpa_scan_n(oo):
+    dd = oo.get('dd_itpa', None)
+    sel_norm = oo.get('sel_norm', 'wc')
+
+    ns, ws, gs = [], [], []
+    data_plot = {'n': [], 'w': [], 'g': [], 'leg': []}
+
+    ## --- ATTENTION ---
+    # Be carefull when you chose normalization, since
+    # you use only one project (one dictionary dd) to define normalization,
+    # different scans can have different normalization, e.g., for the case
+    # of different scans with different temperature profiles
+
+    # ws[i] and gs[i] should have the same size
+    def add_n(n, w, g):
+        ns.append(n)
+        ws.append(w)
+        gs.append(g)
+
+    # # --- md/me = 200 ---
+    # ns, ws, gs = [], [], []
+    # add_n(20, [4.472e-04], [3.788e-04])
+    # add_n(25, [5.697e-04], [4.397e-04])
+    # add_n(30, [6.689e-04], [4.200e-04])
+    #
+    # data_plot['leg'].append('m_d/m_e = 300')
+    # reorganise_data(ns, ws, gs, sel_norm, dd, data_plot)
+    #
+    # # --- md/me = 3670 (realistic) ---
+    # ns, ws, gs = [], [], []
+    # # add_n(20, [4.381e-04], [3.102e-04])  # dt = 5
+    # add_n(20, [4.386e-04], [3.110e-04])  # dt = 3
+    # # add_n(20, [4.808e-04], [3.198e-04])  # dt = 1
+    # add_n(25, [6.124e-04], [3.640e-04])  # dt = 3
+    # add_n(30, [7.084e-04], [3.508e-04])  # dt = 3
+    #
+    # data_plot['leg'].append('m_d/m_e = 3670')
+    # reorganise_data(ns, ws, gs, sel_norm, dd, data_plot)
+
+    # --- ES kappat = 0.8, kappan = 0.3 ---
+    ns, ws, gs = [], [], []
+    add_n(10, [2.827e-04, 6.282e-05], [3.423e-05, 3.423e-05])
+    add_n(15, [2.298e-04], [1.334e-04])
+    add_n(20, [2.911e-04], [1.531e-04])
+    add_n(25, [5.112e-04], [1.636e-04])
+    add_n(30, [5.671e-04], [1.767e-04])
+    add_n(35, [6.100e-04], [1.495e-04])
+    add_n(40, [6.462e-04], [9.074e-05])
+
+    data_plot['leg'].append('ES: \kappa_T = 0.8, \kappa_n = 0.3')
+    reorganise_data(ns, ws, gs, sel_norm, dd, data_plot)
+    #
+    # # --- ES kappat = 1.2, kappan = 0.3 ---
+    # ns, ws, gs = [], [], []
+    # add_n(20, [5.968e-04, 3.455e-04],
+    #           [2.993e-04, 2.993e-04])  # a lot of modes
+    # add_n(25, [6.713e-04], [3.138e-04])    # a lot of modes
+    # add_n(30, [6.911e-04, 3.455e-04],
+    #           [3.034e-04, 3.034e-04])  # a lot of modes
+    #
+    # data_plot['leg'].append('ES: \kappa_T = 1.2, \kappa_n = 0.3')
+    # reorganise_data(ns, ws, gs, sel_norm, dd, data_plot)
+    #
+    # # --- ES kappat = 1.5, kappan = 0.3 ---
+    # ns, ws, gs = [], [], []
+    # add_n(20, [6.911e-04], [3.919e-04])  # a lot of modes
+    # add_n(25, [8.377e-04, 7.120e-04, 9.214e-04],
+    #           [3.777e-04, 3.777e-04, 3.777e-04])    # a lot of modes
+    # add_n(30, [1.047e-03, 7.958e-04, 1.131e-03],
+    #           [3.708e-04, 3.708e-04, 3.708e-04])  # a lot of modes
+    #
+    # data_plot['leg'].append('ES: \kappa_T = 1.5, \kappa_n = 0.3')
+    # reorganise_data(ns, ws, gs, sel_norm, dd, data_plot)
+    #
+    # # --- ES kappan = 0.2, kappat = 1.0 ---
+    # ns, ws, gs = [], [], []
+    # add_n(20, [6.376e-04], [2.347e-04])
+    # add_n(25, [7.539e-04, 5.654e-04],
+    #           [2.482e-04, 2.482e-04])  # a lot of modes
+    # add_n(30, [7.349e-04], [2.404e-04])
+    #
+    # data_plot['leg'].append('ES: \kappa_n = 0.2, \kappa_T = 1.0')
+    # reorganise_data(ns, ws, gs, sel_norm, dd, data_plot)
+    #
+    # --- ES kappan = 0.4, kappat = 1.0 ---
+    ns, ws, gs = [], [], []
+    add_n(10, [2.827e-04, 9.424e-05, 3.141e-05],
+              [8.422e-05, 8.422e-05, 8.422e-05])
+    add_n(15, [1.985e-04], [1.781e-04])
+    add_n(20, [2.827e-04, 4.398e-04, 3.769e-04],
+              [2.086e-04, 2.086e-04, 2.086e-04])  # a lot of modes
+    add_n(25, [4.712e-04, 5.340e-04, 3.455e-04],
+              [2.430e-04, 2.430e-04, 2.430e-04])  # a lot of modes
+    add_n(30, [5.455e-04], [2.514e-04])
+    add_n(35, [6.053e-04], [2.235e-04])
+    add_n(40, [6.592e-04], [1.705e-04])
+
+    data_plot['leg'].append('ES: \kappa_n = 0.4, \kappa_T = 1.0')
+    reorganise_data(ns, ws, gs, sel_norm, dd, data_plot)
+
+    # *** combined plot ***
+    plot_several_scans(data_plot, sel_norm, xlim=[8, 42])
+
+
 def reorganise_data(ns, ws, gs, sel_norm, dd, data_plot):
     # reorganise and save data as np.array
     ns_plot, ws_plot, gs_plot = [], [], []
@@ -238,7 +342,7 @@ def plot_scan_n(ns_plot, ws_plot, gs_plot, sel_norm):
     return
 
 
-def plot_several_scans(data_plot, sel_norm):
+def plot_several_scans(data_plot, sel_norm, xlim=[0, 150]):
     # normalization:
     line_w, line_g = '', ''
     if sel_norm == 'khz':
@@ -262,12 +366,12 @@ def plot_several_scans(data_plot, sel_norm):
         .xlab('n') \
         .ylab(line_w) \
         .tit('frequency').xsty('plain')\
-        .xlim([0, 150]) # !!!
+        .xlim(xlim) # !!!
     curves_g = crv.Curves() \
         .xlab('n') \
         .ylab(line_g) \
         .tit('growth\ rate').xsty('plain')\
-        .xlim([0, 150]) # !!!
+        .xlim(xlim) # !!!
     for i_scan in range(number_scans):
         n = data_plot['n'][i_scan]
         w = data_plot['w'][i_scan]

@@ -19,7 +19,7 @@ class Curve:
     ws = None
     xlabel = ''
     ylabel = ''
-    legend = '\ '
+    legend = "_"
     style = '-'
     width = None
     color = 'blue'
@@ -140,9 +140,10 @@ class Curves:
     legend_position = 'best'
     legend_fcol = 'grey'
 
-    def_colors = ['blue', 'red', 'green', 'grey', 'orange', 'navy', 'darkgreen']
+    def_colors = ['blue', 'red', 'green', 'orange', 'cyan',
+                  'Magenta', 'Purple', 'gray']
     flag_diff_styles = False
-    def_styles = ['-', '--', ':', '-.']
+    def_styles = ['-', '--', '-.']
 
     x_style = 'sci'  # 'sci', 'plain'
     y_style = 'sci'  # 'sci', 'plain'
@@ -192,7 +193,7 @@ class Curves:
             if count_curve + 1 <= len(self.def_styles):
                 one_style = self.def_styles[count_curve]
             else:
-                one_style = ':'
+                one_style = '-.'
 
             one_curve.col(one_color).sty(one_style)
 
@@ -314,3 +315,19 @@ class Curves:
     def ysty(self, v):  # 'sci', 'plain'
         self.y_style = v
         return self
+
+    def sort_legends(self):
+        count_curve = -1
+        new_list_curves = []
+        list_curves_emp_leg = []
+        for one_curve in self.list_curves:
+            count_curve = count_curve + 1
+            leg = one_curve.legend
+
+            if leg == '\ ' or leg == ' ' or len(leg) == 0:
+                list_curves_emp_leg.append(one_curve)
+            else:
+                new_list_curves.append(one_curve)
+        new_list_curves.extend(list_curves_emp_leg)
+        self.list_curves = new_list_curves
+

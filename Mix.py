@@ -148,17 +148,24 @@ def get_interval(x, x_intervals, name_x, format_x):
         one_x, one_ids_x = get_array(x, x_1, x_2)
         x_final_intervals.append(one_x)
         ids_x_intervals.append(one_ids_x)
-        line_format_x = '[{:' + format_x + '}, {:' + format_x + '}]';
-        lines_x.append(name_x + ' = ' + line_format_x.format(one_x[0], one_x[-1]))
+
+        line_format = '{:' + format_x + '}'
+        line_format_x = '[' + line_format + ',' + line_format + ']'
+        line_x = name_x + ' = ' + line_format_x.format(one_x[0], one_x[-1])
+        lines_x.append(line_x)
     return ids_x_intervals, x_final_intervals, lines_x
 
 
 # averaging in space:
 def find_avs(oo):
+    # for several signals oo.vars
+    # every signal is averaged in several s-intervals
+    # s-intervals are the same for every signal
+
     vvars = oo.get('vars', [])  # signals (t, s) to average
     ts = oo.get('ts', [])  # time grids
     ss = oo.get('ss', [])  # space grids
-    ns_av = oo.get('ns_av', 1)  # number of intervals to average in space
+    ns_av = oo.get('ns_av', 0)  # number of intervals to average in space
     label_s = oo.get('label_s', 's')  # describe space coordinate
 
     n_vars = len(vvars)  # number of signals
@@ -200,7 +207,7 @@ def find_avt(oo):
     vvars = oo.get('vars', [])  # signals (t, s) to average
     ts = oo.get('ts', [])  # time grids
     ss = oo.get('ss', [])  # space grids
-    nt_av = oo.get('nt_av', 1)  # number of intervals to average in time
+    nt_av = oo.get('nt_av', 0)  # number of intervals to average in time
     label_t = oo.get('label_t', 't[wci^{-1}]')  # describe time normalization
 
     n_vars = len(vvars)  # number of signals
@@ -243,6 +250,42 @@ def find_avt(oo):
         res = {'data': data_t_av, 's': s_int, 'lines_avt': lines_t_av}
         vars_avs.append(res)
     return vars_avs
+
+
+# NEW: get indices of a corresponding domain:
+def get_ids(x, x_domain, format_x='{:0.3e}'):
+    # x = [x1, x2, x3, ...], where must be x[i] < x[i+1]
+    # x_domain = some value or an array from two numbers
+    x_domain = np.array([x_domain])
+    if len(np.shape(x_domain)) == 2:
+        x_domain = x_domain[0]
+
+    id_start = np.where(x >= x_domain[0])[0]
+    if id_start.size != 0:
+        id_start = id_start[0]
+    else:
+        id_start = len(x) - 1
+
+    id_end = np.where(x <= x_domain[-1])[0]
+    if id_end.size != 0:
+        id_end = id_end[-1]
+    else:
+        id_end = 0
+
+    if id_end < id_start:
+        id_end = id_start
+
+    ids = [i for i in range(id_start, id_end + 1)]
+    x_res = np.array(x[ids[0]:ids[-1] + 1])
+
+    if len(ids) == 1:
+        x_res = x_res[0]
+        line_x = format_x.format(x_res)
+    else:
+        line_temp = '[' + format_x + ', ' + format_x + ']'
+        line_x = line_temp.format(x_res[0], x_res[-1])
+
+    return ids, x_res, line_x
 
 
 

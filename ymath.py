@@ -65,7 +65,7 @@ def estimate_g(x_init, y_init, oo={}):
 
         x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
         y_fit = np.exp(b0 + g * x_fit)
-        # x_fit += x[ids_peaks[0]]
+        x_fit += x[ids_peaks[0]]
     else:
         out['x_peaks'] = None
         out['y_peaks'] = None
@@ -76,7 +76,7 @@ def estimate_g(x_init, y_init, oo={}):
                                                 )
         x_fit = x - x[0]
         y_fit = np.exp(b0 + g * x_fit)
-        x += x[0]
+        x_fit += x[0]
 
     # results
     out['g'] = g
@@ -503,7 +503,181 @@ def find_norm(y):
     return y_norm
 
 
+# NEW: averaging in space:
+def find_av_s(vvar, oavr):
+    # oavr = [opt_av, s_intervals]
+    data, s = vvar['data'], vvar['s']
+    opt_av  = oavr[0]
+    s_ints  = oavr[1]
 
+    data_s_av, lines_s_av = {}, {}
+    ids_ss, s_ints, lines_s = mix.get_interval(s, s_ints, 's', '0.3f')
+    for is_av in range(len(s_ints)):
+        ids_s = ids_ss[is_av]
+        temp = data[:, ids_s[0]:ids_s[-1]+1]
+        line_av = ''
+        if opt_av == 'mean':
+            data_s_av[is_av]  = np.mean(temp, axis=1)
+            line_av = 'mean_s:\ '
+        if opt_av == 'rms':
+            data_s_av[is_av]  = np.sqrt(np.mean(temp**2, axis=1))
+            line_av = 'rms_s:\ '
+        line_av += lines_s[is_av]
+        lines_s_av[is_av] = line_av
+
+    # form result dictionary
+    vvar_avr = {
+        'data': data_s_av,
+        'x':   vvar['t'],
+        'tit': vvar['tit'],
+        'lines_avr': lines_s_av
+    }
+
+    return vvar_avr
+
+
+# NEW: averaging in time:
+def find_av_t(vvar, oavr):
+    # oavr = [opt_av, t_intervals]
+    data, t = vvar['data'], vvar['t']
+    opt_av  = oavr[0]
+    t_ints  = oavr[1]
+
+    datas_av, lines_t_av = {}, {}
+    ids_ts, t_ints, lines_t = mix.get_interval(t, t_ints, 't', '0.3e')
+    for is_av in range(len(t_ints)):
+        ids_t = ids_ts[is_av]
+        temp = data[ids_t[0]:ids_t[-1]+1, :]
+        line_av = ''
+        if opt_av == 'mean':
+            datas_av[is_av]  = np.mean(temp, axis=0)
+            line_av = 'mean_t:\ '
+        if opt_av == 'rms':
+            datas_av[is_av]  = np.sqrt(np.mean(temp**2, axis=0))
+            line_av = 'rms_t:\ '
+        line_av += lines_t[is_av]
+        lines_t_av[is_av] = line_av
+
+    # form result dictionary
+    vvar_avr = {
+        'data': datas_av,
+        'x':   vvar['s'],
+        'tit': vvar['tit'],
+        'lines_avr': lines_t_av
+    }
+
+    return vvar_avr
+
+
+# NEW: signal at s1:
+def find_t1s1(vvar, oavr):
+    # oavr = [opt_av, points]
+    # opt_av: s1, t1
+    data, t, s = vvar['data'], vvar['t'], vvar['s']
+    opt_av = oavr[0]
+    y_points = oavr[1]
+
+    y = []  # reduce the signal along this coordinate axis
+    x = []  # save this coordinate axis
+    line_y, format_y = '', ''
+    if opt_av == 's1':
+        y, line_y, format_y = s, 's', '{:0.3f}'
+        x = t
+    if opt_av == 't1':
+        y, line_y, format_y = t, 't', '{:0.3e}'
+        x = s
+
+    datas_av, lines_av = {}, {}
+    for id_y1 in range(len(y_points)):
+        id_y, y1 = mix.find(y, y_points[id_y1])
+        temp = []
+        if opt_av == 's1':
+            temp = data[:, id_y]
+        if opt_av == 't1':
+            temp = data[id_y, :]
+        lines_av[id_y1] = line_y + ' = ' + format_y.format(y1)
+        datas_av[id_y1] = temp
+
+    # form result dictionary
+    vvar_avr = {
+        'data': datas_av,
+        'x': x,
+        'tit': vvar['tit'],
+        'lines_avr': lines_av
+    }
+
+    return vvar_avr
+
+
+# NEW: combined find_av_s, find_av_t, find_t1s1
+def avr_x1x2(vvar, oavr):
+    # oavr = [sel_av, av_domain]
+    # sel_av = 'type_av-coord_av'
+    # type_av = 'mean', 'rms', 'point'
+    # coord_av = 't', 's', 'vpar', 'mu', 'chi', 'n', 'm'
+    # av_domain is x_points or x_intervals
+    data = vvar['data']
+    x1   = vvar[vvar['x1']]
+    x2   = vvar[vvar['x2']]
+
+    # type of averaging and the coordinate along which the averaging will be performed
+    sel_av = oavr[0]
+    type_av, coord_av = sel_av.split('-')
+    if type_av == 'none':
+        vvar_avr = dict(vvar)
+        vvar_avr['lines_avr'] = ['']
+        return vvar_avr
+
+    # domains along coord_av, where the averaging whill be perfomed
+    av_domains = oavr[1]
+
+    # define a coordinate axis to average along:
+    dir_av, x_work, x_av, format_x_av = None, None, None, None
+    if coord_av == vvar['x1']:
+        dir_av = 0
+        x_av   = x1
+        x_work = x2
+        format_x_av = vvar['fx1']
+    if coord_av == vvar['x2']:
+        dir_av = 1
+        x_av   = x2
+        x_work = x1
+        format_x_av = vvar['fx2']
+
+    # consider domains of averaging
+    data_av, lines_av = [], []
+    for id_domain in range(len(av_domains)):
+        one_domain = av_domains[id_domain]
+
+        ids_av, _, line_x = mix.get_ids(x_av, one_domain, format_x=format_x_av)
+
+        temp = None
+        if coord_av == vvar['x1']:
+            temp = data[ids_av, :]
+        if coord_av == vvar['x2']:
+            temp = data[:, ids_av]
+
+        line_av = ''
+        if type_av == 'mean':
+            data_av.append( np.mean(temp, axis=dir_av) )
+            line_av = 'mean_' + coord_av + ':\ '
+        if type_av == 'rms':
+            data_av.append( np.sqrt(np.mean(temp ** 2, axis=dir_av)) )
+            line_av = 'rms_' + coord_av + ':\ '
+        if type_av == 'point':
+            data_av.append(np.squeeze(temp))
+
+        line_av += coord_av + ' = ' + line_x
+        lines_av.append(line_av)
+
+    # form result dictionary
+    vvar_avr = {
+        'data':         data_av,
+        'x':            x_work,
+        'lines_avr':    lines_av
+    }
+
+    return vvar_avr
 
 
 

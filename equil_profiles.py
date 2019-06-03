@@ -20,8 +20,19 @@ def reload():
 def q_prof(dd):
     rd.q(dd)
 
+    s = dd['q']['s']
+    # rho = dd['deuterium'].nT_equil['rho']
+    #
+    # # analytical expression:
+    # qcoefs = np.array([1.8503, -0.074096, 0.95318, -5.703, 7.5779, -0.19182, -1.8253])
+    # ncoef = np.size(qcoefs)
+    # qa = 0
+    # for icoef in range(ncoef):
+    #     qa += qcoefs[icoef] * rho**icoef
+
     curves = crv.Curves().xlab('s').ylab('q').tit('safety\ factor\ profile')
-    curves.new('q').XS(dd['q']['s']).YS(dd['q']['data']).leg('q')
+    curves.new().XS(s).YS(dd['q']['data']).leg('q')
+    # curves.new().XS(s).YS(qa).leg('q-analytical')
     cpr.plot_curves(curves)
 
 
@@ -168,8 +179,47 @@ def B_equil(dd):
         Z_new[:, i] = np.append(Z[:, i], Z[0, i])
         R_new[:, i] = np.append(R[:, i], R[0, i])
 
-    curves = crv.Curves().xlab('R').ylab('Z').tit('|B|')
+    curves = crv.Curves().xlab('R(m)').ylab('Z(m)').tit('|B|(T)')
     curves.new().XS(R_new).YS(Z_new).ZS(B_new.T).lev(60)
     cpr.plot_curves_3d(curves)
 
     f.close()
+
+
+def choose_var(dd, oo):
+    opt_var = oo.get('opt_var', '')
+    var_name, tit_var = '', ''
+    if opt_var == 'q':
+        var_name = 'q'
+        tit_var = 'q'
+        # tit_var = 'q - q(s=0)'
+
+    vvar = dd[var_name]['data']
+    s    = dd[var_name]['s']
+    res = {
+        'var': vvar,
+        's': s,
+        't': [],
+        'tit': tit_var
+    }
+    return res
+
+
+# NEW: choose a variable (s):
+def choose_one_var_ts(ovar, dd):
+    opt_var = ovar[0]
+    var_name, tit_var = '', ''
+    if opt_var == 'q':
+        var_name = 'q'
+        tit_var = 'q'
+        # tit_var = 'q - q(s=0)'
+
+    vvar = dd[var_name]['data']
+    s    = dd[var_name]['s']
+    res = {
+        'var': vvar,
+        's': s,
+        't': [],
+        'tit': tit_var
+    }
+    return res

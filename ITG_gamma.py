@@ -113,9 +113,36 @@ def phinz_t(dd, oo):
 
         data = {}
         one_name_potsc = names_potsc[count_t]
-        data['id_t_point'], data['t_point'] = mix.find(dd['potsc_grids']['t'], one_t)
+        data['id_t_point'], data['t_point'] = \
+            mix.find(dd['potsc_grids']['t'], one_t)
         phibar_t1   = dd['phibar_interp']['data'][data['id_t_point'], :]
         data['data'] = dd[one_name_potsc]['data'] - phibar_t1[None, :]
+        dd[var_name] = data
+    return names
+
+
+# non-zonal potential at some radial point:
+def phinz_s(dd, oo):
+    names_potsc = rd.potsc_s(dd, oo)
+    phibar_interp(dd)
+
+    s_points = oo.get('s_points', [0.0])
+    ns_points = np.size(s_points)
+
+    names = []
+    for count_s in range(ns_points):
+        one_s = s_points[count_s]
+        var_name = 'phinz-s-' + '{:0.3e}'.format(one_s)
+        names.append(var_name)
+        if var_name in dd:
+            continue
+
+        data = {}
+        one_name_potsc = names_potsc[count_s]
+        data['id_s_point'] = dd[one_name_potsc]['id_s_1']
+        data['s_point']    = dd[one_name_potsc]['s_point']
+        phibar_s1    = dd['phibar_interp']['data'][:, data['id_s_point']]
+        data['data'] = dd[one_name_potsc]['data'] - phibar_s1[:, None]
         dd[var_name] = data
     return names
 
@@ -217,25 +244,449 @@ def ernz_chi(dd, oo):
     return names
 
 
+# NEW: max of the non-zonal potential along chi at every s-point:
+def phinz_abs_max_along_chi(dd):
+    phibar_interp(dd)
+    t, s, chi = dd['potsc_grids']['t'], dd['potsc_grids']['s'], dd['potsc_grids']['chi']
+    nt, ns, nchi = np.size(t), np.size(s), np.size(chi)
+
+    # --- check the data in the project structure ---
+    var_name = 'phinz-max-along-chi'
+    if var_name in dd:
+        return var_name
+
+    # --- check the data in the external file ---
+    data = rd.read_signal(dd['path_ext'], var_name)
+    if data is not None:
+        dd[var_name] = data
+        return var_name
+
+    # number of radial points to read at once
+    max_allowed_size = dd['max_size_Gb'] * 1024 ** 3  # in bytes
+    float_size = 8  # in bytes
+    id_s_step = int(round(max_allowed_size / (float_size * nt * nchi)))
+
+    # --- calculate the data ---
+    f = h5.File(dd['path_orb'], 'r')
+    data = {
+        's': s, 't': t, 'data': np.zeros([ns, nt]),
+        'chi_max': np.zeros([ns, nt])
+    }
+    line_read = '/data/var2d/generic/potsc/data'
+    id_s_end = 0
+    while id_s_end < ns:
+        # read Phi at several points along s: Phi(t,chi,ids_current)
+        id_s_begin = id_s_end
+        id_s_end += id_s_step
+        if id_s_end >= ns:
+            id_s_end = ns
+        ids_current = [i for i in range(id_s_begin, id_s_end)]
+
+        # read Phi at several points along s: Phi(t,chi,ids_current)
+        potsc_s1 = np.array(f[line_read][:, :, ids_current])
+
+        # find non-zonal Phi(t,chi,ids_current)
+        phibar_s1 = dd['phibar_interp']['data'][:, ids_current]
+        phinz_s1 = potsc_s1 - phibar_s1[:, None, :]
+        del potsc_s1, phibar_s1
+
+        # find absolute value
+        abs_phinz_s1 = np.abs(phinz_s1)
+        del phinz_s1
+
+        # find maximum
+        count_id_s = -1
+        for id_s_loc in ids_current:
+            count_id_s += 1
+            phinz_max = np.amax(abs_phinz_s1[:, :, count_id_s], axis=1)
+            data['data'][id_s_loc] = phinz_max
+
+            ids_max = abs_phinz_s1[:, :, count_id_s].argmax(axis=1)
+            data['chi_max'][id_s_loc] = chi[ids_max]
+
+    # for the sake of generality, transpose data (ns,nt) -> (nt,ns)
+    data['data']    = data['data'].T
+    data['chi_max'] = data['chi_max'].T
+
+    f.close()
+
+    # save data to an external file
+    desc = 'max along chi of non-zonal potential at phi = 0'
+    wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
+
+    # save to the project structure
+    dd[var_name] = data
+
+    return var_name
+
+
+#  NEW: radial derivative of the nonzonal potential at s1:
+def ernz_r_abs_max_along_chi(dd):
+    phibar_interp(dd)
+    t,   s,  chi = dd['potsc_grids']['t'], dd['potsc_grids']['s'], dd['potsc_grids']['chi']
+    nt, ns, nchi = np.size(t), np.size(s), np.size(chi)
+
+    # --- check the data in the project structure ---
+    var_name = 'ernz_r-max-along-chi'
+    if var_name in dd:
+        return var_name
+
+    # --- check the data in the external file ---
+    data = rd.read_signal(dd['path_ext'], var_name)
+    if data is not None:
+        dd[var_name] = data
+        return var_name
+
+    # number of poloidal points to read at once
+    max_allowed_size = dd['max_size_Gb'] * 1024 ** 3  # in bytes
+    float_size = 8  # in bytes
+    id_chi_step = int(round(max_allowed_size / (float_size * nt * ns)))
+
+    # --- calculate data ---
+    data = {
+        's': s, 't': t, 'data': [],
+        'chi_max': np.zeros([nt, ns])
+    }
+
+    f = h5.File(dd['path_orb'], 'r')
+    line_read = '/data/var2d/generic/potsc/data'
+    id_chi_end = 0
+    global_max     = np.zeros([nt, ns])
+    global_ids_max = np.zeros([nt, ns])
+    while id_chi_end < nchi:
+        # read Phi at several points along s: Phi(t,chi,ids_current)
+        id_chi_begin = id_chi_end
+        id_chi_end  += id_chi_step
+        if id_chi_end >= nchi:
+            id_chi_end = nchi
+        ids_current = [i for i in range(id_chi_begin, id_chi_end)]
+        potsc_chi1 = np.array(f[line_read][:, ids_current, :])
+
+        # find non-zonal Phi(t,ids_current,s)
+        phibar_data = dd['phibar_interp']['data'][:, :]
+        phinz_chi1  = potsc_chi1 - phibar_data[:, None, :]
+        del potsc_chi1, phibar_data
+
+        # chi-derivative of the non-zonal Phi(t,ids_current,s)
+        loc = - np.gradient(phinz_chi1, s, axis=2)
+        del phinz_chi1
+
+        # find absolute value
+        abs_loc = np.abs(loc)
+        del loc
+
+        # find maximum in a given chi-interval
+        current_max     = np.amax(abs_loc[:, :, :], axis=1)
+        current_ids_max = abs_loc[:, :, :].argmax(axis=1)
+        del abs_loc
+
+        # correct global maximum
+        mask_comp = current_max > global_max
+        global_max     = np.where(mask_comp, current_max, global_max)
+        global_ids_max = np.where(mask_comp, current_ids_max, global_ids_max)
+
+    f.close()
+    data['data']    = global_max
+
+    for id_s in range(ns):
+        for id_t in range(nt):
+            data['chi_max'][id_t, id_s] = chi[int(global_ids_max[id_t, id_s])]
+
+    # save the data to an external file
+    desc = 'max along chi of non-zonal radial electric field at phi = 0'
+    wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
+
+    # --- save data to the structure ---
+    dd[var_name] = data
+    return var_name
+
+
+# NEW: nonzonal phi at chi1
+def phinz_chi1(dd, chi_point):
+    phibar_interp(dd)
+    name_potsc = rd.potsc_chi1(dd, chi_point)
+
+    name_phinz_chi = 'phinz-chi-' + '{:0.3f}'.format(chi_point)
+    if name_phinz_chi in dd:
+        return name_phinz_chi
+
+    data = dd[name_potsc]['data'] - dd['phibar_interp']['data']
+    dd[name_phinz_chi] = {
+        'chi_1':    dd[name_potsc]['chi_1'],
+        'id_chi_1': dd[name_potsc]['id_chi_1'],
+        'data': data}
+    return name_phinz_chi
+
+
+# NEW: nonzonal phi at s1
+def phinz_s1(dd, s_point):
+    phibar_interp(dd)
+    name_potsc = rd.potsc_s1(dd, s_point)
+
+    name_phinz = 'phinz-s-' + '{:0.3f}'.format(s_point)
+    if name_phinz in dd:
+        return name_phinz
+
+    data = dd[name_potsc]['data'] - dd['phibar_interp']['data'][:, dd[name_potsc]['id_s1'], None]
+    dd[name_phinz] = {
+        's1':    dd[name_potsc]['s1'],
+        'id_s1': dd[name_potsc]['id_s1'],
+        'data':  data}
+    return name_phinz
+
+
+#  NEW: radial derivative of the nonzonal potential at chi1:
+def ernz_r_chi1(dd, chi_point):
+    name_phinz = phinz_chi1(dd, chi_point)
+    name_ernz_chi = 'ernz_r-chi-{:0.3f}'.format(chi_point)
+    if name_ernz_chi in dd:
+        return name_ernz_chi
+
+    data = - np.gradient(
+        dd[name_phinz]['data'], dd['potsc_grids']['s'], axis=1)
+    dd[name_ernz_chi] = {
+        'chi_1':    dd[name_phinz]['chi_1'],
+        'id_chi_1': dd[name_phinz]['id_chi_1'],
+        'data': data}
+    return name_ernz_chi
+
+
+#  NEW: radial derivative of the nonzonal potential at s1:
+def ernz_r_s1(dd, s_point):
+    phibar_interp(dd)
+    t, s, chi    = dd['potsc_grids']['t'], dd['potsc_grids']['s'], dd['potsc_grids']['chi']
+    nt, ns, nchi = np.size(t), np.size(s), np.size(chi)
+
+    # number of poloidal points to read at once
+    max_allowed_size = dd['max_size_Gb'] * 1024 ** 3  # in bytes
+    float_size = 8  # in bytes
+    id_chi_step = int(round(max_allowed_size / (float_size * nt * ns)))
+
+    var_name = 'ernz_r-s-{:0.3f}'.format(s_point)
+    if var_name in dd:
+        return var_name
+
+    data = rd.read_signal(dd['path_ext'], var_name)
+    if data is None:
+        data = {}
+
+        # --- calculate data ---
+        f = h5.File(dd['path_orb'], 'r')
+        data['data'] = np.zeros([nchi, nt])  # transposed w.r.t final matrix
+        data['id_s1'], data['s1'] = mix.find(s, s_point)
+        line_read = '/data/var2d/generic/potsc/data'
+        id_chi_end = 0
+        while id_chi_end < nchi:
+            # read Phi at several points along s: Phi(t,chi,ids_current)
+            id_chi_begin = id_chi_end
+            id_chi_end  += id_chi_step
+            if id_chi_end >= nchi:
+                id_chi_end = nchi
+            ids_current = [i for i in range(id_chi_begin, id_chi_end)]
+            potsc_chi1 = np.array(f[line_read][:, ids_current, :])
+
+            # find non-zonal Phi(t,ids_current,s)
+            phibar_data = dd['phibar_interp']['data'][:, :]
+            phinz_chi1 = potsc_chi1 - phibar_data[:, None, :]
+            del potsc_chi1, phibar_data
+
+            # chi-derivative of the non-zonal Phi(t,ids_current,s)
+            loc = np.gradient(phinz_chi1, s, axis=2)
+            del phinz_chi1
+
+            # save non-zonal poloidal electric field E_chi(t,ids_current,s)
+            count_id_chi = -1
+            for id_chi_loc in ids_current:
+                count_id_chi += 1
+                data['data'][id_chi_loc] = - loc[:, count_id_chi, data['id_s1']]
+            del loc
+        f.close()
+
+        # for the sake of generality, transpose data (nchi,nt) -> (nt,nchi)
+        data['data'] = data['data'].T
+
+        # save the data to an external file
+        desc = 'non-zonal poloidal electric field at s = {:0.3f}'.format(data['s1'])
+        wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
+
+    # --- save data to the structure ---
+    dd[var_name] = data
+    return var_name
+
+
+# NEW: poloidal derivative of the non-zonal potential at chi1:
+def ernz_chi_chi1(dd, chi_point):
+    phibar_interp(dd)
+    t, s, chi = dd['potsc_grids']['t'], dd['potsc_grids']['s'], dd['potsc_grids']['chi']
+    nt, ns, nchi = np.size(t), np.size(s), np.size(chi)
+
+    # number of radial points to read at once
+    max_allowed_size = dd['max_size_Gb'] * 1024 ** 3  # in bytes
+    float_size = 8  # in bytes
+    id_s_step = int( round( max_allowed_size / (float_size * nt * nchi) ) )
+
+    var_name = 'ernz_chi-chi-{:0.3f}'.format(chi_point)
+    if var_name in dd:
+        return var_name
+
+    data = rd.read_signal(dd['path_ext'], var_name)
+    if data is None:
+        data = {}
+
+        # --- calculate data ---
+        f = h5.File(dd['path_orb'], 'r')
+        data['data'] = np.zeros([ns, nt])  # transposed w.r.t final matrix
+        data['id_chi_1'], data['chi_1'] = mix.find(chi, chi_point)
+        line_read = '/data/var2d/generic/potsc/data'
+        id_s_end = 0
+        while id_s_end < ns:
+            # read Phi at several points along s: Phi(t,chi,ids_current)
+            id_s_begin = id_s_end
+            id_s_end  += id_s_step
+            if id_s_end >= ns:
+                id_s_end = ns
+            ids_current = [i for i in range(id_s_begin, id_s_end)]
+            potsc_s1 = np.array(f[line_read][:, :, ids_current])
+
+            # find non-zonal Phi(t,chi,ids_current)
+            phibar_s1 = dd['phibar_interp']['data'][:, ids_current]
+            phinz_s1 = potsc_s1 - phibar_s1[:, None, :]
+            del potsc_s1
+
+            # chi-derivative of the non-zonal Phi(t,chi,ids_current)
+            loc = np.gradient(phinz_s1, chi, axis=1)
+            del phinz_s1
+
+            # save non-zonal poloidal electric field E_chi(t,chi1,ids_current)
+            count_id_s = -1
+            for id_s_loc in ids_current:
+                count_id_s += 1
+                data['data'][id_s_loc] = \
+                    - loc[:, data['id_chi_1'], count_id_s] / s[id_s_loc]
+            del loc
+        f.close()
+
+        # for the sake of generality, transpose data (ns,nt) -> (nt,ns)
+        data['data'] = data['data'].T
+
+        # save the data to an external file
+        desc = 'non-zonal poloidal electric field at chi = {:0.3f}'.format(data['chi_1'])
+        wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
+
+    # --- save data to the structure ---
+    dd[var_name] = data
+    return var_name
+
+
+# NEW: take signal (t,s)
+def choose_one_var_ts(ovar, dd):
+    opt_var   = ovar[0]
+    var_name, tit_var, line_chi = '', '', ''
+    res = {}
+    if opt_var == 'phinz':
+        chi_point = ovar[1]
+        var_name = phinz_chi1(dd, chi_point)
+        tit_var  = '\widetilde{\Phi}'
+        line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
+        line_chi = '_{' + line_chi + '}'
+    if opt_var == 'ernz_r':
+        chi_point = ovar[1]
+        var_name = ernz_r_chi1(dd, chi_point)
+        tit_var  = '\widetilde{E}_r'
+        line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
+        line_chi = '_{' + line_chi + '}'
+    if opt_var == 'ernz_chi':
+        chi_point = ovar[1]
+        var_name = ernz_chi_chi1(dd, chi_point)
+        tit_var  = '\widetilde{E}_{\chi}'
+        line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
+        line_chi = '_{' + line_chi + '}'
+    if opt_var == 'phinz-max-chi':
+        var_name = phinz_abs_max_along_chi(dd)
+        tit_var  = 'max_{\chi}:\ \widetilde{\Phi}'
+        line_chi = ''
+        res.update({
+            'chi_max': dd[var_name]['chi_max']
+        })
+    if opt_var == 'ernz_r-max-chi':
+        var_name = ernz_r_abs_max_along_chi(dd)
+        tit_var  = 'max_{\chi}:\ \widetilde{E}_r'
+        line_chi = ''
+        res.update({
+            'chi_max': dd[var_name]['chi_max']
+        })
+
+    vvar = dd[var_name]['data']
+    s    = dd['potsc_grids']['s']
+    t    = dd['potsc_grids']['t']
+
+    tit_var += line_chi
+
+    res.update({
+        'data': vvar,
+        's': s,
+        't': t,
+        'tit': tit_var
+    })
+
+    return res
+
+
+# NEW: take signal (t,chi)
+def choose_one_var_tchi(ovar, dd):
+    opt_var   = ovar[0]
+    s_point = ovar[1]
+    var_name, tit_var, line_chi = '', '', ''
+    if opt_var == 'phinz':
+        var_name = phinz_s1(dd, s_point)
+        tit_var  = '\widetilde{\Phi}'
+        line_chi = 's = {:0.3f}'.format(dd[var_name]['s1'])
+        line_chi = '_{' + line_chi + '}'
+    if opt_var == 'ernz_r':
+        var_name = ernz_r_s1(dd, s_point)
+        tit_var  = '\widetilde{E}_r'
+        line_chi = 's = {:0.3f}'.format(dd[var_name]['s1'])
+        line_chi = '_{' + line_chi + '}'
+
+    vvar = dd[var_name]['data']
+    chi  = dd['potsc_grids']['chi']
+    t    = dd['potsc_grids']['t']
+
+    tit_var += line_chi
+
+    res = {
+        'data': vvar,
+        'chi': chi,
+        't': t,
+        'tit': tit_var
+    }
+
+    return res
+
+
 def choose_var(dd, oo):
+    # signal at a chi point
+
     chi_point = oo.get('chi_point', 0.0)
     oo_var = {'chi_s': [chi_point]}
     opt_var = oo.get('opt_var', 'ernz_r')
     var_name, tit_var = '', ''
     if opt_var == 'phinz':
         var_name = phinz(dd, oo_var)[0]
-        tit_var = '(\Phi - \overline{\Phi}):\ '
+        tit_var = '(\Phi - \overline{\Phi})'
     if opt_var == 'ernz_r':
         var_name = ernz_r(dd, oo_var)[0]
-        tit_var = '-\partial_s(\Phi - \overline{\Phi}):\ '
+        tit_var = '-\partial_s(\Phi - \overline{\Phi})'
     if opt_var == 'ernz_chi':
         var_name = ernz_chi(dd, oo_var)[0]
-        tit_var = '-s^{-1}\partial_{\chi}(\Phi - \overline{\Phi}):\ '
+        tit_var = '-s^{-1}\partial_{\chi}(\Phi - \overline{\Phi})'
+
     vvar = dd[var_name]['data']
     s = dd['potsc_grids']['s']
     t = dd['potsc_grids']['t']
-    line_chi = '\chi = {:0.3f}'.format(dd[var_name]['chi_1'])
-    tit_var = tit_var + line_chi
+    # line_chi = '\chi = {:0.3f}'.format(dd[var_name]['chi_1'])
+    # tit_var = tit_var + ':\ ' + line_chi
+    tit_var = tit_var
 
     res = {
         'var': vvar,
@@ -248,9 +699,11 @@ def choose_var(dd, oo):
 
 
 def choose_var_t(dd, oo):
+    # signal at some t moment
+
     t_point = oo.get('t_point', 0.0)
     oo_var = {'t_points': [t_point]}
-    opt_var = oo.get('opt_var', 'potsc_t')
+    opt_var = oo.get('opt_var', 'potsc')
     var_name, tit_var = '', ''
     if opt_var == 'potsc':
         var_name = rd.potsc_t(dd, oo_var)[0]
@@ -274,12 +727,70 @@ def choose_var_t(dd, oo):
     return res
 
 
+def choose_var_s(dd, oo):
+    # signal at a s point
+
+    s_point = oo.get('s_point', 0.0)
+    oo_var  = {'s_points': [s_point]}
+    opt_var = oo.get('opt_var', 'potsc')
+    var_name, tit_var = '', ''
+    if opt_var == 'potsc':
+        var_name = rd.potsc_s(dd, oo_var)[0]
+        tit_var = '\Phi:\ '
+    if opt_var == 'phinz':
+        var_name = phinz_s(dd, oo_var)[0]
+        tit_var = '(\Phi - \overline{\Phi}):\ '
+    vvar = dd[var_name]['data']
+    t    = dd['potsc_grids']['t']
+    chi  = dd['potsc_grids']['chi']
+    line_s = 's = {:0.3f}'.format(dd[var_name]['s_point'])
+    tit_var = tit_var + line_s
+
+    res = {
+        'var': vvar,
+        't': t,
+        'chi': chi,
+        'tit': tit_var
+    }
+
+    return res
+
+
 def plot_st(dd, oo):
     out = choose_var(dd, oo)
 
     oo_st = dict(oo)
     oo_st.update(out)
     gn.plot_st(dd, oo_st)
+
+
+def plot_chi_max(dd, oo):
+    opt_var = oo.get('opt_var', '')
+    t_point = oo.get('t_point', None)
+    s_point = oo.get('s_point', None)
+    flag_norm = oo.get('flag_norm', False)
+
+    vvar     = choose_one_var_tchi([opt_var, s_point], dd)
+    vvar_max = choose_one_var_ts([opt_var + '-max-chi'], dd)
+
+    t, chi = vvar['t'], vvar['chi']
+    s = vvar_max['s']
+
+    id_s, _, line_s = mix.get_ids(s, s_point, format_x='{:0.3f}')
+    id_t, _, line_t = mix.get_ids(t, t_point, format_x='{:0.3e}')
+
+    data_chi = np.squeeze( np.abs(vvar['data'][id_t, :]) )
+
+    curves = crv.Curves().xlab('\chi').tit(vvar['tit'])
+    curves.flag_norm = flag_norm
+    curves.new() \
+        .XS(chi) \
+        .YS(data_chi)
+    curves.new() \
+        .XS(vvar_max['chi_max'][id_t, id_s] ) \
+        .YS(vvar_max['data'][id_t, id_s]) \
+        .sty('o')
+    cpr.plot_curves(curves)
 
 
 def plot_aver_st(dd, oo):
@@ -355,13 +866,13 @@ def plot_fft_1d(dd, oo):
 
 
 def compare_nz_var_aver_st(dd, oo):
-    # compare NZ signal with some other signal
-
     # --- non-zonal signal ---
     oo_nz = dict(oo)
     oo_nz['opt_var'] = oo['opt_var_nz']
     out = choose_var(dd, oo_nz)
     varnz, s_nz, t_nz, tit_varnz = out['var'], out['s'], out['t'], out['tit']
+    opt_av_nz_t = oo.get('opt_av_nz_t', 'mean')
+    opt_av_nz_s = oo.get('opt_av_nz_s', 'mean')
 
     # --- signal to compare with ---
     var_type = oo.get('var_type', 'zonal')
@@ -376,6 +887,9 @@ def compare_nz_var_aver_st(dd, oo):
         out = choose_var(dd, oo_var)
     vvar, s, t, tit_var = out['var'], out['s'], out['t'], out['tit']
 
+    opt_av_var_t = oo.get('opt_av_var_t', 'mean')
+    opt_av_var_s = oo.get('opt_av_var_s', 'mean')
+
     # preliminary parameters
     oo_av = dict(oo)
     oo_av.update({
@@ -387,15 +901,14 @@ def compare_nz_var_aver_st(dd, oo):
 
     # --- averaging in time ---
     oo_av.update({
-        'opts_av': ['rms', 'rms'],
+        'opts_av': [opt_av_var_t, opt_av_nz_t],
         'tit': 'averaging\ in\ time',
     })
     gn.plot_avt(dd, oo_av)
 
     # --- averaging in space ---
-    oo_avs = dict(oo)
-    oo_avs.update({
-        'opts_av': ['mean', 'mean'],
+    oo_av.update({
+        'opts_av': [opt_av_var_s, opt_av_nz_s],
         'tit': 'averaging\ in\ space',
     })
     gn.plot_avs(dd, oo_av)
@@ -447,8 +960,6 @@ def find_gamma(dd, oo):
         'tit': tit_var, 'var_name': ''
     })
     gn.find_gamma(dd, oo_gamma)
-
-    return
 
 
 def plot_t(dd, oo):

@@ -116,6 +116,61 @@ def potsc_chi(dd, oo):
     return names
 
 
+# NEW: full potential at chi1
+def potsc_chi1(dd, chi_point):
+    potsc_grids(dd)
+    var_name = 'potsc-chi-' + '{:0.3f}'.format(chi_point)
+    if var_name in dd:
+        return var_name
+
+    data = read_signal(dd['path_ext'], var_name)
+    if data is None:
+        data = {}
+
+        # read data from orb5 output file
+        f = h5.File(dd['path_orb'], 'r')
+        data['id_chi_1'], data['chi_1'] = \
+            mix.find(dd['potsc_grids']['chi'], chi_point)
+        data['data'] = np.array(
+            f['/data/var2d/generic/potsc/data'][:, data['id_chi_1'], :])
+        f.close()
+
+        # save data to an external file
+        desc = 'full potential at phi=0 and \chi = {:0.3f}'.format(data['chi_1'])
+        wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
+
+    # save data to the structure
+    dd[var_name] = data
+    return var_name
+
+
+# NEW: full potential at s1
+def potsc_s1(dd, s_point):
+    potsc_grids(dd)
+    var_name = 'potsc-s-' + '{:0.3f}'.format(s_point)
+    if var_name in dd:
+        return var_name
+
+    data = read_signal(dd['path_ext'], var_name)
+    if data is None:
+        data = {}
+
+        # read data from orb5 output file
+        f = h5.File(dd['path_orb'], 'r')
+        data['id_s1'], data['s1'] = mix.find(dd['potsc_grids']['s'], s_point)
+        data['data'] = np.array(
+            f['/data/var2d/generic/potsc/data'][:, :, data['id_s1']])
+        f.close()
+
+        # save data to an external file
+        desc = 'full potential at phi=0 and s = {:0.3f}'.format(data['s1'])
+        wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
+
+    # save data to the structure
+    dd[var_name] = data
+    return var_name
+
+
 # potential at some time moment
 def potsc_t(dd, oo):
     potsc_grids(dd)
@@ -153,7 +208,7 @@ def potsc_t(dd, oo):
 # potential at some radial points (data are saved):
 def potsc_s(dd, oo):
     potsc_grids(dd)
-    ss = oo.get('ss', [0.0])
+    ss = oo.get('s_points', [0.0])
     ns = np.size(ss)
     names = []
     for count_s in range(ns):
@@ -169,14 +224,14 @@ def potsc_s(dd, oo):
 
             # read data from orb5 output file
             f = h5.File(dd['path_orb'], 'r')
-            data['id_s_1'], dd['s_1'] = \
+            data['id_s_1'], data['s_point'] = \
                 mix.find(dd['potsc_grids']['s'], one_s)
             data['data'] = np.array(
                 f['/data/var2d/generic/potsc/data'][:, :, data['id_s_1']])
             f.close()
 
             # save data to an external file
-            desc = 'full potential at phi=0 and s = {:0.3f}'.format(dd['s_1'])
+            desc = 'full potential at phi=0 and s = {:0.3f}'.format(data['s_point'])
             wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
 
         # save data to the structure
@@ -247,6 +302,16 @@ def nT_evol(dd, species_name):
         dd['kin_species'][species_name].find_nT_evol(dd, f)
 
 
+def distribution_1d(dd, species_name):
+    path_to_file = dd['path'] + '/orb5_res.h5'
+    f = h5.File(path_to_file, 'r')
+    if species_name is 'pf':
+        dd['pf'].distribution_1d(dd, f)
+    else:
+        dd['kin_species'][species_name].distribution_1d(dd, f)
+    f.close()
+
+
 def krpert(dd, species_name):
     path_to_file = dd['path'] + '/orb5_res.h5'
     f = h5.File(path_to_file, 'r')
@@ -257,6 +322,9 @@ def krpert(dd, species_name):
 
 
 def init(dd):
+    if 'project_name' not in dd:
+        dd['project_name'] = ''
+
     path_to_file = dd['path'] + '/orb5_res.h5'
     dd['path_orb'] = path_to_file
     f = h5.File(path_to_file, 'r')
@@ -348,12 +416,6 @@ def correct_species_names_win(dd, f):
             if spname.lower() in key1.lower():
                 dd['species_names'][count_sp] = key1
                 break
-
-
-
-
-
-
 
 
 

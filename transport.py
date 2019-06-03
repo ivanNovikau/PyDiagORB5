@@ -30,26 +30,90 @@ def chi(species_name, dd):
     rho_star_inv = Lx / 2.
 
     # signals:
-    t = efluxw_rad['t']  # the same for all 1d signals
-    s_flux  = efluxw_rad['s']
-    s = dd[species_name].nT_evol['s']
+    t        = efluxw_rad['t']  # the same for all 1d signals
+    s_flux   = efluxw_rad['s']
     rad_flux = efluxw_rad['data']
+    s = dd[species_name].nT_evol['s']
     n = dd[species_name].nT_evol['n']
-    gradT = dd[species_name].nT_evol['gradT']
+    gradT = dd[species_name].nT_evol['gradT']  # grad is taken w.r.t s not rho
 
-    func_rad_flux_interp = \
-        interpolate.interp1d(s_flux, rad_flux, axis=1)
-    rad_flux = func_rad_flux_interp(s)
+    T0    = dd[species_name].nT_equil['T']
+    n0    = dd[species_name].nT_equil['n']
+    s_equ = dd[species_name].nT_equil['s']
 
-    chi_var = - rad_flux / (n * gradT)
-    chi_norm = chi_var * rho_star_inv**2
+    func_interp = interpolate.interp1d(s_flux, rad_flux, axis=1)
+    rad_flux    = func_interp(s)
 
-    dd['chi'] = {
+    func_interp = interpolate.interp1d(s_equ, T0, fill_value='extrapolate')
+    T0          = func_interp(s)
+
+    func_interp = interpolate.interp1d(s_equ, n0, fill_value='extrapolate')
+    n0          = func_interp(s)
+
+    gradT0   = np.gradient(T0, s)
+
+    chi_var  = - rad_flux / (n * gradT)
+    chi_var0 = - rad_flux / (n0[None, :] * gradT0[None, :])
+
+    chi_norm  = chi_var  * rho_star_inv**2
+    chi_norm0 = chi_var0 * rho_star_inv ** 2
+
+    dd[species_name].chi = {
         'data': chi_var,
+        'data0': chi_var0,
         'data_norm': chi_norm,
+        'data_norm0': chi_norm0,
         's': s,
         't': t
     }
+
+
+# NEW:
+def choose_one_var_ts(ovar, dd):
+    opt_var = ovar[0]
+    species_name = ovar[1]
+
+    data, t, s, tit_var = [], [], [], []
+    if opt_var == 'chi_norm':
+        chi(species_name, dd)
+        data = dd[species_name].chi['data_norm']
+        tit_var = species_name + ':\ \chi/\chi_B'
+        t = dd[species_name].chi['t']
+        s = dd[species_name].chi['s']
+    if opt_var == 'chi_norm0':
+        chi(species_name, dd)
+        data = dd[species_name].chi['data_norm0']
+        tit_var = species_name + ':\ \chi_0/\chi_B'
+        t = dd[species_name].chi['t']
+        s = dd[species_name].chi['s']
+    if opt_var == 'efluxw_rad':
+        rd.radial_heat_flux(dd)
+        efluxw_rad = dd[species_name].efluxw_rad
+        data = efluxw_rad['data']
+        tit_var = species_name + ':\ efluxw\_rad'
+        t = efluxw_rad['t']
+        s = efluxw_rad['s']
+    if opt_var == 'T':
+        rd.nT_evol(dd, species_name)
+        data = dd[species_name].nT_evol['T']
+        s = dd[species_name].nT_evol['s']
+        t = dd[species_name].nT_evol['t']
+        tit_var = species_name + ':\ T'
+    if opt_var == 'n':
+        rd.nT_evol(dd, species_name)
+        data = dd[species_name].nT_evol['n']
+        s = dd[species_name].nT_evol['s']
+        t = dd[species_name].nT_evol['t']
+        tit_var = species_name + ':\ n'
+
+    res = {
+        'data': data,
+        's': s,
+        't': t,
+        'tit': tit_var
+    }
+
+    return res
 
 
 def choose_var(dd, oo):
@@ -59,11 +123,18 @@ def choose_var(dd, oo):
     vvar, t, s, tit_var = [], [], [], []
     if opt_var == 'chi_norm':
         chi(species_name, dd)
-        vvar = dd['chi']['data_norm']
+        vvar = dd[species_name].chi['data_norm']
         tit_var = species_name + ':\ \chi/\chi_B'
-        t = dd['chi']['t']
-        s = dd['chi']['s']
+        t = dd[species_name].chi['t']
+        s = dd[species_name].chi['s']
+    if opt_var == 'chi_norm0':
+        chi(species_name, dd)
+        vvar = dd[species_name].chi['data_norm0']
+        tit_var = species_name + ':\ \chi_0/\chi_B'
+        t = dd[species_name].chi['t']
+        s = dd[species_name].chi['s']
     if opt_var == 'efluxw_rad':
+        rd.radial_heat_flux(dd)
         efluxw_rad = dd[species_name].efluxw_rad
         vvar = efluxw_rad['data']
         tit_var = species_name + ':\ efluxw\_rad'
@@ -174,6 +245,54 @@ def T(species_name, dd, oo={}):
         .tit(species_name + ':\ temperature')
     curves.new('f').XS(t_wci).YS(s).ZS(T).lev(40)
     cpr.plot_curves_3d(curves)
+
+
+def nT_t_points(dd, oo={}):
+
+    t_points = oo.get('t_points', [])
+    sp_name = oo.get('sp_name', '')
+
+    # T(t,s)
+    rd.nT_evol(dd, sp_name)
+    t = dd[sp_name].nT_evol['t']
+    s = dd[sp_name].nT_evol['s']
+    # s = np.sqrt(s)
+    T = dd[sp_name].nT_evol['T']
+    n = dd[sp_name].nT_evol['n']
+
+    # time moments:
+    T_points, n_points, lines_t1 = [], [], []
+    for id_t in range(np.size(t_points)):
+        t1 = t_points[id_t]
+        id_t1, t1 = mix.find(t, t1)
+        lines_t1.append('t[\omega_{ci}^{-1}] = ' + '{:0.3e}'.format(t1))
+        T_points.append(T[id_t1, :])
+        n_points.append(n[id_t1, :])
+
+    # *** compare with equilibrium profile ***
+    curves_T = crv.Curves().xlab('s').ylab('T').tit(sp_name)
+    curves_n = crv.Curves().xlab('s').ylab('n').tit(sp_name)
+    curves_T.new() \
+        .XS(dd[sp_name].nT_equil['s']) \
+        .YS(dd[sp_name].nT_equil['T']) \
+        .leg('equil.')
+    curves_n.new() \
+        .XS(dd[sp_name].nT_equil['s']) \
+        .YS(dd[sp_name].nT_equil['n']) \
+        .leg('equil.')
+    for id_t in range(np.size(t_points)):
+        curves_T.new() \
+            .XS(s[0:len(s)-1]) \
+            .YS(T_points[id_t][0:len(s)-1]) \
+            .leg(lines_t1[id_t])
+        curves_n.new() \
+            .XS(s[1:-1]) \
+            .YS(n_points[id_t][1:-1]) \
+            .leg(lines_t1[id_t])
+    curves_T.set_colors_styles()
+    curves_n.set_colors_styles()
+    cpr.plot_curves(curves_T)
+    cpr.plot_curves(curves_n)
 
 
 def grad_T(species_name, dd, oo={}):

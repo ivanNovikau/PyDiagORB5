@@ -151,10 +151,13 @@ def compare_profiles_project_files(dd, path_to_files, oo):
     # (such as deuterium_profiles.dat etc) and compare profiles
     # from these files to the profiles from the project dd:
 
+    species_to_compare = oo.get('species_to_compare', [])
+
     # read profiles from files
     file_names = []
     for sp_name in dd['species_names']:
-        file_names.append(sp_name + '_profiles.dat')
+        if sp_name in species_to_compare:
+            file_names.append(sp_name + '_profiles.dat')
     profs_files = read_profiles(path_to_files, file_names)
 
     project_name = dd.get('project_name', 'project1')
@@ -162,7 +165,7 @@ def compare_profiles_project_files(dd, path_to_files, oo):
 
     # plot profiles:
     count_file = -1
-    for sp_name in dd['species_names']:
+    for sp_name in species_to_compare:
         count_file = count_file + 1
         file_name = file_names[count_file]
         proff = profs_files[file_name]
@@ -238,18 +241,17 @@ def build_vpp_profile(path_to_read, path_to_write, file_names):
 
 def build_new_profiles(path_to_read, path_to_write, file_names):
     # read initial profiles
-    init_profs = read_profiles(path_to_read, file_names)
+    sp_profs = read_profiles(path_to_read, file_names)
 
     # modify profiles
-    res_profs = dict(init_profs)
     for one_name in file_names:
-        prof = init_profs[one_name]
+        prof = sp_profs[one_name]
 
         # region *** Flat profiles ***
-        # n_value, T_value, vp_value = 1, 1, 0
+        n_value, T_value, vp_value = 1, 1, 1
         # prof['T']  = flat_profile(prof['ns'], T_value)
         # prof['n']  = flat_profile(prof['ns'], n_value)
-        # prof['vp'] = flat_profile(prof['ns'], vp_value)
+        prof['vp'] = flat_profile(prof['ns'], vp_value)
 
         # endregion
 
@@ -310,27 +312,46 @@ def build_new_profiles(path_to_read, path_to_write, file_names):
         # endregion
 
         # region *** Modify T at the edge ***
-        s_edge = 0.98
-        coef_mod = 50
-
-        prof['ns'] = 256
-        psi_init = prof['psi']
-        prof['psi'] = rescale_psi(prof['ns'])
-        prof['T']  = np.interp(prof['psi'], psi_init, prof['T'])
-        prof['n']  = np.interp(prof['psi'], psi_init, prof['n'])
-        prof['vp'] = np.interp(prof['psi'], psi_init, prof['vp'])
-
-        psi_edge = s_edge ** 2
-        for id_psi1 in range(prof['ns']):
-            if prof['psi'][id_psi1] >= psi_edge:
-                # prof['T'][id_psi1] = prof['T'][id_psi1]\
-                #     * np.exp((psi_edge - prof['psi'][id_psi1]) * coef_mod)
-                prof['T'][id_psi1] = prof['T'][id_psi1] + \
-                    (psi_edge - prof['psi'][id_psi1])**2 * coef_mod
+        # s_edge = 0.98
+        # coef_mod = 50
+        #
+        # prof['ns'] = 256
+        # psi_init = prof['psi']
+        # prof['psi'] = rescale_psi(prof['ns'])
+        # prof['T']  = np.interp(prof['psi'], psi_init, prof['T'])
+        # prof['n']  = np.interp(prof['psi'], psi_init, prof['n'])
+        # prof['vp'] = np.interp(prof['psi'], psi_init, prof['vp'])
+        #
+        # psi_edge = s_edge ** 2
+        # for id_psi1 in range(prof['ns']):
+        #     if prof['psi'][id_psi1] >= psi_edge:
+        #         # prof['T'][id_psi1] = prof['T'][id_psi1]\
+        #         #     * np.exp((psi_edge - prof['psi'][id_psi1]) * coef_mod)
+        #         prof['T'][id_psi1] = prof['T'][id_psi1] + \
+        #             (psi_edge - prof['psi'][id_psi1])**2 * coef_mod
         # endregion
 
     # write result profiles
-    write_profiles(path_to_write, file_names, res_profs)
+    write_profiles(path_to_write, file_names, sp_profs)
+
+
+def copy_T_from_project_to_file(dd, path_to_file, file_name,
+                                path_to_res, species_name):
+    # species_name - name of a species in project dd, which T will be copied
+
+    # read initial profile
+    sp_profs = read_profiles(path_to_file, [file_name])
+
+    # copy profiles
+    profs = sp_profs[file_name]
+    proj_profs = dd[species_name]
+
+    psi = proj_profs.nT_equil['s']**2
+    T   = proj_profs.nT_equil['T']
+    profs['T'] = np.interp(profs['psi'], psi, T)
+
+    # write result profile
+    write_profiles(path_to_res, [file_name], sp_profs)
 
 
 def rescale_psi(npsi_new):

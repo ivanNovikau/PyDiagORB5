@@ -23,6 +23,191 @@ def reload():
     mix.reload_module(wr)
 
 
+# plot time evolutino of a signal in several radial points:
+def plot_s1(dd, oo):
+    # additional data:
+    flag_save = oo.get('flag_save', False)
+    save_name = oo.get('save_name', None)
+
+    project_name = dd.get('project_name', '')
+    var_name = oo.get('var_name', '')
+
+    vvar, s, t, tit = oo['var'], oo['s'], oo['t'], oo['tit']
+
+    labx = oo.get('labx', 't[\omega_{ci}^{-1}]')  # x-label
+    flag_norm = oo.get('flag_norm', False)
+
+    # basic legend:
+    line_leg_0 = ''
+    if len(project_name) > 0:
+        line_leg_0 += project_name + ':\ '
+    if var_name is not '':
+        line_leg_0 += var_name + ':\ '
+
+    # additional data to compare with:
+    list_curves_load = oo.get('list_curves_load_s1', {None})
+
+    # radial points:
+    s_points = np.array(oo.get('s_points', [0.5]))
+    ns_points = np.size(s_points)
+    ids_s = np.zeros(ns_points, dtype=np.int64)
+    lines_s = []
+    for id_s in range(ns_points):
+        s1 = s_points[id_s]
+        ids_s[id_s], s_points[id_s] = mix.find(s, s1)
+        line_s1 = 's = {:0.3f}'.format(s_points[id_s])
+        lines_s.append(line_s1)
+
+    # time interval:
+    t, ids_t = mix.get_array_oo(oo, t, 't')
+
+    # plotting
+    curves = crv.Curves().xlab(labx).tit(tit)
+    curves.flag_norm = flag_norm
+    for id_s in range(ns_points):
+        vvar_s1 = mix.get_slice(vvar, ids_t, ids_s[id_s])
+        line_s1 = lines_s[id_s]
+        curves.new() \
+            .XS(t) \
+            .YS(vvar_s1) \
+            .leg(line_leg_0 + line_s1)
+    for curves_load in list_curves_load:
+        curves.load(curves_load)
+    curves.set_colors_styles()
+    cpr.plot_curves(curves)
+
+    # save data
+    if flag_save:
+        if 'saved_data' not in dd:
+            dd['saved_data'] = {}
+        dd['saved_data'][save_name + '-s1'] = curves
+
+
+# plot radial structure of signals at several time moments:
+def plot_t1_vars(dd, oo):
+    # additional data:
+    project_name = dd.get('project_name', '')
+
+    vvars, ss, ts, tit_vars = oo['vars'], oo['ss'], oo['ts'], oo['tit_vars']
+    nvars = len(vvars)
+
+    labx = oo.get('labx', 's')
+    flag_norm = oo.get('flag_norm', False)
+    flag_semilogy = oo.get('flag_semilogy', False)
+
+    # time points, common for all signals:
+    t_points = np.array(oo.get('t_points', [0.0]))
+    nt_points = np.size(t_points)
+
+    # basic legend:
+    line_leg_0 = ''
+    # if len(project_name) > 0:
+    #     line_leg_0 += project_name + ':\ '
+
+    # additional data to compare with:
+    list_curves_load = oo.get('list_curves_load_t1', {None})
+
+    # find radial structures and plot them:
+    curves = crv.Curves().xlab(labx).tit(project_name)
+    curves.flag_norm     = flag_norm
+    curves.flag_semilogy = flag_semilogy
+    for id_var in range(nvars):
+        vvar, s, t, tit = vvars[id_var], ss[id_var], ts[id_var], tit_vars[id_var]
+        line_leg = line_leg_0 + tit + ':\ '
+
+        if len(np.shape(vvar)) == 1:
+            curves.new() \
+                .XS(s) \
+                .YS(vvar) \
+                .leg(line_leg)
+            continue
+
+        # time points:
+        ids_t = np.zeros(nt_points, dtype=np.int64)
+        lines_t = []
+        for id_t in range(nt_points):
+            t1 = t_points[id_t]
+            ids_t[id_t], t_points[id_t] = mix.find(t, t1)
+            line_t1 = 't[\omega_{ci}^{-1}]' + ' = {:0.3e}'.format(t_points[id_t])
+            lines_t.append(line_t1)
+
+        # radial interval:
+        s, ids_s = mix.get_array_oo(oo, s, 's')
+
+        for id_t in range(nt_points):
+            vvar_t1 = mix.get_slice(vvar, ids_t[id_t], ids_s)
+            line_t1 = lines_t[id_t]
+            curves.new() \
+                .XS(s) \
+                .YS(vvar_t1) \
+                .leg(line_leg + line_t1)
+
+    for curves_load in list_curves_load:
+        curves.load(curves_load)
+    curves.set_colors_styles()
+    cpr.plot_curves(curves)
+
+
+# plot radial structure of a signal at several time moments:
+def plot_t1(dd, oo):
+    # additional data:
+    flag_save = oo.get('flag_save', False)
+    save_name = oo.get('save_name', None)
+
+    project_name = dd.get('project_name', '')
+    var_name = oo.get('var_name', '')
+
+    vvar, s, t, tit = oo['var'], oo['s'], oo['t'], oo['tit']
+
+    labx = oo.get('labx', 's')  # x-label
+    flag_norm = oo.get('flag_norm', False)
+
+    # basic legend:
+    line_leg_0 = ''
+    if len(project_name) > 0:
+        line_leg_0 += project_name + ':\ '
+    if var_name is not '':
+        line_leg_0 += var_name + ':\ '
+
+    # additional data to compare with:
+    list_curves_load = oo.get('list_curves_load_t1', {None})
+
+    # time points:
+    t_points = np.array(oo.get('t_points', [0.0]))
+    nt_points = np.size(t_points)
+    ids_t = np.zeros(nt_points, dtype=np.int64)
+    lines_t = []
+    for id_t in range(nt_points):
+        t1 = t_points[id_t]
+        ids_t[id_t], t_points[id_t] = mix.find(t, t1)
+        line_t1 = 't[\omega_{ci}^{-1}]' + ' = {:0.3e}'.format(t_points[id_t])
+        lines_t.append(line_t1)
+
+    # radial interval:
+    s, ids_s = mix.get_array_oo(oo, s, 's')
+
+    # plotting
+    curves = crv.Curves().xlab(labx).tit(tit)
+    curves.flag_norm = flag_norm
+    for id_t in range(nt_points):
+        vvar_t1 = mix.get_slice(vvar, ids_t[id_t], ids_s)
+        line_t1 = lines_t[id_t]
+        curves.new() \
+            .XS(s) \
+            .YS(vvar_t1) \
+            .leg(line_leg_0 + line_t1)
+    for curves_load in list_curves_load:
+        curves.load(curves_load)
+    curves.set_colors_styles()
+    cpr.plot_curves(curves)
+
+    # save data
+    if flag_save:
+        if 'saved_data' not in dd:
+            dd['saved_data'] = {}
+        dd['saved_data'][save_name + '-t1'] = curves
+
+
 # plot signals, averaged in space
 def plot_avs(dd, oo):
     # additional data:
@@ -38,6 +223,7 @@ def plot_avs(dd, oo):
     vars_names = oo.get('vars_names', [])  # names of the signals
 
     flag_norm = oo.get('flag_norm', False)
+    flag_semilogy = oo.get('flag_semilogy', False)
 
     # additional data to compare with:
     list_curves_load_avs = oo.get('list_curves_load_avs', {None})
@@ -49,6 +235,7 @@ def plot_avs(dd, oo):
     # plotting:
     curves = crv.Curves().xlab(labx).tit(tit)
     curves.flag_norm = flag_norm
+    curves.flag_semilogy = flag_semilogy
     for ivar in range(n_avs):
         t = avs[ivar]['t']
 
@@ -77,7 +264,9 @@ def plot_avs(dd, oo):
     for curves_load_avs in list_curves_load_avs:
         curves.load(curves_load_avs)
     curves.set_colors_styles()
-    cpr.plot_curves(curves)
+
+    if len(curves.list_curves) is not 0:
+        cpr.plot_curves(curves)
 
     # save data
     if flag_save:
@@ -101,6 +290,7 @@ def plot_avt(dd, oo):
     vars_names = oo.get('vars_names', [])  # names of the signals
 
     flag_norm = oo.get('flag_norm', False)
+    flag_semilogy = oo.get('flag_semilogy', False)
 
     # additional data to compare with:
     list_curves_load_avt = oo.get('list_curves_load_avt', {None})
@@ -112,6 +302,7 @@ def plot_avt(dd, oo):
     # plotting:
     curves = crv.Curves().xlab(labx).tit(tit)
     curves.flag_norm = flag_norm
+    curves.flag_semilogy = flag_semilogy
     for ivar in range(n_avt):
         s = avt[ivar]['s']
 
@@ -140,7 +331,9 @@ def plot_avt(dd, oo):
     for curves_load_avt in list_curves_load_avt:
         curves.load(curves_load_avt)
     curves.set_colors_styles()
-    cpr.plot_curves(curves)
+
+    if len(curves.list_curves) is not 0:
+        cpr.plot_curves(curves)
 
     # save data
     if flag_save:
@@ -170,6 +363,30 @@ def plot_st(dd, oo):
     # plotting
     curves = crv.Curves().xlab(labx).ylab(laby).tit(project_name + tit)
     curves.new().XS(t).YS(s).ZS(vvar).lev(60)
+    cpr.plot_curves_3d(curves)
+
+
+# plot (t,chi) structure:
+def plot_chit(dd, oo):
+    vvar = oo.get('var', [])  # signal (t,s)
+    t = oo.get('t', [])
+    chi = oo.get('chi', [])
+    labx = oo.get('labx', 't[wci^{-1}]')
+    laby = oo.get('laby', '\chi')
+    tit = oo.get('tit', '')
+
+    project_name = dd.get('project_name', '')
+    if project_name is not '':
+        project_name = project_name + ':\ '
+
+    # intervals
+    t, ids_t = mix.get_array_oo(oo, t, 't')
+    chi, ids_chi = mix.get_array_oo(oo, chi, 'chi')
+    vvar = mix.get_slice(vvar, ids_t, ids_chi)
+
+    # plotting
+    curves = crv.Curves().xlab(labx).ylab(laby).tit(project_name + tit)
+    curves.new().XS(t).YS(chi).ZS(vvar).lev(60)
     cpr.plot_curves_3d(curves)
 
 
@@ -530,8 +747,7 @@ def find_gamma(dd, oo):
     # find gamma in this time domain:
     g_est = ymath.estimate_g(t_work, data_work)
     line_g = '\gamma[\omega_{ci}]'
-
-    t_fit = g_est['x_fit'] + t_work[0]
+    t_fit = g_est['x_fit']
 
     # plot fitted signals
     curves = crv.Curves().xlab(labx).ylab(var_name).tit(project_name + tit)
@@ -554,8 +770,142 @@ def find_gamma(dd, oo):
     print('--- Estimation ---')
     print('*** Growth rate: ' + line_s + ':\ ' + line_t_work + ' ***')
     print('E -> ' + line_g + ' = {:0.3e}'.format(g_est['g']))
+    return
 
 
+# find dynamic rate for several signals and in several time intervals
+def find_gamma_adv(dd, oo):
+    # several signals -> one can build dependencies between theses signals
+    # several time intervals -> so far, for more informative plots and more compact results
+
+    project_name = dd.get('project_name', '')
+    if len(project_name) > 0:
+        project_name = project_name + ':\ '
+
+    labx = oo.get('labx', 't[wci^{-1}]')
+    flag_semilogy = oo.get('flag_semilogy', True)
+
+    vvars = oo.get('vars', [])
+    nvars = len(vvars)
+    ts = oo.get('ts', [])
+    tit_vars = oo.get('tit_vars', [])
+    var_names = oo.get('var_names', [])
+    lines_s = oo.get('lines_s', [])
+
+    cond_vars = oo.get('cond_vars', {})
+
+    line_g = '\gamma[\omega_{ci}]'
+
+    # read working time domains for every signal:
+    t_work_domains_vars = []
+    for id_var in range(nvars):
+        line_id_var = '{:d}'.format(id_var + 1)
+        t_work_domains = oo.get('t_work_domains' + line_id_var, None)
+        t_work_domains_vars.append(t_work_domains)
+
+    # --- find dynamic rates ---
+    vvars_work_vars, ts_work_vars, lines_t_work_vars, gs_est_vars = [], [], [], []
+    for id_var in range(nvars):
+        # current data
+        data = vvars[id_var]
+        t = ts[id_var]
+        t_work_domains = t_work_domains_vars[id_var]
+
+        vvars_work, ts_work, lines_t_work, gs_est = [], [], [], []
+        for id_t_interval in range(len(t_work_domains)):
+            t_work_domain = t_work_domains[id_t_interval]
+
+            # time domain where the gamma will be computed
+            ids_t_work, t_work, line_t_work = \
+                mix.get_interval(t, [t_work_domain], 't[\omega_{ci}^{-1}]', '0.3e')
+            ids_t_work, t_work, line_t_work = ids_t_work[0], t_work[0], line_t_work[0]
+            data_work = mix.get_slice(data, ids_t_work)
+
+            # find gamma in this time domain
+            g_est = ymath.estimate_g(t_work, data_work)
+
+            # results for a given time interval
+            vvars_work.append(data_work)
+            ts_work.append(t_work)
+            lines_t_work.append(line_t_work)
+            gs_est.append(g_est)
+
+        # results for a given variable
+        vvars_work_vars.append(vvars_work)
+        ts_work_vars.append(ts_work)
+        lines_t_work_vars.append(lines_t_work)
+        gs_est_vars.append(gs_est)
+
+    # --- PLOT INITIAL SIGNALS and WORKING DOMAINS (curves_work) ---
+    styles_loc = ['--', '-.', ':']
+
+    line_title = project_name
+    curves_work = crv.Curves().xlab(labx).tit(line_title)
+    curves_work.flag_semilogy = flag_semilogy
+    curves_fit = crv.Curves().xlab(labx).tit(line_title)
+    curves_fit.flag_semilogy = flag_semilogy
+    for id_var in range(nvars):
+        line_id_var = '{:d}'.format(id_var + 1)
+        if len(var_names) is 0:
+            var_names.append(line_id_var)
+
+        data = vvars[id_var]
+        t = ts[id_var]
+        tit_var = tit_vars[id_var]
+        line_s = lines_s[id_var]
+
+        vvars_work   = vvars_work_vars[id_var]
+        ts_work      = ts_work_vars[id_var]
+        lines_t_work = lines_t_work_vars[id_var]
+        gs_est       = gs_est_vars[id_var]
+
+        # intervals
+        t, ids_t = mix.get_array_oo(oo, t, 't')
+        data = mix.get_slice(data, ids_t)
+
+        # print information about a current signal:
+        print(line_id_var + ': ' + tit_var + ': ' + line_s)
+
+        # plot initial signals
+        line_legend_init = line_id_var
+        curves_work.new() \
+            .XS(t) \
+            .YS(data) \
+            .leg(line_legend_init)
+        curves_fit.new() \
+            .XS(t) \
+            .YS(data)
+
+        # plot data for every time interval
+        for id_t_interval in range(len(ts_work)):
+            data_work = vvars_work[id_t_interval]
+            t_work = ts_work[id_t_interval]
+            line_t_work = lines_t_work[id_t_interval]
+            g_est = gs_est[id_t_interval]
+
+            # line_legend_fit   = line_id_var + ':\ ' + line_t_work
+            line_legend_fit = var_names[id_var] + ':\ ' + line_t_work
+
+            # work domain
+            curves_work.new() \
+                .XS(t_work) \
+                .YS(data_work) \
+                .sty(styles_loc[id_t_interval])
+
+            # fitting
+            # curves_fit.new() \
+            #     .XS(g_est['x_peaks']) \
+            #     .YS(g_est['y_peaks']) \
+            #     .leg(line_legend_fit).sty('o').col('green')
+            curves_fit.new() \
+                .XS(g_est['x_fit']) \
+                .YS(g_est['y_fit']) \
+                .leg(line_legend_fit).sty(styles_loc[id_t_interval])
+
+            print(line_id_var + ': ' + line_t_work + ': ' + line_g + ' = {:0.3e}'.format(g_est['g']))
+
+    cpr.plot_curves(curves_work)
+    cpr.plot_curves(curves_fit)
 
     return
 

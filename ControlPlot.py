@@ -8,11 +8,13 @@ import numpy as np
 import plotly.offline as py
 import plotly.graph_objs as go
 
-FIG_SIZE_W = 14
-FIG_SIZE_H = 9.5
+# FIG_SIZE_W = 14
+# FIG_SIZE_H = 9.5
+# LEG_SCALE = 0.75
 
-# FIG_SIZE_W = 10
-# FIG_SIZE_H = 6
+FIG_SIZE_W = 10
+FIG_SIZE_H = 6
+LEG_SCALE = 0.5
 
 
 def reload():
@@ -49,8 +51,6 @@ def plot_curves(curves, method=None):
 
 
 def plot_curves_mat(curves):
-    # -> curves - class crv.Curves
-
     # number of curves
     ncurves = curves.n()
 
@@ -75,7 +75,10 @@ def plot_curves_mat(curves):
             ref_lines, = ax.plot(curve.xs, y_res, curve.style)
 
         # set legend
-        ref_lines.set_label(r'$' + curve.legend + '$')
+        if curve.legend == "_":
+            ref_lines.set_label("_")
+        else:
+            ref_lines.set_label(r'$' + curve.legend + '$')
 
         # set format for every line
         mpl.setp(ref_lines, linewidth=curve.width,
@@ -121,7 +124,8 @@ def plot_curves_mat(curves):
 
     # set legend
     if curves.flag_legend:
-        ax.legend(fontsize=curves.fontS, loc=curves.legend_position, facecolor=curves.legend_fcol)
+        ax.legend(fontsize=curves.fontS * LEG_SCALE, loc=curves.legend_position,
+                  facecolor=curves.legend_fcol)
 
     # set title
     mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)

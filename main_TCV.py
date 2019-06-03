@@ -47,7 +47,7 @@ def reload():
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/n100-heavy/'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v6-s35'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v6-s45'
-path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v55-s8'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v55-s8'
 # endregion
 
 # region --- LINEAR GAM ---
@@ -271,6 +271,13 @@ path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/
 #              'TCV/linear/scan-EGAM/concentration-scan-v55-s8/f0024/'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #              'TCV/linear/scan-EGAM/concentration-scan-v55-s8/f0026/'    # very close to marginality from GAM side
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#              'TCV/linear/scan-EGAM/Maxwellian/s8'        # no evident changes
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#              'TCV/linear/scan-EGAM/shifted-Maxwellian/one-s8-v55'  # no EGAM
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#              'TCV/linear/scan-EGAM/shifted-Maxwellian/two-s8-v55'   # very close to marginality
+#                                                                     # w[wci] ~ 7.5e-3
 
 # endregion
 

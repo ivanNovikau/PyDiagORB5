@@ -2,6 +2,7 @@ import Mix as mix
 import ymath
 import numpy as np
 from scipy import constants
+import h5py as h5
 
 
 def reload():
@@ -26,8 +27,13 @@ class Species:
     nT_evol = None
 
     efluxw_rad = None
+    chi = None
 
     krpert = None
+
+    f_1d = None
+
+    mpr = None
 
     # in general, rd.init -> rd.species ->
     def __init__(self, name, dd, f):
@@ -43,6 +49,8 @@ class Species:
         else:
             self.tau = f['/parameters/' + name + '/tau'][0]
 
+        self.mpr = {}
+
     def nT(self, dd, f):
         if self.nT_equil is not None:
             return
@@ -50,12 +58,10 @@ class Species:
         self.nsel_profile = mix.get_attribute(f, '/parameters/' + self.name + '/nsel_profile')
         self.nsel_profile = self.nsel_profile[1]
 
-        if self.nsel_profile == '2':
-            s = np.array(f['/equil/profiles/generic/sgrid_eq'])
-            psi = s**2
-        else:
-            s = np.array(f['/equil/profiles/' + self.name + '/s_prof'])
-            psi = np.array(f['/equil/profiles/' + self.name + '/psi_prof'])
+        s = np.array(f['/equil/profiles/' + self.name + '/s_prof'])
+        psi = np.array(f['/equil/profiles/' + self.name + '/psi_prof'])
+        rho = np.array(f['/equil/profiles/' + self.name + '/rho_prof'])
+
         n = np.array(f['/equil/profiles/' + self.name + '/n_pic'])
         T = np.array(f['/equil/profiles/' + self.name + '/t_pic'])
         vp = np.array(f['/equil/profiles/' + self.name + '/v_pic'])
@@ -71,6 +77,7 @@ class Species:
         self.nT_equil = {
             's': s,
             'psi': psi,
+            'rho': rho,
             'T': T, 'T_J': T_J, 'T_keV': T_keV,
             'gradT': gradT, 'grad_logT': grad_logT,
             'n': n,
@@ -82,7 +89,8 @@ class Species:
         if self.nT_evol is not None:
             return
         t = np.array(f['/data/var1d/' + self.name + '/f_av/time'])
-        s  = np.array(f['/data/var1d/' + self.name + '/f_av/coord1'])
+        psi  = np.array(f['/data/var1d/' + self.name + '/f_av/coord1'])
+        s = np.sqrt(psi)
         n    = np.array(f['/data/var1d/' + self.name + '/f_av/data'])
         vperp2f = np.array(f['/data/var1d/' + self.name + '/v_perp2_av/data'])
         u2f = np.array(f['/data/var1d/' + self.name + '/v_par2_av/data'])
@@ -106,6 +114,22 @@ class Species:
             'T': T, 'gradT': grad_T, 'grad_logT': grad_logT
         }
 
+    def distribution_1d(self, dd, f):
+        if self.f_1d is not None:
+            return
+        t        = np.array(f['/data/var1d/' + self.name + '/df_vel_1D/time'])
+        vpar     = np.array(f['/data/var1d/' + self.name + '/df_vel_1D/coord1'])
+        f_vel_1D = np.array(f['/data/var1d/' + self.name + '/f_vel_1D/data'])
+        df_vel_1D = np.array(f['/data/var1d/' + self.name + '/df_vel_1D/data'])
+
+        # results:
+        self.f_1d = {
+            't': t,
+            'vpar': vpar,
+            'f_vel_1d': f_vel_1D,
+            'df_vel_1d': df_vel_1D,
+        }
+
     def find_krpert(self, dd, f):
         if self.krpert is not None:
             return
@@ -124,7 +148,8 @@ class Species:
     def radial_heat_flux(self, f):
         if self.efluxw_rad is not None:
             return
-        s = np.array(f['/data/var1d/' + self.name + '/efluxw_rad/coord1'])
+        psi = np.array(f['/data/var1d/' + self.name + '/efluxw_rad/coord1'])
+        s = np.sqrt(psi)
         t = np.array(f['/data/var1d/' + self.name + '/efluxw_rad/time'])
         data = np.array(f['/data/var1d/' + self.name + '/efluxw_rad/data'])
         self.efluxw_rad = {
@@ -132,6 +157,26 @@ class Species:
             't': t,
             'data': data
         }
+
+    def jdote_es(self, dd):
+        var_name = 'jdote_es'
+        if 'jdote_es' in self.mpr:
+            return self.mpr[var_name]
+        path_to_file = dd['path'] + '/orb5_MPR.h5'
+        f = h5.File(path_to_file, 'r')
+
+        t    = np.array(f['/data/var2d/' + self.name + '/jdote_es/time'])
+        vpar = np.array(f['/data/var2d/' + self.name + '/jdote_es/coord1'])
+        mu   = np.array(f['/data/var2d/' + self.name + '/jdote_es/coord2'])
+        data = np.array(f['/data/var2d/' + self.name + '/jdote_es/data'])
+
+        self.mpr[var_name] = {
+            't': t, 'vpar': vpar, 'mu': mu, 'data': data,
+        }
+
+        f.close()
+
+        return self.mpr[var_name]
 
 
 

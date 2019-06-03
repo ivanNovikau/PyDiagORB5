@@ -5,6 +5,7 @@
       <w>ainf</w>
       <w>cdot</w>
       <w>coef</w>
+      <w>datas</w>
       <w>dataset</w>
       <w>ddata</w>
       <w>descr</w>
@@ -21,14 +22,18 @@
       <w>ffvvars</w>
       <w>filt</w>
       <w>fres</w>
+      <w>jdote</w>
       <w>khat</w>
       <w>krook</w>
       <w>labr</w>
       <w>labx</w>
+      <w>laby</w>
       <w>namesp</w>
       <w>nchi</w>
+      <w>nlegs</w>
       <w>nonzonal</w>
       <w>nvars</w>
+      <w>oovar</w>
       <w>overline</w>
       <w>phibar</w>
       <w>phinz</w>
@@ -43,6 +48,7 @@
       <w>varnz</w>
       <w>varz</w>
       <w>vorbar</w>
+      <w>vpar</w>
       <w>vvar</w>
       <w>vvars</w>
       <w>watanabe</w>

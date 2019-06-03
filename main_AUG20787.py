@@ -6,6 +6,7 @@ import ControlPlot as cpr
 import work_profiles
 import ITG_gamma as itg
 import general
+import common
 import matplotlib.pyplot as mpl
 import numpy as np
 from scipy import constants
@@ -23,6 +24,7 @@ def reload():
     mix.reload_module(itg)
     mix.reload_module(augs)
     mix.reload_module(general)
+    mix.reload_module(common)
 
 
 ## --- NL SIMULATIONS ---
@@ -36,8 +38,8 @@ def reload():
 #            'turbulence/AUG20787/adiab/Krook/s751-ns512/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #            'turbulence/AUG20787/adiab/Krook/flux4-s51-ns1024/'
-path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
-           'turbulence/AUG20787/adiab/Krook/n200-s51/'
+# path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
+#            'turbulence/AUG20787/adiab/Krook/n200-s51/'
 
 ## --- LINEAR GAM ---
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
@@ -56,8 +58,8 @@ path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/' \
 #         'turbulence/AUG20787/adiab/linear/n90/'
 
 ## --- NL SIMS WITH PARALLEL ROTATION ---
-# path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
-#            'AUG20787/adiab/Krook/scan-rotation/pos/'
+path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+           'AUG20787/adiab/Krook/scan-rotation/pos/'
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'AUG20787/adiab/Krook/scan-rotation/neg/'
 

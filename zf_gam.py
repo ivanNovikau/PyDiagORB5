@@ -84,6 +84,34 @@ def choose_var(dd, oo):
     return res
 
 
+# NEW: take signal (t,s)
+def choose_one_var_ts(ovar, dd):
+    vorbar(dd)
+    t = dd['phibar']['t']
+    s = dd['phibar']['s']
+
+    opt_var = ovar[0]
+
+    vvar = dd[opt_var]['data']
+
+    tit_var = ''
+    if opt_var == 'phibar':
+        tit_var = '\overline{\Phi}'
+    if opt_var == 'erbar':
+        tit_var = '\overline{E}_r'
+    if opt_var == 'vorbar':
+        tit_var = '\overline{\Omega}_r'
+
+    res = {
+        'data': vvar,
+        's': s,
+        't': t,
+        'tit': tit_var
+    }
+
+    return res
+
+
 def plot_st(dd, oo):
     out = choose_var(dd, oo)
 
@@ -107,15 +135,9 @@ def plot_aver_st(dd, oo):
     oo_avt.update({
         'vars': [vvar],
         'ts': [t], 'ss': [s],
-        'opts_av': ['mean'],
+        'opts_av': oo.get('opts_av_t', []),
         'tit': tit_var, 'vars_names': ['']
     })
-    # oo_avt.update({
-    #     'vars': [vvar],
-    #     'ts': [t], 'ss': [s],
-    #     'opts_av': ['rms'],
-    #     'tit': tit_var, 'vars_names': ['']
-    # })
     gn.plot_avt(dd, oo_avt)
 
     # --- averaging in space ---
@@ -127,14 +149,9 @@ def plot_aver_st(dd, oo):
     # })
     oo_avs.update({
         'vars': [vvar], 'ts': [t], 'ss': [s],
-        'opts_av': ['mean'],
+        'opts_av': oo.get('opts_av_s', []),
         'tit': tit_var, 'vars_names': ['']
     })
-    # oo_avs.update({
-    #     'vars': [vvar], 'ts': [t], 'ss': [s],
-    #     'opts_av': ['rms'],
-    #     'tit': tit_var, 'vars_names': ['']
-    # })
     gn.plot_avs(dd, oo_avs)
 
 
@@ -176,48 +193,32 @@ def plot_fft_1d(dd, oo):
     gn.plot_fft_1d(dd, oo_fft)
 
 
-# radial strcuture of zonal Phi, Er, Vorticity at different time points:
-def rad_structure(dd, oo):
-    vorbar(dd)
-    t = dd['phibar']['t']
-    s = dd['phibar']['s']
+def plot_t1(dd, oo):
+    out = choose_var(dd, oo)
 
-    # radial interval
-    s, ids_s = mix.get_array_oo(oo, s, 's')
+    oo_t1 = dict(oo)
+    oo_t1.update(out)
+    gn.plot_t1(dd, oo_t1)
 
-    # time points:
-    ts = np.array(oo.get('t_points', [0.0]))
-    ids_t = np.zeros(np.size(ts))
-    for id_t in range(np.size(ts)):
-        t1 = ts[id_t]
-        ids_t[id_t], ts[id_t] = mix.find(t, t1)
 
-    # plotting
-    curves_phi = crv.Curves().xlab('s').ylab('\overline{\Phi}') \
-        .tit('\overline{\Phi}')
-    curves_er = crv.Curves().xlab('s').ylab('\overline{E}_r') \
-        .tit('\overline{E}_r')
-    curves_vor = crv.Curves().xlab('s').ylab('\overline{\Omega}_r') \
-        .tit('\overline{\Omega}_r')
+def plot_s1(dd, oo):
+    out = choose_var(dd, oo)
 
-    for it in range(np.size(ids_t)):
-        id_t = int(ids_t[it])
-        curves_phi.new('{:d}'.format(it))\
-            .XS(s)\
-            .YS(dd['phibar']['data'][id_t, ids_s[0]:ids_s[-1]+1])\
-            .leg('t = {:0.3e}'.format(ts[it])).new_sty(it)
-        curves_er.new('{:d}'.format(it)) \
-            .XS(s) \
-            .YS(dd['erbar']['data'][id_t, ids_s[0]:ids_s[-1]+1]) \
-            .leg('t = {:0.3e}'.format(ts[it])).new_sty(it)
-        curves_vor.new('{:d}'.format(it)) \
-            .XS(s) \
-            .YS(dd['vorbar']['data'][id_t, ids_s[0]:ids_s[-1]+1]) \
-            .leg('t = {:0.3e}'.format(ts[it])).new_sty(it)
+    oo_s1 = dict(oo)
+    oo_s1.update(out)
+    gn.plot_s1(dd, oo_s1)
 
-    cpr.plot_curves(curves_phi)
-    cpr.plot_curves(curves_er)
-    cpr.plot_curves(curves_vor)
+
+def find_gamma(dd, oo):
+    out = choose_var(dd, oo)
+    vvar, s, t, tit_var = out['var'], out['s'], out['t'], out['tit']
+
+    oo_gamma = oo  # oo must have some 'opt_av'
+    oo_gamma.update({
+        'var': vvar, 't': t, 's': s,
+        'tit': tit_var, 'var_name': ''
+    })
+    gn.find_gamma(dd, oo_gamma)
 
 
 # time evolution of zonal Phi, Er, Vorticity at different radial points:
