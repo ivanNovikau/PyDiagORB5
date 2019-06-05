@@ -34,8 +34,12 @@ str_comp = {
     'path_ITPA_1': '/muT12-mun5/n80/',
     'project_name_1': 'ORIG',
     # 'path_ITPA_2': 'muT12-mun5/EGAM/n80-v55-s8',
-    'path_ITPA_2': 'muT12-mun5/EGAM/f001-n80-v55-s8',
-    'project_name_2': 'EGAM-f001',
+
+    # 'path_ITPA_2': 'muT12-mun5/EGAM/f001-n80-v55-s8', # no EGAM in the NL simulation, heat fluxes are the same
+    # 'project_name_2': 'EGAM-f001',
+
+    'path_ITPA_2': 'muT12-mun5/EGAM/TwoShiftedMaxwel-n80-v55-s8',
+    'project_name_2': 'EGAM-twoMaxwellians',
 }
 
 # endregion

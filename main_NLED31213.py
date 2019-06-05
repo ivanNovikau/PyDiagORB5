@@ -8,6 +8,7 @@ import work_profiles
 import ITG_gamma as itg
 import general
 import common
+import MPR as mpr
 import matplotlib.pyplot as mpl
 import numpy as np
 from scipy import constants
@@ -26,13 +27,18 @@ def reload():
     mix.reload_module(general)
     mix.reload_module(common)
 
+
 # region --- LINEAR SIMULATIONS ---
-root_path = 'd:/Work-Projects/MyProgs/ORB_data/MPR/nled/kin/linear/'
+root_path = 'd:/Work-Projects/MyProgs/ORB_data/MPR/nled/'
 str_comp = {
-    'path_ITPA_1': 'ref/',
-    'project_name_1': 'NLED',
+    # 'path_ITPA_1': 'kin/linear/REF-WORK-CPS2019/',
+    'path_ITPA_1': 'adiab/vf8/',
+    'project_name_1': 'NLED-adiab',
+    'path_ITPA_2': 'kin/linear/ref-f0-short/',
+    'project_name_2': 'NLED-adiab',
 }
 # endregion
+
 
 # region --- Project structure initialization ---
 dd_init = {
@@ -43,7 +49,9 @@ dd_init = {
 }
 # endregion
 
+
 # region --- LINEAR STRUCTURES ---
+
 reload()
 dd = dict(dd_init)
 dd.update({
@@ -51,4 +59,12 @@ dd.update({
     'project_name': str_comp['project_name_1'],
 })
 rd.init(dd)
+
+dd_f0 = dict(dd_init)
+dd_f0.update({
+    'path': root_path + str_comp['path_ITPA_2'],
+    'project_name': str_comp['project_name_2'],
+})
+rd.init(dd_f0)
+
 # endregion

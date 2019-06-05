@@ -112,49 +112,6 @@ def choose_one_var_ts(ovar, dd):
     return res
 
 
-def plot_st(dd, oo):
-    out = choose_var(dd, oo)
-
-    oo_st = dict(oo)
-    oo_st.update(out)
-    gn.plot_st(dd, oo_st)
-
-
-def plot_aver_st(dd, oo):
-    out = choose_var(dd, oo)
-    vvar, s, t, tit_var = out['var'], out['s'], out['t'], out['tit']
-
-    # --- averaging in time ---
-    oo_avt = dict(oo)
-    # oo_avt.update({
-    #     'vars': [vvar, vvar],
-    #     'ts': [t, t], 'ss': [s, s],
-    #     'opts_av': ['rms', 'mean'],
-    #     'tit': tit_var, 'vars_names': ['', '']
-    # })
-    oo_avt.update({
-        'vars': [vvar],
-        'ts': [t], 'ss': [s],
-        'opts_av': oo.get('opts_av_t', []),
-        'tit': tit_var, 'vars_names': ['']
-    })
-    gn.plot_avt(dd, oo_avt)
-
-    # --- averaging in space ---
-    oo_avs = dict(oo)
-    # oo_avs.update({
-    #     'vars': [vvar, vvar], 'ts': [t, t], 'ss': [s, s],
-    #     'opts_av': ['mean', 'rms'],
-    #     'tit': tit_var, 'vars_names': ['', '']
-    # })
-    oo_avs.update({
-        'vars': [vvar], 'ts': [t], 'ss': [s],
-        'opts_av': oo.get('opts_av_s', []),
-        'tit': tit_var, 'vars_names': ['']
-    })
-    gn.plot_avs(dd, oo_avs)
-
-
 def plot_fft(dd, oo):
     out = choose_var(dd, oo)
     vvar, r, t, tit_var = out['var'], out['s'], out['t'], out['tit']
@@ -191,22 +148,6 @@ def plot_fft_1d(dd, oo):
         'vars_names': ['']
     })
     gn.plot_fft_1d(dd, oo_fft)
-
-
-def plot_t1(dd, oo):
-    out = choose_var(dd, oo)
-
-    oo_t1 = dict(oo)
-    oo_t1.update(out)
-    gn.plot_t1(dd, oo_t1)
-
-
-def plot_s1(dd, oo):
-    out = choose_var(dd, oo)
-
-    oo_s1 = dict(oo)
-    oo_s1.update(out)
-    gn.plot_s1(dd, oo_s1)
 
 
 def find_gamma(dd, oo):

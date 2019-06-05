@@ -48,6 +48,7 @@ def reload():
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v6-s35'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v6-s45'
 # path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/EGAM/n80-v55-s8'
+# path_TCV = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/TCV/NL/muT12-mun5/n80-flux/'   # no GGAMs
 # endregion
 
 # region --- LINEAR GAM ---

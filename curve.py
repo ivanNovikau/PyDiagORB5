@@ -140,8 +140,9 @@ class Curves:
     legend_position = 'best'
     legend_fcol = 'grey'
 
-    def_colors = ['blue', 'red', 'green', 'orange', 'cyan',
-                  'Magenta', 'Purple', 'gray']
+    def_colors = ['b', 'r', 'g', 'c', 'm',
+                  'y', 'k', 'cyan', 'Purple', 'gray',
+                  'lightcoral']
     flag_diff_styles = False
     def_styles = ['-', '--', '-.']
 

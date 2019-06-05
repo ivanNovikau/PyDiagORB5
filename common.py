@@ -361,6 +361,7 @@ def plot_vars_1d(oo):
     # oo.labx
     # oo.laby
     # oo.func_mod
+
     vvars = choose_vars(oo)
     n_vars = len(vvars)
 
@@ -403,6 +404,10 @@ def choose_vars(oo):
     # oo.dds = [dd1, dd2, ...]
     # oo.var_legs1, oo.var_legs2, ...
     # oo.sel_legs1, oo.sel_legs2, ...   # 'full', 'woPr', 'woVN', 'woPrVN', 'woAVR', 'Pr'
+    # ------------------
+    # return vvars
+    # vvars[i].[data x lines_avr legs opt_av tit labx laby]
+
     ovars = oo.get('ovars', [])
     dds   = oo.get('dds', [])
     avrs  = oo.get('avrs', [])
@@ -486,7 +491,7 @@ def average_one_var(avr, ovar, dd):
     # averaging of the chosen system
     vvar_avr = ymath.avr_x1x2(vvar_res, oavr)
 
-    vvar_avr['tit'] = vvar_res['tit']
+    vvar_avr['tit']  = vvar_res['tit']
     vvar_avr['labx'] = vvar_res['labx']
     vvar_avr['laby'] = vvar_res['laby']
 
@@ -563,3 +568,158 @@ def choose_one_var_vparmu(ovar, dd):
     return vvar
 
 
+# NEW: check max on s:
+def check_absmax_s(oo, t_point):
+    # variable along s:
+    oo_var = dict(oo)
+    oo_var.update({
+        'avrs': [
+            ['ts', 'point-t', [t_point]]
+        ]
+    })
+    vvar = choose_vars(oo_var)[0]
+
+    oo_var.update({
+        'avrs': [
+            ['ts', 'max-s']
+        ]
+    })
+    vvar_max = choose_vars(oo_var)[0]
+
+    # additional data:
+    labx = oo.get('labx', 's')  # x-label
+    tit_plot = oo.get('tit_plot', '')  # title
+
+    flag_norm     = oo.get('flag_norm', False)
+    flag_semilogy = oo.get('flag_semilogy', False)
+
+    # data
+    s, ids_s = mix.get_array_oo(oo, vvar['x'], 'x')
+    data = vvar['data'][0][ids_s[0]:ids_s[-1]+1]
+
+    # max data
+    id_t, _, _ = mix.get_ids(vvar_max['x'], t_point)
+    data_max   = vvar_max['data'][0][id_t]
+    s_max      = vvar_max['opt_av'][0][id_t]
+
+    # plotting:
+    curves = crv.Curves().xlab(labx).tit(tit_plot)
+    curves.flag_norm = flag_norm
+    curves.flag_semilogy = flag_semilogy
+    curves.new()\
+        .XS(s)\
+        .YS(data)\
+        .leg('data')
+    curves.new() \
+        .XS(s_max) \
+        .YS(data_max) \
+        .leg('max').sty('o')
+    cpr.plot_curves(curves)
+
+
+# NEW: find dynamic rate for several signals and in several time intervals
+def find_gamma(oo):
+    # the same time domains for different signals:
+    # oo.t_work_domains - where to find gamma
+    # oo.ovars, oo.avrs
+
+    vvars = choose_vars(oo)
+    nvars = len(vvars)
+
+    tit_plot = oo.get('tit_plot', '')  # title
+    labx = oo.get('labx', 't[wci^{-1}]')
+    laby = oo.get('laby', '')  # y-label
+    flag_semilogy = oo.get('flag_semilogy', True)
+    line_g = '\gamma[\omega_{ci}]'
+
+    t_work_domains = oo.get('t_work_domains', None)
+    nt_domains = len(t_work_domains)
+
+    # --- find dynamic rates ---
+    vvars_work_vars, ts_work_vars, lines_t_work_vars, gs_est_vars = [], [], [], []
+    for id_var in range(nvars):
+        # current data
+        data = vvars[id_var]['data'][0]
+        t    = vvars[id_var]['x']
+
+        vvars_work, ts_work, lines_t_work, gs_est = [], [], [], []
+        for id_t_interval in range(nt_domains):
+            t_work_domain = t_work_domains[id_t_interval]
+
+            # time domain where the gamma will be computed
+            ids_t_work, t_work, line_t_work = mix.get_ids(t, t_work_domain)
+            data_work = np.squeeze(data[ids_t_work])
+
+            # find gamma in this time domain
+            g_est = ymath.estimate_g(t_work, data_work)
+
+            # results for a given time interval
+            vvars_work.append(data_work)
+            ts_work.append(t_work)
+            lines_t_work.append(line_t_work)
+            gs_est.append(g_est)
+
+        # results for a given variable
+        vvars_work_vars.append(vvars_work)
+        ts_work_vars.append(ts_work)
+        lines_t_work_vars.append(lines_t_work)
+        gs_est_vars.append(gs_est)
+
+    # --- PLOT INITIAL SIGNALS and WORKING DOMAINS (curves_work) ---
+    styles_loc = ['-.'] * 20
+
+    curves_work = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)
+    curves_work.flag_semilogy = flag_semilogy
+
+    curves_fit = crv.Curves().xlab(labx).tit(tit_plot)
+    curves_fit.flag_semilogy = flag_semilogy
+
+    for id_var in range(nvars):
+        data = vvars[id_var]['data'][0]
+        t    = vvars[id_var]['x']
+        leg = vvars[id_var]['legs'][0]
+
+        vvars_work   = vvars_work_vars[id_var]
+        ts_work      = ts_work_vars[id_var]
+        lines_t_work = lines_t_work_vars[id_var]
+        gs_est       = gs_est_vars[id_var]
+
+        # intervals
+        t, ids_t = mix.get_array_oo(oo, t, 't')
+        data = mix.get_slice(data, ids_t)
+
+        # plot initial signals
+        curves_work.new().XS(t).YS(data).leg(leg)
+        curves_fit.new().XS(t).YS(data).leg(leg)
+
+        # plot data for every time interval
+        for id_t_interval in range(len(ts_work)):
+            data_work   = vvars_work[id_t_interval]
+            t_work      = ts_work[id_t_interval]
+            line_t_work = lines_t_work[id_t_interval]
+            g_est       = gs_est[id_t_interval]
+
+            line_legend_fit = leg + ':\ ' + line_t_work
+
+            # work domain
+            curves_work.new() \
+                .XS(t_work) \
+                .YS(data_work) \
+                .sty(styles_loc[id_t_interval])
+
+            # fitting
+            # curves_fit.new() \
+            #     .XS(g_est['x_peaks']) \
+            #     .YS(g_est['y_peaks']) \
+            #     .leg(line_legend_fit).sty('o').col('green')
+            curves_fit.new() \
+                .XS(g_est['x_fit']) \
+                .YS(g_est['y_fit']) \
+                .leg(line_legend_fit).sty(styles_loc[id_t_interval])
+
+            print(leg + ': ' + line_t_work + ': ' + line_g + ' = {:0.3e}'.format(g_est['g']))
+
+    cpr.plot_curves(curves_work)
+    cpr.plot_curves(curves_fit)
+
+    return

@@ -371,7 +371,7 @@ def init(dd):
         dd[sp_name].nT(dd, f)
 
     # T,n dependent variables:
-    dd['T_speak'] = dd['pf'].T_speak(dd)
+    dd['T_speak'] = dd['electrons'].T_speak(dd)  # !!!
     dd['rhoL_speak'] = ymath.find_rhoL(dd['T_speak'], dd['B0'], dd['pf'].mass, dd['pf'].Z)
 
 

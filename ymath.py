@@ -628,9 +628,6 @@ def avr_x1x2(vvar, oavr):
         vvar_avr['lines_avr'] = ['']
         return vvar_avr
 
-    # domains along coord_av, where the averaging whill be perfomed
-    av_domains = oavr[1]
-
     # define a coordinate axis to average along:
     dir_av, x_work, x_av, format_x_av = None, None, None, None
     if coord_av == vvar['x1']:
@@ -644,8 +641,14 @@ def avr_x1x2(vvar, oavr):
         x_work = x1
         format_x_av = vvar['fx2']
 
+    # domains along coord_av, where the averaging whill be perfomed
+    if type_av == 'max' or type_av == 'absmax':
+        av_domains = [[x_av[0], x_av[-1]]]
+    else:
+        av_domains = oavr[1]
+
     # consider domains of averaging
-    data_av, lines_av = [], []
+    data_av, lines_av, opt_av = [], [], []
     for id_domain in range(len(av_domains)):
         one_domain = av_domains[id_domain]
 
@@ -668,13 +671,29 @@ def avr_x1x2(vvar, oavr):
             data_av.append(np.squeeze(temp))
 
         line_av += coord_av + ' = ' + line_x
+
+        if type_av == 'max':
+            temp_max = np.max(temp, axis=dir_av)
+            x_max = x_av[np.argmax(temp, axis=dir_av)]
+            data_av.append(temp_max)
+            opt_av.append(x_max)
+            line_av = 'max_{' + coord_av + '}'
+        if type_av == 'absmax':
+            abs_temp  = np.abs(temp)
+            temp_max = np.max(abs_temp, axis=dir_av)
+            x_max    = x_av[np.argmax(abs_temp, axis=dir_av)]
+            data_av.append(temp_max)
+            opt_av.append(x_max)
+            line_av = 'max_{' + coord_av + '}'
+
         lines_av.append(line_av)
 
     # form result dictionary
     vvar_avr = {
         'data':         data_av,
         'x':            x_work,
-        'lines_avr':    lines_av
+        'lines_avr':    lines_av,
+        'opt_av':       opt_av
     }
 
     return vvar_avr
