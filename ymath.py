@@ -497,6 +497,10 @@ def find_rhoL(T, B0, m, Z):
     return rhoLarmor
 
 
+def find_rho_star(Lx):
+    return 2. / Lx
+
+
 def find_norm(y):
     abs_y = np.abs(y)
     y_norm = y / np.nanmax(abs_y[abs_y != np.inf])
@@ -616,9 +620,6 @@ def avr_x1x2(vvar, oavr):
     # type_av = 'mean', 'rms', 'point'
     # coord_av = 't', 's', 'vpar', 'mu', 'chi', 'n', 'm'
     # av_domain is x_points or x_intervals
-    data = vvar['data']
-    x1   = vvar[vvar['x1']]
-    x2   = vvar[vvar['x2']]
 
     # type of averaging and the coordinate along which the averaging will be performed
     sel_av = oavr[0]
@@ -628,18 +629,27 @@ def avr_x1x2(vvar, oavr):
         vvar_avr['lines_avr'] = ['']
         return vvar_avr
 
+    # data and coordinates
+    data = vvar['data']
+    x1 = vvar[vvar['x1']]
+    x2 = vvar[vvar['x2']]
+
     # define a coordinate axis to average along:
-    dir_av, x_work, x_av, format_x_av = None, None, None, None
+    dir_av, x_work, x_av, format_x_work, format_x_av = None, None, None, None, None
     if coord_av == vvar['x1']:
         dir_av = 0
         x_av   = x1
-        x_work = x2
         format_x_av = vvar['fx1']
+        x_work = x2
+        format_x_work = vvar['fx2']
+        name_x_work = vvar['x2']
     if coord_av == vvar['x2']:
         dir_av = 1
         x_av   = x2
-        x_work = x1
         format_x_av = vvar['fx2']
+        x_work = x1
+        format_x_work = vvar['fx1']
+        name_x_work = vvar['x1']
 
     # domains along coord_av, where the averaging whill be perfomed
     if type_av == 'max' or type_av == 'absmax':
@@ -692,6 +702,8 @@ def avr_x1x2(vvar, oavr):
     vvar_avr = {
         'data':         data_av,
         'x':            x_work,
+        'name_x':       name_x_work,
+        'format_x':     format_x_work,
         'lines_avr':    lines_av,
         'opt_av':       opt_av
     }

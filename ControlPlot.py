@@ -8,9 +8,9 @@ import numpy as np
 import plotly.offline as py
 import plotly.graph_objs as go
 
-# FIG_SIZE_W = 14
-# FIG_SIZE_H = 9.5
-# LEG_SCALE = 0.75
+FIG_SIZE_W = 14
+FIG_SIZE_H = 9.5
+LEG_SCALE = 0.75
 
 FIG_SIZE_W = 10
 FIG_SIZE_H = 6
@@ -53,10 +53,13 @@ def plot_curves(curves, method=None):
 def plot_curves_mat(curves):
     # number of curves
     ncurves = curves.n()
+    ngeoms = curves.n_geoms
 
     # Build plots
     fig, ax = mpl.subplots(figsize=(FIG_SIZE_W, FIG_SIZE_H))
+    axes = mpl.gca()
 
+    # set curves
     for icrv in range(ncurves):
         curve = curves.list(icrv)
 
@@ -64,28 +67,31 @@ def plot_curves_mat(curves):
         if y_res is None:
             continue
 
-        if curves.flag_norm:
-            y_res = ymath.find_norm(y_res)
-        if curves.flag_semilogy:
-            y_res = abs(y_res)
-
-        if curves.flag_semilogy:
-            ref_lines, = ax.semilogy(curve.xs, abs(y_res), curve.style)
+        if curve.flag_hist:
+            ax.hist(y_res, curve.xs, alpha=curve.pr_alpha, label=curve.legend, density=True)
         else:
-            ref_lines, = ax.plot(curve.xs, y_res, curve.style)
+            if curves.flag_norm:
+                y_res = ymath.find_norm(y_res)
+            if curves.flag_semilogy:
+                y_res = abs(y_res)
 
-        # set legend
-        if curve.legend == "_":
-            ref_lines.set_label("_")
-        else:
-            ref_lines.set_label(r'$' + curve.legend + '$')
+            if curves.flag_semilogy:
+                ref_lines, = ax.semilogy(curve.xs, abs(y_res), curve.style)
+            else:
+                ref_lines, = ax.plot(curve.xs, y_res, curve.style)
 
-        # set format for every line
-        mpl.setp(ref_lines, linewidth=curve.width,
-                 color=curve.color,
-                 markersize=curve.markersize,
-                 markerfacecolor=curve.markerfacecolor,
-                 markeredgewidth=curve.width/2)
+            # set legend
+            if curve.legend == "_":
+                ref_lines.set_label("_")
+            else:
+                ref_lines.set_label(r'$' + curve.legend + '$')
+
+            # set format for every line
+            mpl.setp(ref_lines, linewidth=curve.width,
+                     color=curve.color,
+                     markersize=curve.markersize,
+                     markerfacecolor=curve.markerfacecolor,
+                     markeredgewidth=curve.width/2)
 
     # set labels:
     if len(curves.xlabel) is not 0:
@@ -130,8 +136,13 @@ def plot_curves_mat(curves):
     # set title
     mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)
 
+    # draw geometrical figures:
+    for igeom in range(ngeoms):
+        one_geom = curves.list_geoms[igeom]
+        one_geom.draw(mpl, ax, axes, {})
+
     mpl.grid(True)
-    mpl.show()
+    mpl.show(block=False)
 
 
 def plot_curves_plotly(curves):
@@ -292,9 +303,11 @@ def plot_curves_3d_mat(curves):
 
     # number of curves
     ncurves = curves.n()
+    ngeoms = curves.n_geoms
 
     # inititialization of the figure
     fig, ax = mpl.subplots(figsize=(FIG_SIZE_W, FIG_SIZE_H))
+    axes = mpl.gca()
 
     # data from the first curve, that has to be 3d plot
     curve_one = curves.list(0)
@@ -307,6 +320,7 @@ def plot_curves_3d_mat(curves):
 
     # build 3d plot
     # -> colormaps: hot, jet, pink, bone, bwr, RdYlBu, RdYlGn, RdBu, ocean, seismic, RdGy
+    # to reverse a colormap, use hot_r, jet_r etc.
     cs = ax.contourf(XX, YY, ZZ.T, levels=curve_one.levels, cmap=curve_one.colormap)
 
     def fmt(x, pos):
@@ -360,13 +374,16 @@ def plot_curves_3d_mat(curves):
 
     # legend
     if ncurves > 1:
-        # ax.legend(fontsize=curves.fontS, loc=curves.legend_position,
-        #           framealpha=1, facecolor='grey')
-        ax.legend(fontsize=curves.fontS, loc='upper left',
+        ax.legend(fontsize=curves.fontS, loc=curves.legend_position,
                   framealpha=1, facecolor='grey')
 
     # set title
     mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)
+
+    # draw geometrical figures:
+    for igeom in range(ngeoms):
+        one_geom = curves.list_geoms[igeom]
+        one_geom.draw(mpl, ax, axes, {})
 
 
 def animation_curves_2d(curves):

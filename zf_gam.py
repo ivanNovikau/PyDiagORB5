@@ -162,67 +162,6 @@ def find_gamma(dd, oo):
     gn.find_gamma(dd, oo_gamma)
 
 
-# time evolution of zonal Phi, Er, Vorticity at different radial points:
-def t_evol(dd, oo):
-    sel_norm = oo.get('sel_norm', 'wci')
-
-    vorbar(dd)
-    t = dd['phibar']['t']
-    s = dd['phibar']['s']
-
-    # time normalization
-    if sel_norm == 'ms':
-        coef_norm = 1.e3 / dd['wc']
-        line_t = 't,\ ms'
-    if sel_norm == 'wci':
-        coef_norm = 1
-        line_t = 't[\omega_c^{-1}]'
-    if sel_norm == 'csa':
-        coef_norm = (dd['cs'] / dd['a0']) / dd['wc']
-        line_t = 't[a_0/c_s]'
-    if sel_norm == 'csr':
-        coef_norm = (dd['cs'] / dd['R0']) / dd['wc']
-        line_t = 't[R_0/c_s]'
-    t = t * coef_norm
-
-    # radial interval
-    t, ids_t = mix.get_array_oo(oo, t, 't')
-
-    # time points:
-    ss = np.array(oo.get('s_points', [0.5]))
-    ids_s = np.zeros(np.size(ss))
-    for id_s in range(np.size(ss)):
-        ids_s[id_s], ss[id_s] = mix.find(s, ss[id_s])
-
-    # plotting
-    curves_phi = crv.Curves().xlab(line_t).ylab('\overline{\Phi}') \
-        .tit('\overline{\Phi}')
-    curves_er = crv.Curves().xlab(line_t).ylab('\overline{E}_r') \
-        .tit('\overline{E}_r')
-    curves_vor = crv.Curves().xlab(line_t).ylab('\overline{\Omega}_r') \
-        .tit('\overline{\Omega}_r')
-
-    for count_s in range(np.size(ids_s)):
-        id_s = int(ids_s[count_s])
-        s1 = ss[count_s]
-        curves_phi.new('{:d}'.format(count_s)) \
-            .XS(t) \
-            .YS(dd['phibar']['data'][ids_t[0]:ids_t[-1] + 1, id_s]) \
-            .leg('s = {:0.3e}'.format(s1)).new_sty(count_s)
-        curves_er.new('{:d}'.format(count_s)) \
-            .XS(t) \
-            .YS(dd['erbar']['data'][ids_t[0]:ids_t[-1] + 1, id_s]) \
-            .leg('s = {:0.3e}'.format(s1)).new_sty(count_s)
-        curves_vor.new('{:d}'.format(count_s)) \
-            .XS(t) \
-            .YS(dd['vorbar']['data'][ids_t[0]:ids_t[-1] + 1, id_s]) \
-            .leg('s = {:0.3e}'.format(s1)).new_sty(count_s)
-
-    cpr.plot_curves(curves_phi)
-    cpr.plot_curves(curves_er)
-    cpr.plot_curves(curves_vor)
-
-
 # frequency(s) and dynamic rate(s) of zonal Er
 def wg_s(dd, oo):
     flag_save = oo.get('flag_save', False)

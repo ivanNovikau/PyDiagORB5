@@ -197,7 +197,7 @@ def get_gk_fit(dd, oo):
 def get_gao(dd, oo):
     # curves, where to add the data
     curves = oo.get('curves', crv.Curves())
-    sel_norm = oo.get('sel_norm', 'wci')  # -> 'wci', 'khz', 'csa', 'csr'
+    sel_norm = oo.get('sel_norm', 'wc')  # -> 'wc', 'khz', 'csa', 'csr'
     sel_r = oo.get('sel_r', 's')  # -> 's', 'psi'
     sel_res = oo.get('sel_res', 'w')  # -> 'w' (frequency), 'g' (damping rate)
     col = oo.get('col', 'blue')
@@ -258,7 +258,9 @@ def get_gao(dd, oo):
     res = res * coef_norm
 
     # result curve
-    curves.new('aug20787').XS(r).YS(res) \
+    curves.new().XS(r).YS(res) \
         .leg('Gao\ 2010\ ' + line_k) \
         .sty('--').col(col)
+    # curves.new().XS(r).YS(res) \
+    #     .sty('--').col(col)
     return curves

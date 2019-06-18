@@ -23,7 +23,7 @@ def choose_one_var_tvpar(ovar, dd):
     opt_var = ovar[0]
     species_name = ovar[1]
 
-    data, t, c1, tit_var = [], [], [], []
+    data, t, tit_var, vpar = [], [], [], []
     if opt_var == 'f_vel_1d':
         rd.distribution_1d(dd, species_name)
         data = dd[species_name].f_1d['f_vel_1d']

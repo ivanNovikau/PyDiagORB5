@@ -58,8 +58,8 @@ def reload():
 #         'turbulence/AUG20787/adiab/linear/n90/'
 
 ## --- NL SIMS WITH PARALLEL ROTATION ---
-path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
-           'AUG20787/adiab/Krook/scan-rotation/pos/'
+# path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
+#            'AUG20787/adiab/Krook/scan-rotation/pos/'  # broken file !!!
 # path_AUG = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/' \
 #            'AUG20787/adiab/Krook/scan-rotation/neg/'
 

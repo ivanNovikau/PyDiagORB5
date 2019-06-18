@@ -178,5 +178,23 @@ class Species:
 
         return self.mpr[var_name]
 
+    def efield(self, dd):
+        var_name = 'efield'
+        if 'efield' in self.mpr:
+            return self.mpr[var_name]
+        path_to_file = dd['path'] + '/orb5_res.h5'
+        f = h5.File(path_to_file, 'r')
+
+        t    = np.array(f['/data/var0d/generic/time'])
+        data = np.array(f['/data/var0d/' + self.name + '/efield'])
+
+        self.mpr[var_name] = {
+            't': t, 'data': data,
+        }
+
+        f.close()
+
+        return self.mpr[var_name]
+
 
 

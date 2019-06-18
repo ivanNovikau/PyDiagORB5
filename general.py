@@ -467,7 +467,7 @@ def plot_fft(dd, oo):
 
     # parameters for the analytical and experimental data:
     oo_th = {'curves': curves, 'sel_norm': sel_norm,
-             'sel_r': sel_r, 's': r, 'col': 'white'}
+             'sel_r': sel_r, 'r': r, 'col': 'white'}
 
     if flag_aug20787:
         curves = gam_exp.exp_AUG20787(dd, oo_th)

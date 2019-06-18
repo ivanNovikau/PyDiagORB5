@@ -1,5 +1,6 @@
 import Mix as mix
 import Constants as cst
+import Geom as geom
 import numpy as np
 
 
@@ -27,6 +28,9 @@ class Curve:
     markerfacecolor = "None"
     colormap = 'jet'
     levels = 10  # for contour plot
+    pr_alpha = 1
+
+    flag_hist = False
 
     def XS(self, v):
         self.xs = v
@@ -107,11 +111,22 @@ class Curve:
         self.levels = v
         return self
 
+    def set_hist(self):
+        self.flag_hist = True
+        return self
+
+    def alpha(self, v):
+        self.pr_alpha = v
+        return self
+
 
 class Curves:
     list_curves = None
     map_curves = None
     n_curves = 0
+
+    list_geoms = None
+    n_geoms = 0
 
     xlabel = '\ '
     ylabel = '\ '
@@ -154,6 +169,8 @@ class Curves:
         self.map_curves = {}
         self.set_work()
 
+        self.list_geoms = []
+
     def new(self, name_curve=None):
         new_curve = Curve()
         self.list_curves.append(new_curve)
@@ -169,6 +186,10 @@ class Curves:
             new_curve.sty(self.new_style())
 
         return new_curve
+
+    def newg(self, one_geom):
+        self.list_geoms.append(one_geom)
+        self.n_geoms += 1
 
     def load(self, curves_to_load):
         if curves_to_load is None:
