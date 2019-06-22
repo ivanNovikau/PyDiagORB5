@@ -7,14 +7,17 @@ import matplotlib.ticker as ticker
 import numpy as np
 import plotly.offline as py
 import plotly.graph_objs as go
+from matplotlib.ticker import FormatStrFormatter
 
-FIG_SIZE_W = 14
+FIG_SIZE_W = 15
 FIG_SIZE_H = 9.5
-LEG_SCALE = 0.75
+LEG_SCALE = 1
+FONT_SIZE = 28
 
 FIG_SIZE_W = 10
 FIG_SIZE_H = 6
 LEG_SCALE = 0.5
+FONT_SIZE = 22
 
 
 def reload():
@@ -68,10 +71,12 @@ def plot_curves_mat(curves):
             continue
 
         if curve.flag_hist:
-            ax.hist(y_res, curve.xs, alpha=curve.pr_alpha, label=curve.legend, density=True)
+            ax.hist(y_res, curve.xs, alpha=curve.pr_alpha,
+                    label=r'$' + curve.legend  + '$',
+                    density=True)
         else:
             if curves.flag_norm:
-                y_res = ymath.find_norm(y_res)
+                y_res = ymath.find_norm(y_res, curve.data_norm_to)
             if curves.flag_semilogy:
                 y_res = abs(y_res)
 
@@ -79,6 +84,9 @@ def plot_curves_mat(curves):
                 ref_lines, = ax.semilogy(curve.xs, abs(y_res), curve.style)
             else:
                 ref_lines, = ax.plot(curve.xs, y_res, curve.style)
+
+            if curve.style == ':':
+                ref_lines.set_dashes([0.8, 0.3])
 
             # set legend
             if curve.legend == "_":
@@ -95,9 +103,9 @@ def plot_curves_mat(curves):
 
     # set labels:
     if len(curves.xlabel) is not 0:
-        mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
+        mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=FONT_SIZE)
     if len(curves.ylabel) is not 0:
-        mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=curves.fontS)
+        mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=FONT_SIZE)
 
     # axes ticks:
     if curves.xticks_labels is np.nan:
@@ -111,13 +119,15 @@ def plot_curves_mat(curves):
         mpl.yticks(curves.yticks, curves.yticks_labels) if curves.yticks is not np.nan else 0
 
     # fontsize of axes ticks
-    ax.xaxis.set_tick_params(labelsize=curves.fontS)
-    ax.yaxis.set_tick_params(labelsize=curves.fontS)
-    ax.xaxis.get_offset_text().set_fontsize(curves.fontS)
-    ax.yaxis.get_offset_text().set_fontsize(curves.fontS)
+    ax.xaxis.set_tick_params(labelsize=FONT_SIZE)
+    ax.yaxis.set_tick_params(labelsize=FONT_SIZE)
+    ax.xaxis.get_offset_text().set_fontsize(FONT_SIZE)
+    ax.yaxis.get_offset_text().set_fontsize(FONT_SIZE)
 
     # format of axis labels
     mpl.ticklabel_format(axis='x', style=curves.x_style, scilimits=(-2, 2))
+    if curves.flag_maxlocator:
+        ax.xaxis.set_major_locator(mpl.MaxNLocator(curves.maxlocator))
 
     if curves.flag_semilogy is False:
         mpl.ticklabel_format(axis='y', style=curves.y_style, scilimits=(-2, 2))
@@ -130,11 +140,11 @@ def plot_curves_mat(curves):
 
     # set legend
     if curves.flag_legend:
-        ax.legend(fontsize=curves.fontS * LEG_SCALE, loc=curves.legend_position,
+        ax.legend(fontsize=FONT_SIZE * LEG_SCALE, loc=curves.legend_position,
                   facecolor=curves.legend_fcol)
 
     # set title
-    mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)
+    mpl.title(r'$' + curves.title + '$', fontsize=1.5 * FONT_SIZE, pad='18')
 
     # draw geometrical figures:
     for igeom in range(ngeoms):
@@ -211,12 +221,12 @@ def plot_curves_plotly(curves):
     layout = go.Layout(
         title=r'$' + curves.title + '$',
         titlefont=dict(
-            size=curves.fontS
+            size=FONT_SIZE
         ),
         xaxis=dict(
             title=r'$' + curves.xlabel + '$',
             titlefont=dict(
-                size=curves.fontS
+                size=FONT_SIZE
             ),
             tickfont=dict(
                 size=curves.axisFS,
@@ -226,7 +236,7 @@ def plot_curves_plotly(curves):
             type=type_y,
             title=r'$' + curves.ylabel + '$',
             titlefont=dict(
-                size=curves.fontS
+                size=FONT_SIZE
             ),
             tickfont=dict(
                 size=curves.axisFS,
@@ -271,12 +281,12 @@ def plot_curves_3d_plotly(curves):
     layout = go.Layout(
         title=curves.title,
         titlefont=dict(
-            size=curves.fontS
+            size=FONT_SIZE
         ),
         xaxis=dict(
             title=r'$' + curves.xlabel + '$',
             titlefont=dict(
-                size=curves.fontS
+                size=FONT_SIZE
             ),
             tickfont=dict(
                 size=curves.axisFS,
@@ -285,7 +295,7 @@ def plot_curves_3d_plotly(curves):
         yaxis=dict(
             title=r'$' + curves.ylabel + '$',
             titlefont=dict(
-                size=curves.fontS
+                size=FONT_SIZE
             ),
             tickfont=dict(
                 size=curves.axisFS,
@@ -331,7 +341,7 @@ def plot_curves_3d_mat(curves):
         else:
             return r'${:0.2f}$'.format(x)
     cb = fig.colorbar(cs, shrink=0.8, extend='both', format=ticker.FuncFormatter(fmt))
-    cb.ax.tick_params(labelsize=curves.fontS)
+    cb.ax.tick_params(labelsize=FONT_SIZE)
 
     # data from other curves, that should be lines
     for icrv in range(1, ncurves):
@@ -353,15 +363,15 @@ def plot_curves_3d_mat(curves):
 
     # set labels
     if len(curves.xlabel) is not 0:
-        mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=curves.fontS)
+        mpl.xlabel(r'$' + curves.xlabel + '$', fontsize=FONT_SIZE)
     if len(curves.ylabel) is not 0:
-        mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=curves.fontS)
+        mpl.ylabel(r'$' + curves.ylabel + '$', fontsize=FONT_SIZE)
 
     # font size of axes ticks
-    ax.xaxis.set_tick_params(labelsize=curves.fontS)
-    ax.yaxis.set_tick_params(labelsize=curves.fontS)
-    ax.xaxis.get_offset_text().set_fontsize(curves.fontS)
-    ax.yaxis.get_offset_text().set_fontsize(curves.fontS)
+    ax.xaxis.set_tick_params(labelsize=FONT_SIZE)
+    ax.yaxis.set_tick_params(labelsize=FONT_SIZE)
+    ax.xaxis.get_offset_text().set_fontsize(FONT_SIZE)
+    ax.yaxis.get_offset_text().set_fontsize(FONT_SIZE)
 
     # format of axis labels
     mpl.ticklabel_format(axis='x', style='sci', scilimits=(-2, 2))
@@ -374,11 +384,11 @@ def plot_curves_3d_mat(curves):
 
     # legend
     if ncurves > 1:
-        ax.legend(fontsize=curves.fontS, loc=curves.legend_position,
+        ax.legend(fontsize=FONT_SIZE, loc=curves.legend_position,
                   framealpha=1, facecolor='grey')
 
     # set title
-    mpl.title(r'$' + curves.title + '$', fontsize=curves.fontS)
+    mpl.title(r'$' + curves.title + '$', fontsize=FONT_SIZE)
 
     # draw geometrical figures:
     for igeom in range(ngeoms):

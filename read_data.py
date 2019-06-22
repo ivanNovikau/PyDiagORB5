@@ -363,6 +363,7 @@ def init(dd):
 
     dd['wc'] = ymath.find_wc(B0, mass_pf, Z_pf)
     dd['cs'] = ymath.find_cs(Te_peak, mass_pf)
+    dd['vt'] = ymath.find_vt(Te_peak * dd['pf'].tau, mass_pf)
 
     dd['Lwork'] = (dd['sfmax'] - dd['sfmin']) * dd['a0']
 

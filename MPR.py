@@ -114,7 +114,7 @@ def choose_one_var_t(ovar, dd):
             for sp_name in sp_names[1:]:
                 vvar_sp, _, _, _ = jdote_es_species(dd, sp_name, mu_int, vpar_int)
                 vvar += vvar_sp
-        tit_var = species_name + ':\ <J*E>_{\mu, v_{\parallel}}'
+        tit_var = species_name + ':\ <\mathcal{P}>_{\mu, v_{\parallel}}'
         res['line_sum'] = '\mu = ' + line_mu + '$\n$ v_{\parallel} = ' + line_vpar
 
     if opt_var == 'efield':
@@ -416,9 +416,13 @@ def calc_gamma(oo_wg, oo_plot, oo_desc):
         if n_samples <= 10:
             flag_print_stat_full = True
 
-        dict_intervals = mix.get_t_intervals(
-            n_samples, t_work, min_gam_n_periods, gam_T_init
-        )
+        oo_get_intervals = {
+            'nsamples': n_samples,
+            't_work': t_work,
+            'min_n_periods': min_gam_n_periods,
+            't_period': gam_T_init
+        }
+        dict_intervals = mix.get_t_intervals(oo_get_intervals)
 
         t_intervals     = dict_intervals['t_intervals']
         ids_t_intervals = dict_intervals['ids_intervals']
@@ -482,9 +486,18 @@ def calc_gamma(oo_wg, oo_plot, oo_desc):
             'old_errorbar': 3 * fit_sigma_x
         }
 
-        curves = crv.Curves().xlab('\gamma[\omega_{ci}]').ylab('n')
-        curves.new().XS(n_bins).YS(gs).set_hist().alpha(1).leg('\gamma[\omega_{ci}]')
-        curves.new().XS(bins).YS(f_data_x).col('red')
+        curves = crv.Curves()\
+            .xlab('\gamma[\omega_{ci}]')\
+            .ylab('a.u.')
+        curves.flag_legend = True
+        curves.new()\
+            .XS(n_bins)\
+            .YS(gs)\
+            .set_hist().alpha(1).leg('histogram')
+        curves.new()\
+            .XS(bins)\
+            .YS(f_data_x)\
+            .col('red').leg('normal\ distribution')
         cpr.plot_curves(curves)
 
     # --- PRINTING RESULT ---

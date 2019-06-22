@@ -33,12 +33,12 @@ root_path = 'd:/Work-Projects/MyProgs/ORB_data/MPR/'
 str_comp = {
     'path_ITPA_1': 'nled/kin/linear/REF-WORK-CPS2019/',
     'project_name_1': 'NLED',
-    # 'path_ITPA_1': 'nled/adiab/vf8/',
-    # 'project_name_1': 'NLED-adiab',
     # 'path_ITPA_2': 'nled/kin/linear/ref-f0-short/',
     # 'project_name_2': 'NLED-short',
     'path_ITPA_2': 'GAMs/adiab/q15/',
     'project_name_2': 'GAM,\ q = 1.5',
+    'path_ITPA_3': 'nled/adiab/vf8/',
+    'project_name_3': 'NLED-adiab',
 }
 # endregion
 
@@ -46,7 +46,7 @@ str_comp = {
 # region --- Project structure initialization ---
 dd_init_egam = {
     'a0': 0.482,
-    'R0': 1.62,
+    'R0': 1.67,
     'B0': 2.2,
     'mass_pf': 2 * constants.proton_mass
 }
@@ -63,13 +63,6 @@ dd_init_gam = {
 
 reload()
 
-# dd = dict(dd_init_egam)
-# dd.update({
-#     'path': root_path + str_comp['path_ITPA_1'],
-#     'project_name': str_comp['project_name_1'],
-# })
-# rd.init(dd)
-#
 # dd_f0 = dict(dd_init_egam)
 # dd_f0.update({
 #     'path': root_path + str_comp['path_ITPA_2'],
@@ -83,6 +76,13 @@ dd_egam.update({
     'project_name': str_comp['project_name_1'],
 })
 rd.init(dd_egam)
+
+dd_egam_es = dict(dd_init_egam)
+dd_egam_es.update({
+    'path': root_path + str_comp['path_ITPA_3'],
+    'project_name': str_comp['project_name_3'],
+})
+rd.init(dd_egam_es)
 
 dd_gam = dict(dd_init_gam)
 dd_gam.update({

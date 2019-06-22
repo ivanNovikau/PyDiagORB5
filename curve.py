@@ -32,6 +32,8 @@ class Curve:
 
     flag_hist = False
 
+    data_norm_to = None
+
     def XS(self, v):
         self.xs = v
         return self
@@ -119,6 +121,10 @@ class Curve:
         self.pr_alpha = v
         return self
 
+    def norm_to(self, v):
+        self.data_norm_to = v
+        return self
+
 
 class Curves:
     list_curves = None
@@ -153,7 +159,7 @@ class Curves:
 
     flag_legend = True
     legend_position = 'best'
-    legend_fcol = 'grey'
+    legend_fcol = 'lightgray'
 
     def_colors = ['b', 'r', 'g', 'c', 'm',
                   'y', 'k', 'cyan', 'Purple', 'gray',
@@ -163,6 +169,9 @@ class Curves:
 
     x_style = 'sci'  # 'sci', 'plain'
     y_style = 'sci'  # 'sci', 'plain'
+
+    flag_maxlocator = False
+    maxlocator = 6
 
     def __init__(self):
         self.list_curves = []

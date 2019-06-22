@@ -300,7 +300,115 @@ def is_unique(y):
 
 
 # Create an array with different time intervals
-def get_t_intervals(nsamples, t_work, min_n_gam_periods, gam_t_period):
+def get_t_intervals(oo):
+    # ---------------------------------------------------------
+    # Create an array with several random time intervals within
+    # a particular working time domain. Every time interval
+    # is equal to an integer number of the GAM intervals.
+    # ---------------------------------------------------------
+    # -> nsamples - number of time intervals to choose
+    # -> t_work - working time domain
+    # -> min_n_periods - minimum number of a period that
+    #   should be inside of every time interval
+    # -> t_period - length of the period
+
+    # parameters:
+    nsamples = oo.get('nsamples', None)
+    t_work = oo.get('t_work', None)
+
+    min_n_periods = oo.get('min_n_periods', None)
+    t_period = oo.get('t_period', None)
+
+    # maximum begin time point
+    id_max_start_point, _, _ = get_ids(
+        t_work, t_work[-1] - min_n_periods * t_period
+    )
+    id_max_start_point -= 1
+    if id_max_start_point == 0:
+        print('ERROR: work time interval is too narrow.')
+        return None
+
+    # array with random begin time points
+    ids_points_begin = np.random.randint(
+        id_max_start_point + 1, size=nsamples
+    ).astype('uint64')
+
+    # For every random start point, define a length of a time interval
+    ids_chosen_points = [[None, None]]
+    for id_point_begin in ids_points_begin:
+
+        chosen_comb = [None, None]
+        count_n_begin_points = -1
+        while chosen_comb in ids_chosen_points:
+
+            # check if number of samples is too high
+            count_n_begin_points += 1
+            if count_n_begin_points > len(t_work):
+                print('Error: number of samples is too high, '
+                      'or work time domain is too narrow')
+                return None
+
+            # number of the GAM periods inside of the domain
+            # from the current start point till
+            # the right boundary of the working time domain
+            max_n_periods = np.int(
+                (t_work[-1] - t_work[id_point_begin]) / t_period
+            )
+
+            # array of available number of GAM periods
+            possible_n_periods = \
+                np.array([n_one for n_one in
+                          range(min_n_periods, max_n_periods + 1)
+                          ])
+
+            rand_n_period = None
+            while chosen_comb in ids_chosen_points:
+                # remove already used number of periods
+                possible_n_periods = \
+                    possible_n_periods[(possible_n_periods != rand_n_period)]
+
+                # if there are not more options of period numbers, then
+                # change a begin time point
+                if len(possible_n_periods) is 0:
+                    id_point_begin_new = id_point_begin
+                    while id_point_begin_new == id_point_begin:
+                        id_point_begin_new = np.random.randint(id_max_start_point + 1)
+                    id_point_begin = id_point_begin_new
+                    break
+
+                # choose a length of a time interval
+                rand_n_period = np.random.choice(possible_n_periods, replace=True)
+
+                # end time point
+                id_point_end, _, _ = get_ids(
+                    t_work,
+                    t_work[id_point_begin] + rand_n_period * t_period
+                )
+                chosen_comb = [id_point_begin, id_point_end]
+
+        ids_chosen_points.append(chosen_comb)
+
+    del ids_chosen_points[0]
+
+    res_t_intervals = []
+    for one_ids_time_interval in ids_chosen_points:
+        # noinspection PyTypeChecker
+        res_t_intervals.append(
+            t_work[one_ids_time_interval[0]:one_ids_time_interval[-1] + 1]
+        )
+
+    if is_unique(ids_chosen_points):
+        print('All chosen time intervals are unique.')
+
+    res = {
+        't_intervals': res_t_intervals,
+        'ids_intervals': ids_chosen_points,
+    }
+
+    return res
+
+
+def get_t_intervals_old(nsamples, t_work, min_n_gam_periods, gam_t_period):
     # ---------------------------------------------------------
     # Create an array with several random time intervals within
     # a particular working time domain. Every time interval
@@ -511,6 +619,7 @@ def get_t_intervals_zeros(nsamples, t_work, min_n_gam_periods, gam_t_period, t_j
     }
 
     return res
+
 
 
 

@@ -7,7 +7,9 @@ from scipy import constants
 from scipy import interpolate
 from scipy.fftpack import fft as sci_fft
 
-#-> avoid plotting here
+# avoid plotting here
+
+MIN_N_PEAKS = 3
 
 
 def reload():
@@ -15,7 +17,171 @@ def reload():
     mix.reload_module(mix)
 
 
-def estimate_w(x_init, y_init, oo={}):
+def estimate_w(x, y):
+    # find peaks of the signal
+    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
+    if np.size(ids_peaks) < MIN_N_PEAKS:
+        return None
+
+    x_peaks = x[ids_peaks]
+    y_peaks = abs(y[ids_peaks])
+
+    # frequency
+    w = np.pi / np.mean(np.diff(x_peaks))
+
+    x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
+    y_fit = y_peaks[0] * np.cos(w * x_fit)
+    x_fit += x[ids_peaks[0]]
+
+    # results
+    out = {'ids_peak': ids_peaks,
+           'w': w,
+           'y_fit': y_fit, 'x_fit': x_fit}
+    return out
+
+
+def estimate_g(x, y):
+    # initialize output:
+    out = {}
+
+    # find peaks of the signal
+    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
+    if len(ids_peaks) >= MIN_N_PEAKS:
+        x_peaks = x[ids_peaks]
+        y_peaks = abs(y[ids_peaks])
+
+        res = stats.theilslopes(
+            np.log(y_peaks),
+            x_peaks - x[ids_peaks[0]],
+            0.95
+        )
+        g = res[0]
+        b0 = res[1]
+        g_err_l = res[2]
+        g_err_u = res[3]
+        g_err = np.max([g_err_l, g_err_u])
+
+        out['ids_peaks'] = ids_peaks
+
+        x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
+        y_fit = np.exp(b0 + g * x_fit)
+        x_fit += x[ids_peaks[0]]
+    else:
+        out['ids_peaks'] = None
+
+        res = stats.theilslopes(
+            np.log(y),
+            x - x[0],
+            0.95
+        )
+        g = res[0]
+        b0 = res[1]
+        g_err_l = res[2]
+        g_err_u = res[3]
+        g_err = np.max([g_err_l, g_err_u])
+
+        x_fit = x - x[0]
+        y_fit = np.exp(b0 + g * x_fit)
+        x_fit += x[0]
+
+    # results
+    out['g'] = g
+    out['g_err'] = np.abs(g - g_err)
+    out['y_fit'] = y_fit
+    out['x_fit'] = x_fit
+
+    return out
+
+
+def estimate_wg(x, y):
+    # find peaks of the signal
+    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
+
+    if len(ids_peaks) >= MIN_N_PEAKS:
+        x_peaks = x[ids_peaks]
+        y_peaks = abs(y[ids_peaks])
+
+        # frequency
+        w = np.pi / np.mean(np.diff(x_peaks))
+
+        res = stats.theilslopes(
+            np.log(y_peaks),
+            x_peaks - x[ids_peaks[0]],
+            0.95
+        )
+        g = res[0]
+        b0 = res[1]
+        g_err_l = res[2]
+        g_err_u = res[3]
+        g_err = np.max([g_err_l, g_err_u])
+
+        # fitting signals:
+        x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
+        y_fit = np.cos(w * x_fit) * np.exp(b0 + g * x_fit)
+        x_fit += x[ids_peaks[0]]
+        out = {'ids_peaks': ids_peaks,
+               'w': w, 'g': g,
+               'w_err': None, 'g_err': np.abs(g - g_err),
+               'y_fit': y_fit, 'x_fit': x_fit}
+    else:
+        out = estimate_g(x, y)
+        out.update({
+            'w': None, 'w_err': None
+        })
+
+    return out
+
+
+def advanced_wg(x, y, flag_print=True):
+    def advanced_fitting(x, y, F, p0):
+        # p0 = [A00, g0, w0]
+        popt, pcov = curve_fit(F, x, y, p0=p0)
+        y_fit = F(x, *popt)
+        wg_errs = np.sqrt(np.diag(pcov))
+        res_adv = {
+            'g': popt[1], 'w': popt[2],
+            'g_err': 1.96*wg_errs[1], 'w_err': 1.96*wg_errs[2],
+            'y_fit': y_fit, 'x_fit': x
+        }
+        return res_adv
+
+    # estimation of w,g
+    wg_est = estimate_wg(x, y)
+
+    # initial result dictionary
+    out = {
+        'adv': None,
+        'est': wg_est
+    }
+
+    if len(wg_est['ids_peaks']) < MIN_N_PEAKS:
+        # fitting with only gamma
+        F = lambda x_loc, A0, g: A0 * np.exp(g * x_loc)
+        p0 = [y[0], wg_est['g'], None]
+    else:
+        # fitting with gamma and frequency
+        F = lambda x_loc, A0, g, w: A0 * np.cos(w * x_loc) * np.exp(g * x_loc)
+        p0 = [y[0], wg_est['g'], wg_est['w']]
+    try:
+        out_adv = advanced_fitting(x, y, F, p0)
+        out.update({'adv': out_adv})
+    except:
+        if flag_print:
+            print('Advanced fitting with dynamic rate failed.')
+        try:
+            if len(wg_est['ids_peaks']) >= MIN_N_PEAKS:
+                # fitting with frequency
+                F = lambda x_loc, A0, g, w: A0 * np.cos(w * x_loc)
+                p0 = [y[0], None, wg_est['w']]
+                out_adv = advanced_fitting(x, y, F, p0)
+                out.update({'adv': out_adv})
+        except:
+            if flag_print:
+                print('Advanced fitting with frequency failed.')
+    return out
+
+
+def estimate_w_old(x_init, y_init, oo={}):
     # additional parameters
     _, ids_x = mix.get_array_oo(oo, x_init, 'x')
     x = np.array(mix.get_slice(x_init, ids_x))
@@ -42,7 +208,7 @@ def estimate_w(x_init, y_init, oo={}):
     return out
 
 
-def estimate_g(x_init, y_init, oo={}):
+def estimate_g_old(x_init, y_init, oo={}):
     # additional parameters
     _, ids_x = mix.get_array_oo(oo, x_init, 'x')
     x = np.array(mix.get_slice(x_init, ids_x))
@@ -86,29 +252,7 @@ def estimate_g(x_init, y_init, oo={}):
     return out
 
 
-def estimate_w_max_fft(w, f, oo={}):
-    n_max = oo.get('n_max', 1)
-
-    ids_peaks, _ = scipy.signal.find_peaks(f, height=0)
-    f_peaks = f[ids_peaks]
-    w_peaks = w[ids_peaks]
-    ids_sort = np.argsort(f_peaks)
-
-    w_max, f_max = np.zeros(n_max), np.zeros(n_max)
-    nf = np.size(f_peaks)
-    for count_max in range(n_max):
-        id_sort = ids_sort[nf - 1 - count_max]
-        w_max[count_max] = w_peaks[id_sort]
-        f_max[count_max] = f_peaks[id_sort]
-
-    out = {
-        'w_max': w_max,
-        'f_max': f_max
-    }
-    return out
-
-
-def estimate_wg(x_init, y_init, oo={}):
+def estimate_wg_old(x_init, y_init, oo={}):
     # additional parameters
     _, ids_x = mix.get_array_oo(oo, x_init, 'x')
     x = np.array(mix.get_slice(x_init, ids_x))
@@ -139,7 +283,7 @@ def estimate_wg(x_init, y_init, oo={}):
     return out
 
 
-def advanced_wg(x_init, y_init, oo={}):
+def advanced_wg_old(x_init, y_init, oo={}):
     # additional parameters
     _, ids_x = mix.get_array_oo(oo, x_init, 'x')
     x = np.array(mix.get_slice(x_init, ids_x))
@@ -169,7 +313,7 @@ def advanced_wg(x_init, y_init, oo={}):
     return out
 
 
-def advanced_g(x_init, y_init, oo={}):
+def advanced_g_old(x_init, y_init, oo={}):
     # additional parameters
     _, ids_x = mix.get_array_oo(oo, x_init, 'x')
     x = np.array(mix.get_slice(x_init, ids_x))
@@ -196,6 +340,28 @@ def advanced_g(x_init, y_init, oo={}):
     out = {'est': wg_est,
            'g': popt[1],
            'y_fit': y_fit, 'x_fit': x}
+    return out
+
+
+def estimate_w_max_fft(w, f, oo={}):
+    n_max = oo.get('n_max', 1)
+
+    ids_peaks, _ = scipy.signal.find_peaks(f, height=0)
+    f_peaks = f[ids_peaks]
+    w_peaks = w[ids_peaks]
+    ids_sort = np.argsort(f_peaks)
+
+    w_max, f_max = np.zeros(n_max), np.zeros(n_max)
+    nf = np.size(f_peaks)
+    for count_max in range(n_max):
+        id_sort = ids_sort[nf - 1 - count_max]
+        w_max[count_max] = w_peaks[id_sort]
+        f_max[count_max] = f_peaks[id_sort]
+
+    out = {
+        'w_max': w_max,
+        'f_max': f_max
+    }
     return out
 
 
@@ -284,7 +450,7 @@ def filtering(x, y, oo):
         return res
 
     # determine a filter type
-    sel_filt = oo.get('sel_filt', 'rough')  # None, 'rough', 'smooth', 'fft_smooth'
+    sel_filt = oo.get('sel_filt', None)  # None, 'rough', 'smooth', 'fft_smooth'
     norm_w   = oo.get('norm_w', 1)
 
     # take the signal in a some predefined interval:
@@ -292,6 +458,7 @@ def filtering(x, y, oo):
     y_filt = y[ids_x_filt[0]:ids_x_filt[-1] + 1]
 
     # no any filtering
+    out = {}
     if sel_filt is None:
         out = res_None(x_filt, y_filt, norm_w)
     if sel_filt is 'rough':
@@ -307,7 +474,7 @@ def filtering(x, y, oo):
 
 
 def rough_filter(x, y, oo):
-    w_interval = oo.get('w_interval', [0, 0])
+    w_interval = oo.get('w_interval', None)
     norm_w = oo.get('norm_w', 1)
 
     ffres = fft_y(x, y, oo={'flag_f2_arranged': True})
@@ -320,13 +487,14 @@ def rough_filter(x, y, oo):
     yw2 = ffres['f2_raw']
 
     # filtering
-    if w_interval[-1] is 0:
-        yw2[0] = 0.0
-    else:
-        id_w1, _ = mix.find(w, w_interval[0])
-        id_w2, _ = mix.find(w, w_interval[-1])
-        yw2[id_w1:id_w2 + 1] = 0.0
-        yw2[nw2 - id_w2:nw2 - id_w1] = 0.0
+    if w_interval is not None:
+        if w_interval[-1] is 0:
+            yw2[0] = 0.0
+        else:
+            id_w1, _ = mix.find(w, w_interval[0])
+            id_w2, _ = mix.find(w, w_interval[-1])
+            yw2[id_w1:id_w2 + 1] = 0.0
+            yw2[nw2 - id_w2:nw2 - id_w1] = 0.0
 
     # new signal and its FFT
     y_new     = np.fft.irfft(yw2, np.size(ffres['x_new']))
@@ -382,7 +550,7 @@ def fft_smooth_filter(x, y, oo):
     w = w * norm_w
     w2 = w2 * norm_w
 
-    # smoothing of the filtering
+    # smoothing of the fft
     id_w1, _ = mix.find(w, w_interval[0])
     id_w2, _ = mix.find(w, w_interval[-1])
     yw2[id_w1:id_w2 + 1] = smooth(yw2[id_w1:id_w2 + 1], wind)
@@ -501,8 +669,11 @@ def find_rho_star(Lx):
     return 2. / Lx
 
 
-def find_norm(y):
-    abs_y = np.abs(y)
+def find_norm(y, y_norm_to=None):
+    if y_norm_to is None:
+        abs_y = np.abs(y)
+    else:
+        abs_y = np.abs(y_norm_to)
     y_norm = y / np.nanmax(abs_y[abs_y != np.inf])
     return y_norm
 

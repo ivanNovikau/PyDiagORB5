@@ -59,8 +59,15 @@ def GENE_ES_global(oo):
     inv_rho_star = 1. / rho_star
     renorm_phi = dd['wc'] * dd['R0'] / dd['cs']
 
-    curves = crv.Curves().xlab('x').ylab('t').tit('Phi')
-    curves.new().XS(x_gene).YS(t_gene * renorm_phi).ZS(phi_gene).lev(60)
+    curves = crv.Curves().xlab('t[wci^{-1}]').ylab('x').tit('Phi')
+    # curves.new()\
+    #     .XS(x_gene)\
+    #     .YS(t_gene * renorm_phi)\
+    #     .ZS(phi_gene).lev(60)
+    curves.new() \
+        .YS(x_gene) \
+        .XS(t_gene * renorm_phi) \
+        .ZS(phi_gene.T).lev(60)
     cpr.plot_curves_3d(curves)
 
     max_phi_gene = np.max(phi_gene, axis=0)  # -> function on t
@@ -75,12 +82,12 @@ def GENE_ES_global(oo):
     t_orb = vvar['x']
     leg_orb = vvar['legs'][0]
 
-    curves = crv.Curves().xlab('t').tit('ORB5:\ ' + leg_orb)
+    curves = crv.Curves().xlab('t[wci^{-1}]').tit('ORB5:\ ' + leg_orb)
     curves.new().XS(t_orb).YS(data_orb)
     cpr.plot_curves(curves)
 
     # # --- COMPARE ---
-    curves = crv.Curves().xlab('t').tit('max_s:\ \Phi')
+    curves = crv.Curves().xlab('t[wci^{-1}]').tit('max_s:\ \Phi')
     curves.flag_semilogy = flag_semilogy
     curves.new().XS(t_gene).YS(max_phi_gene).leg('GENE')
     curves.new().XS(t_orb).YS(data_orb).leg('ORB5')

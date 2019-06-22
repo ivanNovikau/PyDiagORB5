@@ -21,6 +21,7 @@
       <w>ffvvar</w>
       <w>ffvvars</w>
       <w>filt</w>
+      <w>filts</w>
       <w>fres</w>
       <w>jdote</w>
       <w>khat</w>
@@ -28,6 +29,7 @@
       <w>labr</w>
       <w>labx</w>
       <w>laby</w>
+      <w>maxlocator</w>
       <w>namesp</w>
       <w>nchi</w>
       <w>nlegs</w>
@@ -41,9 +43,11 @@
       <w>phinz</w>
       <w>poloidal</w>
       <w>potsc</w>
+      <w>prel</w>
       <w>progs</w>
       <w>pyqtgraph</w>
       <w>renormalize</w>
+      <w>scipy</w>
       <w>semilogy</w>
       <w>sqrt</w>
       <w>sugama</w>
