@@ -39,6 +39,12 @@ str_comp = {
     'project_name_2': 'GAM,\ q = 1.5',
     'path_ITPA_3': 'nled/adiab/vf8/',
     'project_name_3': 'NLED-adiab',
+    'path_ITPA_4': 'nled/kin/linear/beta-dep/2m5-REF',
+    'project_name_4': 'NLED-smaller-beta',
+    'path_ITPA_5': 'GAMs/adiab/q15-check2/',
+    'project_name_5': 'GAM,\ q = 1.5',
+    'path_ITPA_6': 'nled/adiab/s090/',
+    'project_name_6': 'NLED-adiab-smax090',
 }
 # endregion
 
@@ -90,5 +96,26 @@ dd_gam.update({
     'project_name': str_comp['project_name_2'],
 })
 rd.init(dd_gam)
+
+dd_egam_beta = dict(dd_init_egam)
+dd_egam_beta.update({
+    'path': root_path + str_comp['path_ITPA_4'],
+    'project_name': str_comp['project_name_4'],
+})
+rd.init(dd_egam_beta)
+
+dd_gam_check = dict(dd_init_gam)
+dd_gam_check.update({
+    'path': root_path + str_comp['path_ITPA_5'],
+    'project_name': str_comp['project_name_5'],
+})
+rd.init(dd_gam_check)
+
+dd_egam_es_s090 = dict(dd_init_gam)
+dd_egam_es_s090.update({
+    'path': root_path + str_comp['path_ITPA_6'],
+    'project_name': str_comp['project_name_6'],
+})
+rd.init(dd_egam_es_s090)
 
 # endregion

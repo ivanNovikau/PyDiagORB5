@@ -18,17 +18,16 @@ class Curve:
     ys = None
     zs = None
     ws = None
-    xlabel = ''
-    ylabel = ''
     legend = "_"
     style = '-'
     width = None
     color = 'blue'
     markersize = None
     markerfacecolor = "None"
-    colormap = 'jet'
+    colormap = 'jet'  # hot, jet, pink, hot_r, jet_r etc.
     levels = 10  # for contour plot
     pr_alpha = 1
+    flag_errorbar = False
 
     flag_hist = False
 
@@ -56,14 +55,6 @@ class Curve:
 
     def WS(self, v):
         self.ws = v
-        return self
-
-    def xlab(self, v):
-        self.xlabel = v
-        return self
-
-    def ylab(self, v):
-        self.ylabel = v
         return self
 
     def leg(self, v):
@@ -125,6 +116,12 @@ class Curve:
         self.data_norm_to = v
         return self
 
+    def set_errorbar(self, v, ys=None, xs=None):
+        self.flag_errorbar = v
+        self.ys_err = ys
+        self.xs_err = xs
+        return self
+
 
 class Curves:
     list_curves = None
@@ -134,11 +131,13 @@ class Curves:
     list_geoms = None
     n_geoms = 0
 
-    xlabel = '\ '
-    ylabel = '\ '
-    zlabel = '\ '
-    wlabel = '\ '
-    title = '\ '
+    list_text = None
+
+    xlabel = None
+    ylabel = None
+    zlabel = None
+    wlabel = None
+    title = None
 
     flag_semilogy = False
     flag_norm = False
@@ -179,6 +178,7 @@ class Curves:
         self.set_work()
 
         self.list_geoms = []
+        self.list_text = []
 
     def new(self, name_curve=None):
         new_curve = Curve()
@@ -199,6 +199,9 @@ class Curves:
     def newg(self, one_geom):
         self.list_geoms.append(one_geom)
         self.n_geoms += 1
+
+    def newt(self, one_text):
+        self.list_text.append(one_text)
 
     def load(self, curves_to_load):
         if curves_to_load is None:
@@ -260,11 +263,17 @@ class Curves:
         return self
 
     def tit(self, v):
-        self.title += v
+        if v is not None:
+            if self.title is None:
+                self.title = ''
+            self.title += v
         return self
 
     def titn(self, v):
-        self.title += '$\n$' + v
+        if v is not None:
+            if self.title is None:
+                self.title = ''
+            self.title += '$\n$' + v
         return self
 
     def new_tit(self, v):
@@ -361,4 +370,23 @@ class Curves:
                 new_list_curves.append(one_curve)
         new_list_curves.extend(list_curves_emp_leg)
         self.list_curves = new_list_curves
+
+
+class PlText:
+    x = None
+    y = None
+    line = ''
+    color = 'black'
+
+    def __init__(self, oo):
+        self.init_from_oo(oo)
+
+    def init_from_oo(self, oo):
+        self.x = oo.get('x', None)
+        self.y = oo.get('y', None)
+        self.line = oo.get('line', '')
+        self.color = oo.get('color', 'black')
+
+
+
 

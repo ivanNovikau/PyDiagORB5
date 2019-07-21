@@ -10,6 +10,8 @@ from scipy.fftpack import fft as sci_fft
 # avoid plotting here
 
 MIN_N_PEAKS = 3
+COEF_ERR = 1.96   # alpha-quantile of the standard normal distribution
+CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval, that corresponds to the alpha qunatile
 
 
 def reload():
@@ -53,7 +55,7 @@ def estimate_g(x, y):
         res = stats.theilslopes(
             np.log(y_peaks),
             x_peaks - x[ids_peaks[0]],
-            0.95
+            CONFIDENCE_PERC
         )
         g = res[0]
         b0 = res[1]
@@ -72,7 +74,7 @@ def estimate_g(x, y):
         res = stats.theilslopes(
             np.log(y),
             x - x[0],
-            0.95
+            CONFIDENCE_PERC
         )
         g = res[0]
         b0 = res[1]
@@ -107,7 +109,7 @@ def estimate_wg(x, y):
         res = stats.theilslopes(
             np.log(y_peaks),
             x_peaks - x[ids_peaks[0]],
-            0.95
+            CONFIDENCE_PERC
         )
         g = res[0]
         b0 = res[1]
@@ -140,7 +142,7 @@ def advanced_wg(x, y, flag_print=True):
         wg_errs = np.sqrt(np.diag(pcov))
         res_adv = {
             'g': popt[1], 'w': popt[2],
-            'g_err': 1.96*wg_errs[1], 'w_err': 1.96*wg_errs[2],
+            'g_err': COEF_ERR*wg_errs[1], 'w_err': COEF_ERR*wg_errs[2],
             'y_fit': y_fit, 'x_fit': x
         }
         return res_adv
@@ -178,168 +180,6 @@ def advanced_wg(x, y, flag_print=True):
         except:
             if flag_print:
                 print('Advanced fitting with frequency failed.')
-    return out
-
-
-def estimate_w_old(x_init, y_init, oo={}):
-    # additional parameters
-    _, ids_x = mix.get_array_oo(oo, x_init, 'x')
-    x = np.array(mix.get_slice(x_init, ids_x))
-    y = np.array(mix.get_slice(y_init, ids_x))
-
-    # find peaks of the signal
-    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
-    if np.size(ids_peaks) is 0:
-        return None
-
-    x_peaks = x[ids_peaks]
-    y_peaks = abs(y[ids_peaks])
-
-    # frequency
-    w = 2 * np.pi * 0.5 / np.mean(np.diff(x_peaks))
-
-    x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
-    y_fit = y_peaks[0] * np.cos(w * x_fit)
-
-    # results
-    out = {'x_peaks': x_peaks, 'y_peaks': y_peaks,
-           'w': w,
-           'y_fit': y_fit, 'x_fit': x_fit + x[ids_peaks[0]]}
-    return out
-
-
-def estimate_g_old(x_init, y_init, oo={}):
-    # additional parameters
-    _, ids_x = mix.get_array_oo(oo, x_init, 'x')
-    x = np.array(mix.get_slice(x_init, ids_x))
-    y = np.array(mix.get_slice(y_init, ids_x))
-
-    # initialize output:
-    out = {}
-
-    # find peaks of the signal
-    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
-    if len(ids_peaks) > 1:
-        x_peaks = x[ids_peaks]
-        y_peaks = abs(y[ids_peaks])
-        g, b0, r_value, p_value, std_err = stats.linregress(
-                                            x_peaks - x_peaks[0],
-                                            np.log(y_peaks)
-                                        )
-        out['x_peaks'] = x_peaks
-        out['y_peaks'] = y_peaks
-
-        x_fit = x[ids_peaks[0]:ids_peaks[-1] + 1] - x[ids_peaks[0]]
-        y_fit = np.exp(b0 + g * x_fit)
-        x_fit += x[ids_peaks[0]]
-    else:
-        out['x_peaks'] = None
-        out['y_peaks'] = None
-
-        g, b0, r_value, p_value, std_err = stats.linregress(
-                                                    x - x[0],
-                                                    np.log(y)
-                                                )
-        x_fit = x - x[0]
-        y_fit = np.exp(b0 + g * x_fit)
-        x_fit += x[0]
-
-    # results
-    out['g'] = g
-    out['y_fit'] = y_fit
-    out['x_fit'] = x_fit
-
-    return out
-
-
-def estimate_wg_old(x_init, y_init, oo={}):
-    # additional parameters
-    _, ids_x = mix.get_array_oo(oo, x_init, 'x')
-    x = np.array(mix.get_slice(x_init, ids_x))
-    y = np.array(mix.get_slice(y_init, ids_x))
-
-    # find peaks of the signal
-    ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
-    if np.size(ids_peaks) is 0:
-        return None
-
-    x_peaks = x[ids_peaks]
-    y_peaks = abs(y[ids_peaks])
-
-    # frequency
-    w = 2 * np.pi * 0.5 / np.mean(np.diff(x_peaks))
-    g, b0,  r_value, p_value, std_err = stats.linregress(
-                                        x_peaks - x[ids_peaks[0]],
-                                        np.log(y_peaks)
-                                    )
-
-    x_fit = x[ids_peaks[0]:ids_peaks[-1]+1] - x[ids_peaks[0]]
-    y_fit = np.cos(w * x_fit) * np.exp(b0 + g * x_fit)
-
-    # results
-    out = {'x_peaks': x_peaks, 'y_peaks': y_peaks,
-          'w': w, 'g': g,
-          'y_fit': y_fit, 'x_fit': x_fit + x[ids_peaks[0]]}
-    return out
-
-
-def advanced_wg_old(x_init, y_init, oo={}):
-    # additional parameters
-    _, ids_x = mix.get_array_oo(oo, x_init, 'x')
-    x = np.array(mix.get_slice(x_init, ids_x))
-    y = np.array(mix.get_slice(y_init, ids_x))
-
-    # estimation of w,g
-    wg_est = oo.get('est', None)
-    if wg_est is None:
-        wg_est = estimate_wg(x, y)
-
-    # test function
-    F = lambda x_loc, A0, w, g: A0 * np.cos(w*x_loc) * np.exp(g*x_loc)
-
-    # initial guess
-    p0 = [y[0], wg_est['w'], wg_est['g']]
-
-    # nonlinear fitting
-    popt, pcov = curve_fit(F, x - x[0], y, p0)
-
-    # fitted function
-    y_fit = F(x - x[0], *popt)
-
-    # results
-    out = {'est': wg_est,
-           'w': popt[1], 'g': popt[2],
-           'y_fit': y_fit, 'x_fit': x}
-    return out
-
-
-def advanced_g_old(x_init, y_init, oo={}):
-    # additional parameters
-    _, ids_x = mix.get_array_oo(oo, x_init, 'x')
-    x = np.array(mix.get_slice(x_init, ids_x))
-    y = np.array(mix.get_slice(y_init, ids_x))
-
-    # estimation of w,g
-    wg_est = oo.get('est', None)
-    if wg_est is None:
-        wg_est = estimate_wg(x, y)
-
-    # test function
-    F = lambda x, A0, g: A0 * np.exp(g*x)
-
-    # initial guess
-    p0 = [y[0], wg_est['g']]
-
-    # nonlinear fitting
-    popt, pcov = curve_fit(F, x - x[0], y, p0)
-
-    # fitted function
-    y_fit = F(x - x[0], *popt)
-
-    # results
-    out = {'est': wg_est,
-           'g': popt[1],
-           'y_fit': y_fit, 'x_fit': x}
     return out
 
 
@@ -491,8 +331,11 @@ def rough_filter(x, y, oo):
         if w_interval[-1] is 0:
             yw2[0] = 0.0
         else:
-            id_w1, _ = mix.find(w, w_interval[0])
-            id_w2, _ = mix.find(w, w_interval[-1])
+            if w_interval[-1] is -1 or w_interval[-1] is None:
+                w_interval[-1] = w[-1]
+
+            ids_w, _, _ = mix.get_ids(w, w_interval)
+            id_w1, id_w2 = ids_w[0], ids_w[-1]
             yw2[id_w1:id_w2 + 1] = 0.0
             yw2[nw2 - id_w2:nw2 - id_w1] = 0.0
 

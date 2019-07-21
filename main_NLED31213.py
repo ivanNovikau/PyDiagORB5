@@ -28,67 +28,60 @@ def reload():
     mix.reload_module(common)
 
 
-# region --- LINEAR SIMULATIONS ---
-root_path = 'd:/Work-Projects/MyProgs/ORB_data/MPR/'
-str_comp = {
-    'path_ITPA_1': 'nled/kin/linear/REF-WORK-CPS2019/',
-    'project_name_1': 'NLED',
-    # 'path_ITPA_1': 'nled/adiab/vf8/',
-    # 'project_name_1': 'NLED-adiab',
-    # 'path_ITPA_2': 'nled/kin/linear/ref-f0-short/',
-    # 'project_name_2': 'NLED-short',
-    'path_ITPA_2': 'GAMs/adiab/q15/',
-    'project_name_2': 'GAM,\ q = 1.5',
-}
-# endregion
+def set_dd(dd_loc, root, path_loc, name_loc):
+    proj_loc = {
+        'path': root + path_loc,
+        'name': name_loc,
+    }
+    dd_loc.update({'path': proj_loc['path'], 'project_name': proj_loc['name']})
+    rd.init(dd_loc)
+    return dd_loc
 
 
-# region --- Project structure initialization ---
-dd_init_egam = {
+reload()
+root_ref = 'd:/Work-Projects/MyProgs/ORB_data/MPR/'
+root_LA = 'd:/Work-Projects/MyProgs/ORB_data/MPR/nled/LIN/adiab/'
+root_LK = 'd:/Work-Projects/MyProgs/ORB_data/MPR/nled/LIN/kin/'
+
+root_new = 'd:/Work-Projects/MyProgs/ORB_data/NLED/LIN/'
+
+dd_init = {
     'a0': 0.482,
     'R0': 1.62,
     'B0': 2.2,
     'mass_pf': 2 * constants.proton_mass
 }
-dd_init_gam = {
-    'a0': 0.5,
-    'R0': 1.65,
-    'B0': 2,
-    'mass_pf': 2 * constants.proton_mass
-}
-# endregion
+
+# --- REFERENCE EM LINEAR EGAM SIMULATION ---
+dd_egam_ref = set_dd(dict(dd_init), root_ref,
+                 'nled/kin/linear/REF-WORK-CPS2019/', 'REF')
+
+# --- GAM --
+n0a_speak00  = set_dd(dict(dd_init), root_LA,  '/scan-n/speak00/n0/', 'ES\ GAM:\ speak = 0.0')
+n0a      = set_dd(dict(dd_init), root_new, '/scan-n/n0a',         'ES\ GAM:\ speak = 0.90')
+n0k      = set_dd(dict(dd_init), root_new, '/scan-n/n0k',     'EM\ GAM:\ speak = 0.90')
+
+# --- EGAM: corrected density profiles ---
+# b025_dt20 = set_dd(dict(dd_init), root_new, '/n0-egam/025b-dt20', 'ES\ EGAMb: dt = 20')
+# b025_dt10 = set_dd(dict(dd_init), root_new, '/n0-egam/025b-dt10', 'ES\ EGAMb: dt = 10')
+# b025_dt5 = set_dd(dict(dd_init), root_new,  '/n0-egam/025b-dt5',  'ES\ EGAMb: dt = 5')
+# m025_dt20 = set_dd(dict(dd_init), root_new, '/n0-egam/025m-dt20', 'ES\ EGAMm: dt = 20')
+# m025_dt10 = set_dd(dict(dd_init), root_new, '/n0-egam/025m-dt10', 'ES\ EGAMm: dt = 10')
+# m025_dt5 = set_dd(dict(dd_init), root_new,  '/n0-egam/025m-dt5',  'ES\ EGAMm: dt = 5')
+
+b025_f001_dt10 = set_dd(dict(dd_init), root_new, '/n0-egam/025b-f001-dt10', 'ES\ EGAMb: f = 0.01, dt = 10')
+b025_f001_N37  = set_dd(dict(dd_init), root_new, '/n0-egam/025b-f001-N37', 'ES\ EGAMb: f = 0.01, N = 3e7')
+
+b025_f009 = set_dd(dict(dd_init), root_new, '/n0-egam/025b-dt20', 'ES\ EGAMb: f = 0.0949')
+b025_f007 = set_dd(dict(dd_init), root_new, '/n0-egam/025b-f007', 'ES\ EGAMb: f = 0.07')
+b025_f005 = set_dd(dict(dd_init), root_new, '/n0-egam/025b-f005', 'ES\ EGAMb: f = 0.05')
+b025_f002 = set_dd(dict(dd_init), root_new, '/n0-egam/025b-f002', 'ES\ EGAMb: f = 0.02')
+b025_f001 = set_dd(dict(dd_init), root_new, '/n0-egam/025b-f001', 'ES\ EGAMb: f = 0.01')
+
+m025_f009 = set_dd(dict(dd_init), root_new, '/n0-egam/025m-dt20', 'ES\ EGAMm: f = 0.0949')
+m025_f007 = set_dd(dict(dd_init), root_new, '/n0-egam/025m-f007', 'ES\ EGAMm: f = 0.07')
+m025_f005 = set_dd(dict(dd_init), root_new, '/n0-egam/025m-f005', 'ES\ EGAMm: f = 0.05')
+m025_f002 = set_dd(dict(dd_init), root_new, '/n0-egam/025m-f002', 'ES\ EGAMm: f = 0.02')
+m025_f001 = set_dd(dict(dd_init), root_new, '/n0-egam/025m-f001', 'ES\ EGAMm: f = 0.01')
 
 
-# region --- LINEAR STRUCTURES ---
-
-reload()
-
-# dd = dict(dd_init_egam)
-# dd.update({
-#     'path': root_path + str_comp['path_ITPA_1'],
-#     'project_name': str_comp['project_name_1'],
-# })
-# rd.init(dd)
-#
-# dd_f0 = dict(dd_init_egam)
-# dd_f0.update({
-#     'path': root_path + str_comp['path_ITPA_2'],
-#     'project_name': str_comp['project_name_2'],
-# })
-# rd.init(dd_f0)
-
-dd_egam = dict(dd_init_egam)
-dd_egam.update({
-    'path': root_path + str_comp['path_ITPA_1'],
-    'project_name': str_comp['project_name_1'],
-})
-rd.init(dd_egam)
-
-dd_gam = dict(dd_init_gam)
-dd_gam.update({
-    'path': root_path + str_comp['path_ITPA_2'],
-    'project_name': str_comp['project_name_2'],
-})
-rd.init(dd_gam)
-
-# endregion

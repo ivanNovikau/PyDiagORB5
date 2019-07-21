@@ -17,10 +17,6 @@ import Geom as geom
 import numpy as np
 import scipy.signal
 from scipy.stats import norm as stat_norm
-import matplotlib.mlab as mlab
-from scipy import interpolate
-import h5py as h5
-from scipy.signal import correlate
 
 
 def reload():
@@ -242,9 +238,9 @@ def plot_vars_2d(oo):
     vvars = choose_vars(oo_use)
 
     # additional data:
-    labx = oo.get('labx', 't[\omega_{ci}^{-1}]')  # x-label
-    laby = oo.get('labx', 's')  # y-label
-    tit_plot   = oo.get('tit_plot', '')  # title
+    labx = oo.get('labx', None)  # x-label
+    laby = oo.get('labx', None)  # y-label
+    tit_plot   = oo.get('tit_plot', None)  # title
 
     flag_norm     = oo.get('flag_norm', False)
     flag_semilogy = oo.get('flag_semilogy', False)
@@ -253,7 +249,7 @@ def plot_vars_2d(oo):
     for ivar in range(n_vars):
         vvar = vvars[ivar]
         leg = vvar['legs'][0]
-        if tit_plot is '':
+        if tit_plot is None:
             tit_plot_res = leg
         else:
             tit_plot_res = tit_plot
@@ -263,9 +259,18 @@ def plot_vars_2d(oo):
         curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot_res)
         curves.flag_norm     = flag_norm
         curves.flag_semilogy = flag_semilogy
-        x1, ids_x1 = mix.get_array_oo(oo, vvar[vvar['x1']], vvar['x1'])
-        x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
-        data = mix.get_slice(vvars[ivar]['data'], ids_x1, ids_x2)
+
+        if vvar['x1'] is 'r' and vvar['x2'] is 'z':
+            _, ids_s   = mix.get_array_oo(oo, vvar['s'],   's')
+            _, ids_chi = mix.get_array_oo(oo, vvar['chi'], 'chi')
+            x1 = mix.get_slice(vvar['r'], ids_chi, ids_s)
+            x2 = mix.get_slice(vvar['z'], ids_chi, ids_s)
+            data = mix.get_slice(vvars[ivar]['data'], ids_s, ids_chi)
+        else:
+            x1, ids_x1 = mix.get_array_oo(oo, vvar[vvar['x1']], vvar['x1'])
+            x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
+            data = mix.get_slice(vvars[ivar]['data'], ids_x1, ids_x2)
+
         curves.new().XS(x1).YS(x2).ZS(data).lev(60)
         cpr.plot_curves_3d(curves)
 
@@ -284,9 +289,10 @@ def plot_vars_1d(oo):
     n_vars = len(vvars)
 
     # additional data:
-    labx       = oo.get('labx', '')  # x-label
-    laby       = oo.get('laby', '')  # y-label
-    tit_plot   = oo.get('tit_plot', '')  # title
+    labx       = oo.get('labx', None)  # x-label
+    laby       = oo.get('laby', None)  # y-label
+    tit_plot   = oo.get('tit_plot', None)  # title
+    stys       = oo.get('stys', None)
 
     flag_norm     = oo.get('flag_norm', False)
     flag_semilogy = oo.get('flag_semilogy', False)
@@ -297,6 +303,7 @@ def plot_vars_1d(oo):
     curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)
     curves.flag_norm     = flag_norm
     curves.flag_semilogy = flag_semilogy
+    count_line = -1
     for ivar in range(n_vars):
         vvar = vvars[ivar]
         datas = vvar['data']
@@ -304,13 +311,20 @@ def plot_vars_1d(oo):
         legs  = vvar['legs']
         ns_av = len(datas)
         for is_av in range(ns_av):
+            count_line += 1
+
             data = mix.get_slice(datas[is_av], ids_x)
 
             x = x_init
             if func_mod is not None:
                 x, data = func_mod(x_init, data)
 
-            curves.new().XS(x).YS(data).leg(legs[is_av])
+            sty_current = '-'
+            if stys is not None:
+                if count_line < len(stys):
+                    sty_current = stys[count_line]
+
+            curves.new().XS(x).YS(data).leg(legs[is_av]).sty(sty_current)
     # curves.set_colors_styles()
     if len(curves.list_curves) is not 0:
         cpr.plot_curves(curves)
@@ -344,7 +358,7 @@ def plot_fft_1d(oo):
     # - frequency normalization (notation) -
     sel_norm = oo.get('sel_norm', 'wc')
 
-    line_w = ''
+    line_w = None
     if sel_norm == 'khz':
         line_w = '\omega,\ kHz'
     if sel_norm == 'wc':
@@ -356,8 +370,8 @@ def plot_fft_1d(oo):
 
     # additional data:
     labx = oo.get('labx', line_w)  # x-label
-    laby = oo.get('laby', '')  # y-label
-    tit_plot = oo.get('tit_plot', '')  # title
+    laby = oo.get('laby', None)  # y-label
+    tit_plot  = oo.get('tit_plot', None)  # title
 
     flag_norm = oo.get('flag_norm', False)
 
@@ -428,7 +442,7 @@ def plot_fft_2d(oo):
     # - frequency normalization (notation) -
     sel_norm = oo.get('sel_norm', 'wc')
 
-    line_w = ''
+    line_w = None
     if sel_norm == 'khz':
         line_w = '\omega,\ kHz'
     if sel_norm == 'wc':
@@ -610,7 +624,7 @@ def find_gamma(oo):
     return
 
 
-# NEW: calculation of the frequency and dynamic rate:
+# NEW: calculation of the frequency and dynamic rate at one radial point:
 def calc_wg(oo_var, oo_wg, oo_plot):
     # -------------------------------------------------------------------------------
     # -> oo_var - dictionary to choose a variable
@@ -624,7 +638,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
     #       calculate the frequency
     #   False:
     #       calculate gamma and frequency from the initial_signal
-    # 'sel_norm': 'wc', 'vt':
+    # 'sel_norm': 'wc', 'vt', 'khz':
     #       output normalization
     # ---
     # 'flag_stat' = True:
@@ -664,10 +678,12 @@ def calc_wg(oo_var, oo_wg, oo_plot):
     # 't_plot' - domain of plotting;
     # 'flag_norm' = True: normalized plots;
     # 'flag_semilogy' = True: Y-axis in logarithmic scale;
+    # 'flag_plot_print' = True: plot results and print values on screen
     # -------------------------------------------------------------------------------
 
     # - None-filter -
     non_filt = {'sel_filt': None}
+    out_res = {}
 
     # - FUNCTION: filtering at one stage -
     def one_stage_filtering(x, y, oo_filt_loc):
@@ -690,14 +706,17 @@ def calc_wg(oo_var, oo_wg, oo_plot):
         return dict_loc
 
     # - FUNCTION: get result -
-    def give_res(dict_wg_loc, name_method, name_value):
+    def give_res(dict_wg_loc, name_method, name_value, coef_norm):
         value_res, err_value = None, None
         if dict_wg_loc[name_method] is not None:
             value_res = dict_wg_loc[name_method][name_value]
             err_value = dict_wg_loc[name_method][name_value + '_err']
 
         # normalization:
-
+        if value_res is not None:
+            value_res *= coef_norm
+        if err_value is not None:
+            err_value *= coef_norm
 
         line_value = 'None'
         if value_res is not None:
@@ -706,6 +725,9 @@ def calc_wg(oo_var, oo_wg, oo_plot):
                 line_value += ' +- {:0.3e}'.format(err_value)
 
         return value_res, line_value
+
+    # - project structure -
+    dd = oo_var.get('dds', None)[0]
 
     # - choose a variable -
     dict_var = choose_vars(oo_var)[0]
@@ -717,7 +739,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
 
     # --- Frequency/rate calculation PARAMETERS ---
     t_work = oo_wg.get('t_work', [])
-    sel_norm_global = oo_wg.get('sel_norm', 'wc')
+
     if len(t_work) == 0 or t_work is None:
         t_work = t_init
     flag_two_stages = oo_wg.get('flag_two_stages', False)
@@ -737,6 +759,21 @@ def calc_wg(oo_var, oo_wg, oo_plot):
     if n_samples <= 10:
         flag_print = True
 
+    sel_norm = oo_wg.get('sel_norm', 'wc')
+    coef_norm_global_w, coef_norm_global_g, line_norm_w, line_norm_g = None, None, '', ''
+    if sel_norm == 'wc':
+        line_norm_w = line_norm_g = '[wci]'
+        coef_norm_global_w = coef_norm_global_g = 1
+    if sel_norm == 'vt':
+        line_norm_w = line_norm_g = '[sqrt(2)*vt/R0]'
+        coef_norm_global_w = coef_norm_global_g = \
+            dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
+    if sel_norm == 'khz':
+        line_norm_w = '(kHz)'
+        line_norm_g = '(10^3 s)'
+        coef_norm_global_w = dd['wc'] / (1e3 * 2*np.pi)
+        coef_norm_global_g = dd['wc'] / 1e3
+
     # --- GLOBAL FILTERING ---
     dict_global = one_stage_filtering(t_init, data_init, oo_filt_global)
     data_global = dict_global['filt']
@@ -752,116 +789,120 @@ def calc_wg(oo_var, oo_wg, oo_plot):
     # - PLOTTING: GLOBAL FILTERING -
 
     # parameters of plotting
-    t_plot = oo_plot.get('t_plot', [])
-    if len(t_plot) == 0:
-        t_plot = t_init
+    flag_plot_print = oo_plot.get('flag_plot_print', True)
 
-    ids_plot_init, _, _   = mix.get_ids(t_init,   t_plot)
-    ids_plot_global, _, _ = mix.get_ids(t_global, t_plot)
-    ids_plot_work, _, _   = mix.get_ids(t_work,   t_plot)
+    if flag_plot_print:
+        t_plot = oo_plot.get('t_plot', [])
+        if len(t_plot) == 0:
+            t_plot = t_init
 
-    flag_norm     = oo_plot.get('flag_norm', False)
-    flag_semilogy = oo_plot.get('flag_semilogy', False)
+        ids_plot_init, _, _   = mix.get_ids(t_init,   t_plot)
+        ids_plot_global, _, _ = mix.get_ids(t_global, t_plot)
+        ids_plot_work, _, _   = mix.get_ids(t_work,   t_plot)
 
-    leg_data = dict_var['legs'][0]
+        flag_norm     = oo_plot.get('flag_norm', False)
+        flag_semilogy = oo_plot.get('flag_semilogy', False)
 
-    # work domain
-    area_work = geom.Fill()
-    area_work.xs = [t_work[0], t_work[-1], t_work[-1], t_work[0]]
-    area_work.ys = ['limb', 'limb', 'limu', 'limu']
-    area_work.color = 'grey'
-    area_work.alpha = 0.3
+        leg_data = dict_var['legs'][0]
 
-    # plotting time evolution
-    curves = crv.Curves() \
-        .xlab('t[\omega_{ci}^{-1}]') \
-        .tit(dict_var['tit']) \
-        .xlim([t_plot[0], t_plot[-1]])
-    curves.flag_norm = flag_norm
-    curves.flag_semilogy = flag_semilogy
-    if flag_norm:
-        curves.ylab('norm.')
-    curves.newg(area_work)
-    curves.new() \
-        .XS(t_init[ids_plot_init]) \
-        .YS(data_init[ids_plot_init]) \
-        .leg(leg_data)
-    curves.new() \
-        .XS(t_global[ids_plot_global]) \
-        .YS(data_global[ids_plot_global]) \
-        .leg(leg_data + ': globally\ filtered').sty(':')
-    curves.new().norm_to(data_global[ids_plot_init])\
-        .XS(t_peaks_work)\
-        .YS(data_work[ids_peaks_work])\
-        .leg(leg_data + ':\ peaks').sty('o')
-    cpr.plot_curves(curves)
+        # work domain
+        area_work = geom.Fill()
+        area_work.xs = [t_work[0], t_work[-1], t_work[-1], t_work[0]]
+        area_work.ys = ['limb', 'limb', 'limu', 'limu']
+        area_work.color = 'grey'
+        area_work.alpha = 0.3
 
-    # plotting FFT
-    curves = crv.Curves() \
-        .xlab('\omega[\omega_{ci}]') \
-        .tit(leg_data + ':\ FFT')
-    curves.flag_norm = flag_norm
-    if flag_norm:
-        curves.ylab('norm.')
-    curves.new() \
-        .XS(dict_fft_init['w2']) \
-        .YS(dict_fft_init['fft_init_2']) \
-        .leg('FFT:\ initial')
-    curves.new() \
-        .XS(dict_global['w2']) \
-        .YS(dict_global['fft_filt_2']) \
-        .leg('FFT:\ globally\ filtered:\ whole\ time\ domain').sty(':')
-    curves.new() \
-        .XS(dict_fft_work_global['w2']) \
-        .YS(dict_fft_work_global['fft_init_2']) \
-        .leg('FFT:\ globally\ filtered:\ work\ time\ domain').sty(':')
-    cpr.plot_curves(curves)
+        # plotting time evolution
+        curves = crv.Curves() \
+            .xlab('t[\omega_{ci}^{-1}]') \
+            .tit(dict_var['tit']) \
+            .xlim([t_plot[0], t_plot[-1]])
+        curves.flag_norm = flag_norm
+        curves.flag_semilogy = flag_semilogy
+        if flag_norm:
+            curves.ylab('norm.')
+        curves.newg(area_work)
+        curves.new() \
+            .XS(t_init[ids_plot_init]) \
+            .YS(data_init[ids_plot_init]) \
+            .leg(leg_data)
+        curves.new() \
+            .XS(t_global[ids_plot_global]) \
+            .YS(data_global[ids_plot_global]) \
+            .leg(leg_data + ': globally\ filtered').sty(':')
+        curves.new().norm_to(data_global[ids_plot_init])\
+            .XS(t_peaks_work)\
+            .YS(data_work[ids_peaks_work])\
+            .leg(leg_data + ':\ peaks').sty('o')
+        cpr.plot_curves(curves)
+
+        # plotting FFT
+        curves = crv.Curves() \
+            .xlab('\omega[\omega_{ci}]') \
+            .tit(leg_data + ':\ FFT')
+        curves.flag_norm = flag_norm
+        if flag_norm:
+            curves.ylab('norm.')
+        curves.new() \
+            .XS(dict_fft_init['w2']) \
+            .YS(dict_fft_init['fft_init_2']) \
+            .leg('FFT:\ initial')
+        curves.new() \
+            .XS(dict_global['w2']) \
+            .YS(dict_global['fft_filt_2']) \
+            .leg('FFT:\ globally\ filtered:\ whole\ time\ domain').sty(':')
+        curves.new() \
+            .XS(dict_fft_work_global['w2']) \
+            .YS(dict_fft_work_global['fft_init_2']) \
+            .leg('FFT:\ globally\ filtered:\ work\ time\ domain').sty(':')
+        cpr.plot_curves(curves)
 
     # --- NAIVE CALCULATION ---
     if not flag_two_stages:
         dict_wg = ymath.advanced_wg(t_work, data_work)
 
-        # - plotting -
-        curves = crv.Curves() \
-            .xlab('t[\omega_{ci}^{-1}]') \
-            .tit('Freq./Gamma\ calculation')
-        curves.flag_norm = flag_norm
-        curves.flag_semilogy = flag_semilogy
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.new() \
-            .XS(t_work) \
-            .YS(data_work) \
-            .leg(leg_data)
-        curves.new().norm_to(data_work) \
-            .XS(t_work[dict_wg['est']['ids_peaks']]) \
-            .YS(data_work[dict_wg['est']['ids_peaks']]) \
-            .leg('peaks').sty('o')
-        curves.new() \
-            .XS(dict_wg['est']['x_fit']) \
-            .YS(dict_wg['est']['y_fit']) \
-            .leg('LIN.\ REGRESSION').sty(':')
-        if dict_wg['adv'] is not None:
+        if flag_plot_print:
+            # - plotting -
+            curves = crv.Curves() \
+                .xlab('t[\omega_{ci}^{-1}]') \
+                .tit('Freq./Gamma\ calculation')
+            curves.flag_norm = flag_norm
+            curves.flag_semilogy = flag_semilogy
+            if flag_norm:
+                curves.ylab('norm.')
             curves.new() \
-                .XS(dict_wg['adv']['x_fit']) \
-                .YS(dict_wg['adv']['y_fit']) \
-                .leg('NL\ FITTING').sty(':')
-        cpr.plot_curves(curves)
+                .XS(t_work) \
+                .YS(data_work) \
+                .leg(leg_data)
+            curves.new().norm_to(data_work) \
+                .XS(t_work[dict_wg['est']['ids_peaks']]) \
+                .YS(data_work[dict_wg['est']['ids_peaks']]) \
+                .leg('peaks').sty('o')
+            curves.new() \
+                .XS(dict_wg['est']['x_fit']) \
+                .YS(dict_wg['est']['y_fit']) \
+                .leg('LIN.\ REGRESSION').sty(':')
+            if dict_wg['adv'] is not None:
+                curves.new() \
+                    .XS(dict_wg['adv']['x_fit']) \
+                    .YS(dict_wg['adv']['y_fit']) \
+                    .leg('NL\ FITTING').sty(':')
+            cpr.plot_curves(curves)
 
-        # - results -
-        w_est, line_w_est = give_res(dict_wg, 'est', 'w')
-        g_est, line_g_est = give_res(dict_wg, 'est', 'g')
-        w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w')
-        g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g')
+            # - results -
+            w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
+            g_est, line_g_est = give_res(dict_wg, 'est', 'g', coef_norm_global_g)
+            w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
+            g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
 
-        line_res = '--- NAIVE CALCULATION ---\n'
-        line_res += '--- ESTIMATION ---\n'
-        line_res += 'w[wci] = ' + line_w_est + '\n'
-        line_res += 'g[wci] = ' + line_g_est + '\n'
-        line_res += '--- NL FITTING ---\n'
-        line_res += 'w[wci] = ' + line_w_adv + '\n'
-        line_res += 'g[wci] = ' + line_g_adv
-        print(line_res)
+            line_res = '--- NAIVE CALCULATION ---\n'
+            line_res += '--- ESTIMATION ---\n'
+            line_res += 'w' + line_norm_w + ' = ' + line_w_est + '\n'
+            line_res += 'g' + line_norm_g + ' = ' + line_g_est + '\n'
+            line_res += '--- NL FITTING ---\n'
+            line_res += 'w' + line_norm_w + ' = ' + line_w_adv + '\n'
+            line_res += 'g' + line_norm_g + ' = ' + line_g_adv
+            print(line_res)
     else:
         # - FIND GAMMA -
         dict_gamma_filt = one_stage_filtering(t_work, data_work, oo_filt_gamma)
@@ -869,15 +910,16 @@ def calc_wg(oo_var, oo_wg, oo_plot):
         t_gamma    = dict_gamma_filt['x']
         dict_gamma = ymath.advanced_wg(t_gamma, data_gamma)
 
-        w_est_prel, line_w_est_prel = give_res(dict_gamma, 'est', 'w')
-        g_est, line_g_est           = give_res(dict_gamma, 'est', 'g')
-        w_adv_prel, line_w_adv_prel = give_res(dict_gamma, 'adv', 'w')
-        g_adv, line_g_adv           = give_res(dict_gamma, 'adv', 'g')
+        w_est_prel, line_w_est_prel = give_res(dict_gamma, 'est', 'w', coef_norm_global_w)
+        g_est, line_g_est           = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
+        w_adv_prel, line_w_adv_prel = give_res(dict_gamma, 'adv', 'w', coef_norm_global_w)
+        g_adv, line_g_adv           = give_res(dict_gamma, 'adv', 'g', coef_norm_global_g)
 
         # - FIND FREQUENCY -
         g_mult = g_est
         if g_adv is not None:
             g_mult = g_adv
+        g_mult /= coef_norm_global_g
         data_work_exp = data_work * np.exp(- g_mult * t_work)
         dict_freq_filt = one_stage_filtering(
             t_work,
@@ -888,154 +930,160 @@ def calc_wg(oo_var, oo_wg, oo_plot):
         t_freq    = dict_freq_filt['x']
         dict_freq = ymath.advanced_wg(t_freq, data_freq)
 
-        w_est, line_w_est           = give_res(dict_freq, 'est', 'w')
-        g_est_zero, line_g_est_zero = give_res(dict_freq, 'est', 'g')
-        w_adv, line_w_adv           = give_res(dict_freq, 'adv', 'w')
-        g_adv_zero, line_g_adv_zero = give_res(dict_freq, 'adv', 'g')
+        w_est, line_w_est           = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
+        g_est_zero, line_g_est_zero = give_res(dict_freq, 'est', 'g', coef_norm_global_g)
+        w_adv, line_w_adv           = give_res(dict_freq, 'adv', 'w', coef_norm_global_w)
+        g_adv_zero, line_g_adv_zero = give_res(dict_freq, 'adv', 'g', coef_norm_global_g)
 
-        # plotting: gamma: filtering
-        curves = crv.Curves() \
-            .xlab('t[\omega_{ci}^{-1}]') \
-            .tit('Gamma\ calculation:\ filtering')
-        curves.flag_norm        = flag_norm
-        curves.flag_semilogy    = flag_semilogy
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.new() \
-            .XS(t_work) \
-            .YS(data_work) \
-            .leg(leg_data)
-        curves.new() \
-            .XS(t_gamma) \
-            .YS(data_gamma) \
-            .leg(leg_data + ':\ filtered').sty(':')
-        cpr.plot_curves(curves)
-
-        # plotting: gamma: fft
-        curves = crv.Curves() \
-            .xlab('\omega[\omega_{ci}]') \
-            .tit('Gamma\ calculation:\ FFT')
-        curves.flag_norm = flag_norm
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.new() \
-            .XS(dict_gamma_filt['w2']) \
-            .YS(dict_gamma_filt['fft_init_2']) \
-            .leg('FFT:\ global\ filtering')
-        curves.new() \
-            .XS(dict_gamma_filt['w2']) \
-            .YS(dict_gamma_filt['fft_filt_2']) \
-            .leg('FFT:\ gamma\ filtering').sty(':')
-        cpr.plot_curves(curves)
-
-        # plotting: gamma: fitting
-        curves = crv.Curves() \
-            .xlab('t[\omega_{ci}^{-1}]') \
-            .tit('Gamma\ calculation:\ fitting')
-        curves.flag_norm = flag_norm
-        curves.flag_semilogy = flag_semilogy
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.new() \
-            .XS(t_gamma) \
-            .YS(data_gamma) \
-            .leg(leg_data + ':\ filtered')
-        curves.new().norm_to(data_work) \
-            .XS(t_work[dict_gamma['est']['ids_peaks']]) \
-            .YS(data_work[dict_gamma['est']['ids_peaks']]) \
-            .leg('peaks').sty('o')
-        curves.new() \
-            .XS(dict_gamma['est']['x_fit']) \
-            .YS(dict_gamma['est']['y_fit']) \
-            .leg('LIN.\ REGRESSION').sty(':')
-        if dict_gamma['adv'] is not None:
+        if flag_plot_print:
+            # plotting: gamma: filtering
+            curves = crv.Curves() \
+                .xlab('t[\omega_{ci}^{-1}]') \
+                .tit('Gamma\ calculation:\ filtering')
+            curves.flag_norm        = flag_norm
+            curves.flag_semilogy    = flag_semilogy
+            if flag_norm:
+                curves.ylab('norm.')
             curves.new() \
-                .XS(dict_gamma['adv']['x_fit']) \
-                .YS(dict_gamma['adv']['y_fit']) \
-                .leg('NL\ FITTING').sty(':')
-        cpr.plot_curves(curves)
-
-        # plotting: frequency: filtering
-        curves = crv.Curves() \
-            .xlab('t[\omega_{ci}^{-1}]') \
-            .tit('Freq.\ calc.:\ filtering')
-        curves.flag_norm = flag_norm
-        curves.flag_semilogy = flag_semilogy
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.new() \
-            .XS(t_work) \
-            .YS(data_work) \
-            .leg(leg_data)
-        curves.new() \
-            .XS(t_freq) \
-            .YS(data_freq) \
-            .leg(leg_data + ':\ *\exp(-g*t),\ filtered').sty(':')
-        cpr.plot_curves(curves)
-
-        # plotting: frequency: fft
-        curves = crv.Curves() \
-            .xlab('\omega[\omega_{ci}]') \
-            .tit('Freq.\ calc.:\ FFT')
-        curves.flag_norm = flag_norm
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.new() \
-            .XS(dict_freq_filt['w2']) \
-            .YS(dict_freq_filt['fft_init_2']) \
-            .leg('FFT:\ global\ filtering')
-        curves.new() \
-            .XS(dict_freq_filt['w2']) \
-            .YS(dict_freq_filt['fft_filt_2']) \
-            .leg('FFT:\ freq.\ filtering').sty(':')
-        cpr.plot_curves(curves)
-
-        # plotting: frequency: fitting
-        curves = crv.Curves() \
-            .xlab('t[\omega_{ci}^{-1}]') \
-            .tit('Freq.\ calc.:\ fitting')
-        curves.flag_norm = flag_norm
-        curves.flag_semilogy = flag_semilogy
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.new() \
-            .XS(t_freq) \
-            .YS(data_freq) \
-            .leg('filtered')
-        curves.new().norm_to(data_work_exp) \
-            .XS(t_work[dict_freq['est']['ids_peaks']]) \
-            .YS(data_work_exp[dict_freq['est']['ids_peaks']]) \
-            .leg('peaks').sty('o')
-        curves.new() \
-            .XS(dict_freq['est']['x_fit']) \
-            .YS(dict_freq['est']['y_fit']) \
-            .leg('LIN.\ REGRESSION').sty(':')
-        if dict_freq['adv'] is not None:
+                .XS(t_work) \
+                .YS(data_work) \
+                .leg(leg_data)
             curves.new() \
-                .XS(dict_freq['adv']['x_fit']) \
-                .YS(dict_freq['adv']['y_fit']) \
-                .leg('NL\ FITTING').sty(':')
-        cpr.plot_curves(curves)
+                .XS(t_gamma) \
+                .YS(data_gamma) \
+                .leg(leg_data + ':\ filtered').sty(':')
+            cpr.plot_curves(curves)
 
-        # - print results -
-        line_res = '--- NAIVE CALCULATION ---\n'
-        line_res += '- GAMMA: ESTIMATION -\n'
-        line_res += 'prel. w[wci] = ' + line_w_est_prel + '\n'
-        line_res += 'g[wci] = ' + line_g_est + '\n'
-        line_res += '- GAMMA: NL FITTING -\n'
-        line_res += 'prel. w[wci] = ' + line_w_adv_prel + '\n'
-        line_res += 'g[wci] = ' + line_g_adv + '\n'
-        line_res += '- FREQUENCY: ESTIMATION -\n'
-        line_res += 'w[wci] = ' + line_w_est + '\n'
-        line_res += '(g_real - g_num)[wci] = ' + line_g_est_zero + '\n'
-        line_res += '- FREQUENCY: NL FITTING -\n'
-        line_res += 'w[wci] = ' + line_w_adv + '\n'
-        line_res += '(g_real - g_num)[wci] = ' + line_g_adv_zero
-        print(line_res)
+            # plotting: gamma: fft
+            curves = crv.Curves() \
+                .xlab('\omega[\omega_{ci}]') \
+                .tit('Gamma\ calculation:\ FFT')
+            curves.flag_norm = flag_norm
+            if flag_norm:
+                curves.ylab('norm.')
+            curves.new() \
+                .XS(dict_gamma_filt['w2']) \
+                .YS(dict_gamma_filt['fft_init_2']) \
+                .leg('FFT:\ global\ filtering')
+            curves.new() \
+                .XS(dict_gamma_filt['w2']) \
+                .YS(dict_gamma_filt['fft_filt_2']) \
+                .leg('FFT:\ gamma\ filtering').sty(':')
+            cpr.plot_curves(curves)
+
+            # plotting: gamma: fitting
+            curves = crv.Curves() \
+                .xlab('t[\omega_{ci}^{-1}]') \
+                .tit('Gamma\ calculation:\ fitting')
+            curves.flag_norm = flag_norm
+            curves.flag_semilogy = flag_semilogy
+            if flag_norm:
+                curves.ylab('norm.')
+            curves.new() \
+                .XS(t_gamma) \
+                .YS(data_gamma) \
+                .leg(leg_data + ':\ filtered')
+            curves.new().norm_to(data_work) \
+                .XS(t_work[dict_gamma['est']['ids_peaks']]) \
+                .YS(data_work[dict_gamma['est']['ids_peaks']]) \
+                .leg('peaks').sty('o')
+            curves.new() \
+                .XS(dict_gamma['est']['x_fit']) \
+                .YS(dict_gamma['est']['y_fit']) \
+                .leg('LIN.\ REGRESSION').sty(':')
+            if dict_gamma['adv'] is not None:
+                curves.new() \
+                    .XS(dict_gamma['adv']['x_fit']) \
+                    .YS(dict_gamma['adv']['y_fit']) \
+                    .leg('NL\ FITTING').sty(':')
+            cpr.plot_curves(curves)
+
+            # plotting: frequency: filtering
+            curves = crv.Curves() \
+                .xlab('t[\omega_{ci}^{-1}]') \
+                .tit('Freq.\ calc.:\ filtering')
+            curves.flag_norm = flag_norm
+            curves.flag_semilogy = flag_semilogy
+            if flag_norm:
+                curves.ylab('norm.')
+            curves.new() \
+                .XS(t_work) \
+                .YS(data_work) \
+                .leg(leg_data)
+            curves.new() \
+                .XS(t_freq) \
+                .YS(data_freq) \
+                .leg(leg_data + ':\ *\exp(-g*t),\ filtered').sty(':')
+            cpr.plot_curves(curves)
+
+            # plotting: frequency: fft
+            curves = crv.Curves() \
+                .xlab('\omega[\omega_{ci}]') \
+                .tit('Freq.\ calc.:\ FFT')
+            curves.flag_norm = flag_norm
+            if flag_norm:
+                curves.ylab('norm.')
+            curves.new() \
+                .XS(dict_freq_filt['w2']) \
+                .YS(dict_freq_filt['fft_init_2']) \
+                .leg('FFT:\ global\ filtering')
+            curves.new() \
+                .XS(dict_freq_filt['w2']) \
+                .YS(dict_freq_filt['fft_filt_2']) \
+                .leg('FFT:\ freq.\ filtering').sty(':')
+            cpr.plot_curves(curves)
+
+            # plotting: frequency: fitting
+            curves = crv.Curves() \
+                .xlab('t[\omega_{ci}^{-1}]') \
+                .tit('Freq.\ calc.:\ fitting')
+            curves.flag_norm = flag_norm
+            curves.flag_semilogy = flag_semilogy
+            if flag_norm:
+                curves.ylab('norm.')
+            curves.new() \
+                .XS(t_freq) \
+                .YS(data_freq) \
+                .leg('filtered')
+            curves.new().norm_to(data_work_exp) \
+                .XS(t_work[dict_freq['est']['ids_peaks']]) \
+                .YS(data_work_exp[dict_freq['est']['ids_peaks']]) \
+                .leg('peaks').sty('o')
+            curves.new() \
+                .XS(dict_freq['est']['x_fit']) \
+                .YS(dict_freq['est']['y_fit']) \
+                .leg('LIN.\ REGRESSION').sty(':')
+            if dict_freq['adv'] is not None:
+                curves.new() \
+                    .XS(dict_freq['adv']['x_fit']) \
+                    .YS(dict_freq['adv']['y_fit']) \
+                    .leg('NL\ FITTING').sty(':')
+            cpr.plot_curves(curves)
+
+            # - print results -
+            line_res = '--- NAIVE CALCULATION ---\n'
+            line_res += '- GAMMA: ESTIMATION -\n'
+            line_res += 'prel. w' + line_norm_w + ' = ' + line_w_est_prel + '\n'
+            line_res += 'g' + line_norm_g + ' = ' + line_g_est + '\n'
+            line_res += '- GAMMA: NL FITTING -\n'
+            line_res += 'prel. w' + line_norm_w + ' = ' + line_w_adv_prel + '\n'
+            line_res += 'g' + line_norm_g + ' = ' + line_g_adv + '\n'
+            line_res += '- FREQUENCY: ESTIMATION -\n'
+            line_res += 'w' + line_norm_w + ' = ' + line_w_est + '\n'
+            line_res += '(g_real - g_num)' + line_norm_g + ' = ' + line_g_est_zero + '\n'
+            line_res += '- FREQUENCY: NL FITTING -\n'
+            line_res += 'w' + line_norm_w + ' = ' + line_w_adv + '\n'
+            line_res += '(g_real - g_num)' + line_norm_g + ' = ' + line_g_adv_zero
+            print(line_res)
+
+    # - save results of naive calculation -
+    naive_res = {
+        'w_est': w_est, 'g_est': g_est,
+        'w_adv': w_adv, 'g_adv': g_adv,
+    }
+    out_res.update({'naive': naive_res})
 
     # --- CALCULATION WITH STATISTICS ---
-
-    # - find time intervals -
     t_intervals = []
     if flag_stat:
         oo_get_intervals = {
@@ -1048,7 +1096,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
         t_intervals = dict_intervals['t_intervals']
 
         # plot time intervals
-        if flag_print:
+        if flag_print and flag_plot_print:
             for one_t_interval in t_intervals:
                 area_calc_chosen = geom.Fill()
                 area_calc_chosen.xs = [
@@ -1087,12 +1135,13 @@ def calc_wg(oo_var, oo_wg, oo_plot):
 
             dict_wg = ymath.advanced_wg(
                 t_one_interval,
-                data_work[ids_one_t_interval]
+                data_work[ids_one_t_interval],
+                flag_print=False
             )
-            w_est, line_w_est = give_res(dict_wg, 'est', 'w')
-            g_est, line_g_est = give_res(dict_wg, 'est', 'g')
-            w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w')
-            g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g')
+            w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
+            g_est, line_g_est = give_res(dict_wg, 'est', 'g', coef_norm_global_g)
+            w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
+            g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
 
             if w_adv is not None:
                 if np.abs((w_adv - w_est)/w_est) <= threshold_w:
@@ -1113,11 +1162,12 @@ def calc_wg(oo_var, oo_wg, oo_plot):
 
             dict_gamma = ymath.advanced_wg(
                 t_one_interval,
-                data_gamma[ids_one_t_interval]
+                data_gamma[ids_one_t_interval],
+                flag_print=False
             )
 
-            g_est, line_g_est = give_res(dict_gamma, 'est', 'g')
-            g_adv, line_g_adv = give_res(dict_gamma, 'adv', 'g')
+            g_est, line_g_est = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
+            g_adv, line_g_adv = give_res(dict_gamma, 'adv', 'g', coef_norm_global_g)
             if g_adv is not None:
                 if np.abs((g_adv - g_est) / g_est) <= threshold_g:
                     gs.append(g_adv)
@@ -1126,6 +1176,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
             g_mult = g_est
             if g_adv is not None:
                 g_mult = g_adv
+            g_mult /= coef_norm_global_g
             dict_freq_filt = one_stage_filtering(
                 t_work,  # filtering is performed in the work domain
                 data_work * np.exp(- g_mult * t_work),
@@ -1139,68 +1190,193 @@ def calc_wg(oo_var, oo_wg, oo_plot):
 
             dict_freq = ymath.advanced_wg(
                 t_one_interval,  # calculation is performed in one of the time domains
-                data_freq[ids_one_t_interval]
+                data_freq[ids_one_t_interval],
+                flag_print=False
             )
 
-            w_est, line_w_est = give_res(dict_freq, 'est', 'w')
-            w_adv, line_w_adv = give_res(dict_freq, 'adv', 'w')
+            w_est, line_w_est = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
+            w_adv, line_w_adv = give_res(dict_freq, 'adv', 'w', coef_norm_global_w)
             if w_adv is not None:
                 if np.abs((w_adv - w_est)/w_est) <= threshold_w:
                     ws.append(w_adv)
         ws = np.array(ws)
         gs = np.array(gs)
 
-    # - plotting and printing statistical results -
+    # - statistical results -
+    stat_res = {
+        'w': None, 'err_w': None,
+        'g': None, 'err_g': None,
+    }
     if flag_stat:
         # frequency histogram
         hist_w = np.histogram(ws, bins=n_bins)
         fit_mean_w, fit_sigma_w = stat_norm.fit(ws)
-        f_data_w = mlab.normpdf(hist_w[1], fit_mean_w, fit_sigma_w)
-
-        curves = crv.Curves() \
-            .xlab('\omega[\omega_{ci}]') \
-            .ylab('a.u.') \
-            # .tit('Histogram:\ Frequency')
-        curves.flag_maxlocator = True
-        curves.new() \
-            .XS(n_bins) \
-            .YS(ws) \
-            .set_hist().alpha(1).leg('histogram')
-        curves.new() \
-            .XS(hist_w[1]) \
-            .YS(f_data_w) \
-            .col('red').leg('normal\ distribution')
-        cpr.plot_curves(curves)
+        f_data_w = stat_norm.pdf(hist_w[1], fit_mean_w, fit_sigma_w)
 
         # Rate histogram
         hist_g = np.histogram(gs, bins=n_bins)
         fit_mean_g, fit_sigma_g = stat_norm.fit(gs)
-        f_data_g = mlab.normpdf(hist_g[1], fit_mean_g, fit_sigma_g)
+        f_data_g = stat_norm.pdf(hist_g[1], fit_mean_g, fit_sigma_g)
 
-        curves = crv.Curves() \
-            .xlab('\gamma[\omega_{ci}]') \
-            .ylab('a.u.') \
-            # .tit('Histogram:\ Damping Rate')
-        curves.flag_maxlocator = True
-        curves.new() \
-            .XS(n_bins) \
-            .YS(gs) \
-            .set_hist().alpha(1).leg('histogram')
-        curves.new() \
-            .XS(hist_g[1]) \
-            .YS(f_data_g) \
-            .col('red').leg('normal\ distribution')
-        cpr.plot_curves(curves)
+        err_w = ymath.COEF_ERR * fit_sigma_w
+        err_g = ymath.COEF_ERR * fit_sigma_g
 
-        # Print results
-        line_stat = '--- STATISTICS ---\n'
-        line_stat += 'number of frequency samples = ' + '{:d}'.format(len(ws)) + '\n'
-        line_stat += 'number of rate samples = ' + '{:d}'.format(len(gs)) + '\n'
-        line_stat += 'w[wci] = ' + '{:0.3e}'.format(fit_mean_w) \
-                    + '+-' + '{:0.3e}'.format(1.96 * fit_sigma_w) + '\n'
-        line_stat += 'g[wci] = ' + '{:0.3e}'.format(fit_mean_g) \
-                     + '+-' + '{:0.3e}'.format(1.96 * fit_sigma_g)
-        print(line_stat)
+        # - plotting and printing statistical results -
+        if flag_plot_print:
+            curves = crv.Curves() \
+                .xlab('\omega[\omega_{ci}]') \
+                .ylab('a.u.') \
+                # .tit('Histogram:\ Frequency')
+            curves.flag_maxlocator = True
+            curves.new() \
+                .XS(n_bins) \
+                .YS(ws) \
+                .set_hist().alpha(1).leg('histogram')
+            curves.new() \
+                .XS(hist_w[1]) \
+                .YS(f_data_w) \
+                .col('red').leg('normal\ distribution')
+            cpr.plot_curves(curves)
+
+            curves = crv.Curves() \
+                .xlab('\gamma[\omega_{ci}]') \
+                .ylab('a.u.') \
+                # .tit('Histogram:\ Damping Rate')
+            curves.flag_maxlocator = True
+            curves.new() \
+                .XS(n_bins) \
+                .YS(gs) \
+                .set_hist().alpha(1).leg('histogram')
+            curves.new() \
+                .XS(hist_g[1]) \
+                .YS(f_data_g) \
+                .col('red').leg('normal\ distribution')
+            cpr.plot_curves(curves)
+
+            # Print results
+            line_stat = '--- STATISTICS ---\n'
+            line_stat += 'number of frequency samples = ' + '{:d}'.format(len(ws)) + '\n'
+            line_stat += 'number of rate samples = ' + '{:d}'.format(len(gs)) + '\n'
+            line_stat += 'w' + line_norm_w + ' = ' + '{:0.3e}'.format(fit_mean_w) \
+                        + '+-' + '{:0.3e}'.format(err_w) + '\n'
+            line_stat += 'g' + line_norm_g + ' = ' + '{:0.3e}'.format(fit_mean_g) \
+                        + '+-' + '{:0.3e}'.format(err_g)
+            print(line_stat)
+
+        # - save results of naive calculation -
+        stat_res = {
+            'w': fit_mean_w, 'err_w': err_w,
+            'g': fit_mean_g, 'err_g': err_g,
+        }
+    out_res.update({'stat': stat_res})
+
+    return out_res
+
+
+# NEW: calculation of the frequency and dynamic rate in a radial interval:
+def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
+    # Calculate frequency (w) and damping/growth rate (g) at radial points in the some
+    #   radial interval;
+    # oo_s - dict. to describe radial domain where (w,g) will be calculated.
+    #  'cond_res_w' - function:
+    #    defines conditions to which result w has to satisfy
+    #  'cond_res_g' - function:
+    #    defines conditions to which result g has to satisfy
+    smax = oo_s.get('smax', 0.0)
+    smin = oo_s.get('smin', 1.0)
+    ds = oo_s.get('ds', None)
+    s  = oo_s.get('s_array', None)
+
+    cond_res_w = oo_s.get('cond_res_w', None)
+    cond_res_g = oo_s.get('cond_res_g', None)
+
+    ns = int((smax - smin) / ds + 1)
+    if s is None:
+        s = np.linspace(smin, smax, ns)
+
+    oo_plot.update({
+        'flag_plot_print': False
+    })
+
+    s_res, w_est, g_est, w_adv, g_adv = [], [], [], [], []
+    s_res_stat, w_stat, w_stat_err, g_stat, g_stat_err = [], [], [], [], []
+    for s1 in s:
+        print('--- s = {:0.3f} ---'.format(s1))
+
+        oo_var.update({
+            'avrs': [['ts', 'point-s', [s1]]],
+        })
+        try:
+            out_res = calc_wg(oo_var, oo_wg, oo_plot)
+        except:
+            print('No results')
+            print('---')
+            continue
+
+        # Naive results
+        w1_est = out_res['naive']['w_est']
+        g1_est = out_res['naive']['g_est']
+        w1_adv = out_res['naive']['w_adv']
+        g1_adv = out_res['naive']['g_adv']
+
+        flag_check = True
+        if w1_est is None or g1_est is None or \
+                w1_adv is None or g1_adv is None:
+            flag_check = False
+        if cond_res_w is not None:
+            if not cond_res_w(w1_est) or not cond_res_w(w1_adv):
+                flag_check = False
+        if cond_res_g is not None:
+            if not cond_res_g(g1_est) or not cond_res_g(g1_adv):
+                flag_check = False
+
+        if flag_check:
+            s_res.append(s1)
+            w_est.append(w1_est)
+            g_est.append(g1_est)
+            w_adv.append(w1_adv)
+            g_adv.append(g1_adv)
+        else:
+            print('No results for naive calculation')
+
+        # Statistical results
+        w1 = out_res['stat']['w']
+        w1_err = out_res['stat']['err_w']
+        g1 = out_res['stat']['g']
+        g1_err = out_res['stat']['err_g']
+
+        flag_check = True
+        if w1 is None or g1 is None:
+            flag_check = False
+        if cond_res_w is not None:
+            if not cond_res_w(w1):
+                flag_check = False
+        if cond_res_g is not None:
+            if not cond_res_g(g1):
+                flag_check = False
+
+        if flag_check:
+            s_res_stat.append(s1)
+            w_stat.append(w1)
+            g_stat.append(g1)
+            w_stat_err.append(w1_err)
+            g_stat_err.append(g1_err)
+        else:
+            print('No results for statistical calculation')
+        print('---')
+
+    curves = crv.Curves().xlab('s').ylab('\omega[\omega_{ci}]')\
+        .tit('Naive\ frequency')
+    curves.new().XS(s_res).YS(w_est).sty('o--')
+    cpr.plot_curves(curves)
+
+    curves = crv.Curves().xlab('s').ylab('\omega[\omega_{ci}]') \
+        .tit('Statistical\ frequency')
+    curves.new().XS(s_res_stat).YS(w_stat).sty('o--')\
+        .set_errorbar(True, ys=w_stat_err)
+    cpr.plot_curves(curves)
+
+    return
 
 
 # NEW: choose variables:
@@ -1296,6 +1472,10 @@ def average_one_var(avr, ovar, dd):
         vvar_res = choose_one_var_t(ovar, dd)
         oavr = ['none-']
         vvar_res['laby'] = ''
+    if sel_coords == 'rz':
+        vvar_res = choose_one_var_rz(ovar, dd)
+    if sel_coords == 'schi':
+        vvar_res = choose_one_var_schi(ovar, dd)
 
     # averaging of the chosen system
     vvar_avr = ymath.avr_x1x2(vvar_res, oavr)
@@ -1325,6 +1505,38 @@ def choose_one_var_ts(ovar, dd):
     # save information about coordinate system:
     vvar['x1'], vvar['fx1'], vvar['labx'] = 't', '{:0.3e}', 't'
     vvar['x2'], vvar['fx2'], vvar['laby'] = 's', '{:0.3f}', 's'
+
+    return vvar
+
+
+# NEW: take variable(r,z)
+def choose_one_var_rz(ovar, dd):
+    opt_type = ovar[0]
+    oovar = ovar[1:len(ovar)]
+
+    vvar = {}
+    if opt_type == 'nonzonal':
+        vvar = itg.choose_one_var_rz(oovar, dd)
+
+    # save information about coordinate system:
+    vvar['x1'], vvar['fx1'], vvar['labx'] = 'r', '{:0.3f}', 'R'
+    vvar['x2'], vvar['fx2'], vvar['laby'] = 'z', '{:0.3f}', 'Z'
+
+    return vvar
+
+
+# NEW: take variable(r,z)
+def choose_one_var_schi(ovar, dd):
+    opt_type = ovar[0]
+    oovar = ovar[1:len(ovar)]
+
+    vvar = {}
+    if opt_type == 'nonzonal':
+        vvar = itg.choose_one_var_schi(oovar, dd)
+
+    # save information about coordinate system:
+    vvar['x1'], vvar['fx1'], vvar['labx'] = 's', '{:0.3f}', 's'
+    vvar['x2'], vvar['fx2'], vvar['laby'] = 'chi', '{:0.3f}', '\chi'
 
     return vvar
 
@@ -1363,7 +1575,7 @@ def choose_one_var_tvpar(ovar, dd):
     return vvar
 
 
-# NEW: take variable(t,vpar)
+# NEW: take variable(vpar,mu)
 def choose_one_var_vparmu(ovar, dd):
     opt_type = ovar[0]
     oovar = ovar[1:len(ovar)]
@@ -1379,7 +1591,7 @@ def choose_one_var_vparmu(ovar, dd):
     return vvar
 
 
-# NEW: take variable(t,s)
+# NEW: take variable(t)
 def choose_one_var_t(ovar, dd):
     opt_type = ovar[0]
     oovar = ovar[1:len(ovar)]
@@ -2014,7 +2226,254 @@ def MPR_plot_1d(dd, oo):
 
 
 # Plot main 2d figures for the MPR diagnostic:
-def MPR_plot_2d(dd, oo):
+def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
+    # --------------------------------------------------------------
+    # For description of the dictionaries oo_vars, oo_wg, oo_plot
+    # see the function MPR_gamma()
+    # --------------------------------------------------------------
+    # Dictionary oo_vars does not have fields: 'mu_domain', 'vpar_domain'.
+    # Dictionary oo_vars also has the following fields:
+    #   't_int' = [t_start, t_end]:
+    #       time interval, where je(vpar, mu, t) will be averaged
+    # --------------------------------------------------------------
+    # Dictionary oo_wg also has the following fields:
+    #  's1' - integer:
+    #       radial point, where safety factor is taken and the gam/egam
+    #       frequency is taken
+    # ------------------------------------------------------------------
+    # oo_vel - [dict., dict., ...], see code, section Velocity domains
+    # ------------------------------------------------------------------
+    # oo_plot - dict. for plotting:
+    #   'mu_plot' - domain of mu to plot
+    #   'vpar_plot' - domain of vpar to plot
+    #   'texts_plot' - [dict., dict., ...]:
+    #       lines of text to add to a plot;
+    #       for description of every dict. see
+    #       file curve.py, class PlText, function init_from_oo(dict.)
+    #   'geoms_plot' - [dict., dict., ...]:
+    #       geometrical figures to add to a plot;
+    #       for description of every dict. see
+    #       file Geom.py, class Geom and classed, derived from it, function
+
+    # --- Parameters ---
+    je_name = 'jdote_es-mean-t'
+    sel_species = oo_vars.get('sel_species', 'total')
+    t_int = oo_vars.get('t_int', [])
+
+    s1 = oo_wg.get('s1', None)
+    w0_wc = oo_wg.get('gam-w', None)
+
+    mu_plot = oo_plot.get('mu_plot', [])
+    vpar_plot = oo_plot.get('vpar_plot', [])
+    oo_texts = oo_plot.get('texts_plot', [])
+    oo_geoms = oo_plot.get('geoms_plot', [])
+
+    # velocity normalization:
+    coef_max = np.max(dd[sel_species].nT_equil['T'])
+    Te_speak = dd['electrons'].T_speak(dd)
+    cs_speak = np.sqrt(Te_speak / dd['pf'].mass)
+    norm_v = coef_max / cs_speak
+
+    # Te_max = np.max(dd['electrons'].nT_equil['T_J'])
+    # cs_max = np.sqrt(Te_max / dd['pf'].mass)
+    # norm_v = 1. / cs_max
+
+    # --- Species energy transfer signal ---
+    oo_vvar = {
+        'avrs': [['vparmu', 'none-']],
+        'dds': [dd],
+    }
+    ovar_array = [['mpr', je_name, sel_species, t_int]]
+    oo_vvar.update({'ovars': ovar_array})
+    je_dict = choose_vars(oo_vvar)[0]
+    je      =  np.array(je_dict['data'])
+    mu      = np.array(je_dict['mu'])
+    vpar    = np.array(je_dict['vpar'])
+    nmu = np.size(mu)
+
+    # --- Analytical resonances ---
+    w0 = w0_wc * dd['wc']
+
+    q_s1, _, line_s1 = equil_profiles.q_s1(dd, s1)
+    vres = (q_s1 * dd['R0'] * w0) * norm_v
+
+    gHLines = geom.HLine()
+    # gHLines.ys = [-vres, -vres/2, vres/2, vres]
+    gHLines.ys = [-vres, vres]
+    gHLines.color = 'white'
+    gHLines.style = '--'
+
+    # --- Passing-Trapped boundary ---
+    cone_pt, mu_pt, pt_bottom, pt_up = geom.pass_trap_boundary(dd, mu)
+
+    # --- Velocity domains ---
+    n_areas = len(oo_vel)
+    names_areas = []
+    je_areas = []
+    ids_je_areas = []
+    separate_boundaries_areas = []
+    vertical_lines_areas = []
+    for i_area in range(n_areas):
+        oo_area = oo_vel[i_area]
+        name_type = oo_area.get('type', None)
+
+        sep_boundary_area = None
+
+        vertical_lines_areas.append(None)
+
+        name_area = oo_area.get('name', '')
+
+        # - strap between the passing-trapped boundary and a chosen parabola -
+        if name_type == 'strap_pr_pb':
+            # build a parabola mu = a * vpar^2 + mu0
+            mu0, mu1, vpar1 = oo_area['mu0'], oo_area['mu1'], oo_area['vpar1']
+            _, _, _, pb_bottom, pb_up = \
+                geom.parabola_x(mu, mu0, mu1, vpar1)
+
+            # boundaries
+            sep_boundary_area = [pt_bottom, pb_bottom, pb_up, pt_up]
+        # ---
+        # - area inside a parabola =
+        if name_type == 'parabola':
+            # build a parabola mu = a * vpar^2 + mu0
+            mu0, mu1, vpar1 = oo_area['mu0'], oo_area['mu1'], oo_area['vpar1']
+            _, _, _, pb_bottom, pb_up = \
+                geom.parabola_x(mu, mu0, mu1, vpar1)
+
+            # boundaries
+            sep_boundary_area = [pb_bottom, pb_up]
+        # ---
+        # - area inside a vertical parallelogram =
+        if name_type == 'parallelogram_v':
+            flag_upper_points = oo_area.get('flag-upper-points', True)
+            point_left, point_right = oo_area['point-left'], oo_area['point-right']
+            vlength = oo_area['vlength']
+
+            pav_bottom, pav_up, pav_corners = geom.parallelogram_v(
+                mu, point_left, point_right, vlength, flag_upper_points
+            )
+
+            # boundaries
+            sep_boundary_area = [pav_bottom, pav_up]
+
+            # vertical lines
+            vertical_line_left  = [pav_corners[2], pav_corners[0]]
+            vertical_line_right = [pav_corners[3], pav_corners[1]]
+            vertical_lines_areas[-1] = [vertical_line_left, vertical_line_right]
+        if name_type == 'outside-lines':
+            lines = oo_area.get('lines', [])
+
+            # lines
+            lines_area = geom.lines(mu, lines)
+
+            # bottom and upper vpar-boundaries
+            line_low_vpar = geom.lines(mu, [ [[mu[0],  vpar[0]], [mu[-1],  vpar[0]]]  ])
+            line_up_vpar  = geom.lines(mu, [ [[mu[0], vpar[-1]], [mu[-1], vpar[-1]]] ])
+
+            # boundaries
+
+            sep_boundary_area = line_low_vpar + lines_area + line_up_vpar
+
+        # ---
+        # - build boundaries -
+        boundaries_area = geom.create_boundaries(
+            nmu,
+            sep_boundary_area
+        )
+
+        # - build J*E inside the strap -
+        je_area, ids_area_je = geom.build_area(mu, vpar, je, boundaries_area)
+
+        # - results -
+        separate_boundaries_areas.append(sep_boundary_area)
+        je_areas.append(je_area)
+        ids_je_areas.append(ids_area_je)
+        names_areas.append(name_area)
+
+    # --- Plot chosen velocity domains ---
+    if len(mu_plot) is 0 or mu_plot is None:
+        mu_plot = mu
+    else:
+        _, mu_plot, _ = mix.get_ids(mu, mu_plot)
+    if len(vpar_plot) is 0 or vpar_plot is None:
+        vpar_plot = vpar
+    else:
+        _, vpar_plot, _ = mix.get_ids(vpar, vpar_plot)
+
+    color_area = 'white'
+    curves = crv.Curves()\
+        .xlab('\mu').ylab('v_\parallel') \
+        .tit(je_dict['tit'])
+    curves.flag_legend = False
+    curves.newg(gHLines)
+    curves.xlim([mu_plot[0],   mu_plot[-1]])
+    curves.ylim([vpar_plot[0], vpar_plot[-1]])
+    curves.new() \
+        .XS(mu)\
+        .YS(vpar)\
+        .ZS(je).lev(60) \
+        .cmp('seismic')
+    for i_area in range(n_areas):
+        boundaries_area = separate_boundaries_areas[i_area]
+        vertical_lines = vertical_lines_areas[i_area]
+        for sel_boundary in boundaries_area:
+            curves.new() \
+                .XS(mu) \
+                .YS(sel_boundary) \
+                .col(color_area).sty(':')
+        if vertical_lines is not None:
+            gVerticalLinesArea = geom.Line()
+            for vertical_line in vertical_lines:
+                gVerticalLinesArea.lines.append(vertical_line)
+                gVerticalLinesArea.color = color_area
+                gVerticalLinesArea.style = ':'
+                gVerticalLinesArea.width = 3
+            curves.newg(gVerticalLinesArea)
+    for oo_text in oo_texts:
+        oText = crv.PlText(oo_text)
+        curves.newt(oText)
+    for oo_geom in oo_geoms:
+        oGeom = None
+        if oo_geom['type'] == 'annotate':
+            oGeom = geom.Annotate(oo_geom)
+        if oGeom is not None:
+            curves.newg(oGeom)
+    curves.new() \
+        .XS(mu_pt) \
+        .YS(cone_pt) \
+        .col('red').sty(':')
+    cpr.plot_curves_3d(curves)
+
+    # --- Plot areas ---
+    gHLines.color = 'black'
+    for i_area in range(n_areas):
+        curves = crv.Curves() \
+            .xlab('\mu').ylab('v_\parallel') \
+            .tit(je_dict['tit'] + ':\ ' + names_areas[i_area])
+        curves.flag_legend = False
+        curves.newg(gHLines)
+        curves.xlim([mu_plot[0],   mu_plot[-1]])
+        curves.ylim([vpar_plot[0], vpar_plot[-1]])
+        curves.newg(gHLines)
+        curves.new() \
+            .XS(mu) \
+            .YS(vpar) \
+            .ZS(je_areas[i_area]).lev(60) \
+            .cmp('seismic')
+        curves.new() \
+            .XS(mu_pt) \
+            .YS(cone_pt) \
+            .col('black').sty('-')
+        cpr.plot_curves_3d(curves)
+
+    # # --- Calculate gamma in chosen velocity domains ---
+    # oo_vars['flag_given_signal_je'] = True
+    # for i_area in range(n_areas):
+    #     ovar_loc = ['jdote_es', sel_species, ids_je_areas[i_area], names_areas[i_area]]
+    #     oo_vars['signal_je'] = MPR.choose_one_var_t(ovar_loc, dd, flag_vpar_boundaries=True)
+    #     oo_vars['signal_je']['legs'] = ['_']
+    #     MPR_gamma(dd, oo_vars, oo_wg, oo_plot)
+
     return
 
 
@@ -2029,19 +2488,28 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
     #   'sel_species': 'total', 'deuterium', 'electrons' etc.;
     #   'mu_domain', 'vpar_domain' - 1d arrays with two elements:
     #           velocity domain, where JE integrated;
+    #   'flag_given_signal_je' = True:
+    #       take a given J*E signal oo_vars['signal_je']
     # -> oo_plot - dict.:
     #   't_plot' - 1d array [t_start, t_end]:
     #       time domain, where data will be plotted
     # -> oo_wg - dict.: parameters for MPR.GAM_calc_wg() diagnostic:
     #   't_work' - 1d array [t_start, t_end]:
     #       time interval, where gamma will be calculated
+    #   'filt_je' - dict. or [dict., dict., ...]:
+    #       filter of the J*E signal
+    #   'filt_ef' - dict. or [dict., dict., ...]:
+    #       filter of the field energy signal
+    #   REMARK: final time interval is defined by the last filtering domain.
+    #           Work domain is taken from this final time domain.
     # ---
     #   'flag_naive_t_peaks' = True: only for naive calculation
     #       take a time interval between peaks to calculate the damping/growth rate,
     #       otherwise, take an arbitrary time interval
     #   'naive_n_periods' - integer:
     #       number of GAM periods that will define a length of the time interval
-    #
+    #   'sel_norm': 'wc', 'vt':
+    #       output normalization
     # ---
     #   'flag_ZFZF' = True:
     #        eliminate contribution of the zero-frequency zonal flows;
@@ -2070,12 +2538,115 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
     #   'min_je_n_periods' - integer:
     #       minimum number of GAM periods to estimate in one time interval
 
+    # - None-filter -
+    non_filt = {'sel_filt': None}
+
+    # - FUNCTION: filtering at one stage -
+    def several_filters(x, y, oo_filt_loc):
+        oo_filts_res = []
+        if oo_filt_loc is None or len(oo_filt_loc) is 0:
+            oo_filts_res.append(non_filt)
+        elif isinstance(oo_filt_loc, dict):
+            oo_filts_res.append(oo_filt_loc)
+        else:
+            oo_filts_res = oo_filt_loc  # array of filters
+
+        # apply one by one the filters in the array :
+        dict_loc = {'x': np.array(x), 'filt': np.array(y)}
+        count_filt = -1
+        for one_filt in oo_filts_res:
+            count_filt += 1
+            dict_loc = ymath.filtering(
+                dict_loc['x'], dict_loc['filt'], one_filt
+            )
+        return dict_loc
+
+    # -FUNCTION: Filter a signal -
+    def filter_signal(init_dict, oo_filt, oo_plot):
+        # initial fft
+        dict_fft_ini = ymath.filtering(init_dict['x'], init_dict['data'], non_filt)
+        leg_data = init_dict['legs'][0]
+
+        # filtering
+        res_dict = dict(init_dict)
+        filt = several_filters(init_dict['x'], init_dict['data'], oo_filt)
+        res_dict['data'] = np.array(filt['filt'])
+        res_dict['x']    = np.array(filt['x'])
+
+        # find peaks
+        if not flag_inv_peaks:
+            ids_peaks, _ = scipy.signal.find_peaks(res_dict['data'])
+        else:
+            ids_peaks, _ = scipy.signal.find_peaks(-res_dict['data'])
+        t_peaks = res_dict['x'][ids_peaks]
+
+        # plotting time evolution
+        t_plot = oo_plot.get('t_plot', [])
+        if t_plot is None or len(t_plot) is 0:
+            t_plot = init_dict['x']
+        else:
+            _, t_plot, _ = mix.get_ids(init_dict['x'], t_plot)
+
+        line_add_to_title = oo_plot.get('line_add_to_title', '')
+
+        curves = crv.Curves() \
+            .xlab('t[\omega_{ci}^{-1}]') \
+            .tit(init_dict['tit'] + ':\ ' + line_add_to_title)
+        curves.flag_norm        = flag_norm
+        curves.flag_semilogy    = flag_semilogy
+        if flag_norm:
+            curves.ylab('norm.')
+        curves.xlim([t_plot[0], t_plot[-1]])
+        curves.new() \
+            .XS(init_dict['x']) \
+            .YS(init_dict['data']) \
+            .leg('initial\ signal')
+        curves.new().norm_to(init_dict['data']) \
+            .XS(res_dict['x']) \
+            .YS(res_dict['data']) \
+            .leg('filtered\ signal').sty(':')
+        # curves.new().norm_to(init_dict['data']) \
+        #     .XS(t_peaks) \
+        #     .YS(res_dict['data'][ids_peaks]) \
+        #     .leg('peaks').sty('o')
+        cpr.plot_curves(curves)
+
+        # plotting FFT
+        curves = crv.Curves() \
+            .xlab('\omega[\omega_{ci}]') \
+            .tit(leg_data + ':\ FFT'  + ':\ ' + line_add_to_title)
+        curves.flag_norm = flag_norm
+        if flag_norm:
+            curves.ylab('norm.')
+        curves.new() \
+            .XS(dict_fft_ini['w2']) \
+            .YS(dict_fft_ini['fft_init_2']) \
+            .leg('FFT:\ initial')
+        curves.new() \
+            .XS(filt['w2']) \
+            .YS(filt['fft_filt_2']) \
+            .leg('FFT:\ filtered').sty(':')
+        cpr.plot_curves(curves)
+
+        return res_dict
+
     # --- Parameters ---
     sel_species = oo_vars.get('sel_species', 'total')
     mu_domain   = oo_vars.get('mu_domain', [])
     vpar_domain = oo_vars.get('vpar_domain', [])
 
     flag_ZFZF = oo_wg.get('flag_ZFZF', False)
+
+    flag_inv_peaks = oo_wg.get('flag_inv_peaks', False)
+
+    oo_filt_je = oo_wg.get('filt_je', None)
+    oo_filt_ef = oo_wg.get('filt_ef', None)
+
+    flag_norm = oo_plot.get('flag_norm', False)
+    flag_semilogy = oo_plot.get('flag_semilogy', False)
+
+    flag_given_signal_je = oo_vars.get('flag_given_signal_je', False)
+    given_signal = oo_vars.get('signal_je', None)
 
     # --- Names ---
     je_name = 'jdote_es'
@@ -2086,21 +2657,32 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         'avrs': [['t']],
         'dds': [dd],
     }
-
     ovar_array = [['mpr', je_name, sel_species, mu_domain, vpar_domain]]
-    oo_vvar.update({'ovars': ovar_array})
-    je_dict = choose_vars(oo_vvar)[0]
+
+    if not flag_given_signal_je:
+        oo_vvar.update({'ovars': ovar_array})
+        je_dict = choose_vars(oo_vvar)[0]
+    else:
+        je_dict = given_signal
 
     ovar_array[0][1] = ef_name
+    ovar_array[0][2] = 'total'
     oo_vvar.update({'ovars': ovar_array})
     ef_dict = choose_vars(oo_vvar)[0]
 
     del oo_vvar, ovar_array
 
+    # --- FILTERING ---
+    if oo_filt_je is not None:
+        je_dict = filter_signal(je_dict, oo_filt_je, oo_plot)
+    if oo_filt_ef is not None:
+        ef_dict = filter_signal(ef_dict, oo_filt_ef, oo_plot)
+
     # --- INTERPOLATE Efield to the t-axis of JE ---
     ef_dict['data'] = np.interp(je_dict['x'], ef_dict['x'], ef_dict['data'])
-    ef_dict['x'] = je_dict['x']
+    ef_dict['x'] = np.array(je_dict['x'])
 
+    # - update dictionary oo_wg -
     oo_wg.update({
         'je_dict': je_dict,
         'ef_dict': ef_dict
@@ -2109,6 +2691,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
     # --- EXCLUDE ZFZF from signals ---
     if flag_ZFZF:
         flag_norm = oo_plot.get('flag_norm', False)
+        flag_semilogy = oo_plot.get('flag_semilogy', False)
 
         t  = je_dict['x']
 
@@ -2147,6 +2730,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         # - PLOTTING: electric field -
         curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit(erbar_dict['tit'])
         curves.flag_norm = flag_norm
+        curves.flag_semilogy = flag_semilogy
         curves.new() \
             .XS(t).YS(erbar) \
             .leg('ZF + GAM')
@@ -2164,26 +2748,28 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         # - PLOTTING: field energy -
         curves = crv.Curves()\
             .xlab('t[\omega_{ci}^{-1}]')\
-            # .tit(ef_dict['tit'])
+            .tit(ef_dict['tit'])
         if flag_norm:
             curves.ylab('norm.')
         curves.flag_norm = flag_norm
+        curves.flag_semilogy = flag_semilogy
         curves.new() \
             .XS(t[ids_t_plot[0]:ids_t_plot[-1]+1]) \
-            .YS(res_e['e_gam'][ids_t_plot[0]:ids_t_plot[-1]+1]) \
-            .leg(erbar_dict['legs'][0]).sty(':')
+            .YS(res_e['e_gam'][ids_t_plot[0]:ids_t_plot[-1]+1])\
+            .leg('Er')
+            # .leg(erbar_dict['legs'][0]).sty(':')
         curves.new()\
             .XS(t[ids_t_plot[0]:ids_t_plot[-1]+1])\
             .YS(ef[ids_t_plot[0]:ids_t_plot[-1]+1])\
             .leg('\mathcal{E}:\ ZFZF+GAM')
-        # curves.new() \
-        #     .XS(t[res_f['ids_peaks']]) \
-        #     .YS(ef[res_f['ids_peaks']]) \
-        #     .leg('peaks').sty('o')
-        # curves.new() \
-        #     .XS(t[res_f['ids_peaks'][id_peak]]) \
-        #     .YS(ef[res_f['ids_peaks'][id_peak]]) \
-        #     .leg('chosen\ peak').sty('s')
+        curves.new().norm_to(ef[ids_t_plot[0]:ids_t_plot[-1]+1]) \
+            .XS(t[res_f['ids_peaks']]) \
+            .YS(ef[res_f['ids_peaks']]) \
+            .leg('peaks').sty('o')
+        curves.new().norm_to(ef[ids_t_plot[0]:ids_t_plot[-1]+1]) \
+            .XS(t[res_f['ids_peaks'][id_peak]]) \
+            .YS(ef[res_f['ids_peaks'][id_peak]]) \
+            .leg('chosen\ peak').sty('s')
         curves.new()\
             .XS(t[ids_t_plot[0]:ids_t_plot[-1]+1])\
             .YS(res_f['Egam'][ids_t_plot[0]:ids_t_plot[-1]+1])\
@@ -2197,6 +2783,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         if flag_norm:
             curves.ylab('norm.')
         curves.flag_norm = flag_norm
+        curves.flag_semilogy = flag_semilogy
         curves.new()\
             .XS(t[ids_t_plot[0]:ids_t_plot[-1]+1])\
             .YS(je[ids_t_plot[0]:ids_t_plot[-1]+1])\
@@ -2205,6 +2792,42 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
             .XS(t[ids_t_plot[0]:ids_t_plot[-1]+1])\
             .YS(res_f['Pgam'][ids_t_plot[0]:ids_t_plot[-1]+1])\
             .leg('GAM').sty(':')
+        cpr.plot_curves(curves)
+
+        # - Comparison with theory -
+        th_gam = (gam_w * np.sin(2*gam_w*t) - gam_g - gam_g * np.cos(2*gam_w*t)) * \
+                 np.exp(2 * gam_g * t)
+        th_zf = th_gam + \
+                (gam_w * np.sin(gam_w * t) - gam_g * np.cos(gam_w * t)) * np.exp(gam_g * t)
+
+        curves = crv.Curves() \
+            .xlab('t[\omega_{ci}^{-1}]') \
+            .ylab('norm.') \
+            .tit('Signals\ with\ only\ GAM\ component')
+        curves.flag_norm = True
+        curves.new()\
+            .XS(t[ids_t_plot])\
+            .YS(th_gam[ids_t_plot])\
+            .leg('Analytical\ theory')
+        curves.new()\
+            .XS(t[ids_t_plot])\
+            .YS(res_f['Pgam'][ids_t_plot])\
+            .leg('ORB5').sty(':')
+        cpr.plot_curves(curves)
+
+        curves = crv.Curves() \
+            .xlab('t[\omega_{ci}^{-1}]') \
+            .ylab('norm.') \
+            .tit('Signals\ with\ GAM\ and\ ZFZF\ components')
+        curves.flag_norm = True
+        curves.new() \
+            .XS(t[ids_t_plot]) \
+            .YS(th_zf[ids_t_plot]) \
+            .leg('Analytical\ theory')
+        curves.new() \
+            .XS(t[ids_t_plot]) \
+            .YS(je[ids_t_plot]) \
+            .leg('ORB5').sty(':')
         cpr.plot_curves(curves)
 
         # - UPDATE je and efield signals -
@@ -2227,7 +2850,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
     oo_desc = {
         'species': sel_species
     }
-    MPR.calc_gamma(oo_wg, oo_plot, oo_desc)
+    MPR.calc_gamma(dd, oo_wg, oo_plot, oo_desc)
 
     return
 
@@ -2443,5 +3066,63 @@ def MPR_exclude_ZFZF(w, g, E, P, t, id_peak, eta):
         'Pgam': Pgam
     }
     return res
+
+
+# NEW: Test animation:
+def animation_1d(oo):
+    # oo.ovars = [[type, opt_var, opts], [], ...]
+    # oo.dds = [dd1, dd2, dd3, ...]
+    # oo.tit_plot
+    # oo.labx, oo.laby
+    oo_use = dict(oo)
+
+    n_vars = len(oo['ovars'])
+
+    # correct averaging parameter
+    avrs_use = list(oo['avrs'])
+    for ivar in range(n_vars):
+        if len(avrs_use[ivar]) >= 2:
+            avrs_use[ivar][1] = 'none-'
+        else:
+            avrs_use[ivar].append('none-')
+    oo_use.update({
+        'avrs': avrs_use,
+    })
+
+    vvars = choose_vars(oo_use)
+
+    # additional data:
+    labx = oo.get('labx', None)  # x-label
+    laby = oo.get('laby', None)  # y-label
+    tit_plot = oo.get('tit_plot', None)  # title
+
+    xlims = oo.get('xlims', None)
+    ylims = oo.get('ylims', None)
+
+    flag_norm = oo.get('flag_norm', False)
+    flag_semilogy = oo.get('flag_semilogy', False)
+
+    # plotting:
+    curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)
+    curves.flag_norm     = flag_norm
+    curves.flag_semilogy = flag_semilogy
+    curves.xlim(xlims)
+    curves.ylim(ylims)
+    for ivar in range(n_vars):
+        vvar = vvars[ivar]
+        leg = vvar['legs'][0]
+        if vvar['x1'] is 'r' and vvar['x2'] is 'z':
+            _, ids_s = mix.get_array_oo(oo, vvar['s'], 's')
+            _, ids_chi = mix.get_array_oo(oo, vvar['chi'], 'chi')
+            x1 = mix.get_slice(vvar['r'], ids_chi, ids_s)
+            x2 = mix.get_slice(vvar['z'], ids_chi, ids_s)
+            data = mix.get_slice(vvars[ivar]['data'], ids_s, ids_chi)
+        else:
+            x1, ids_x1 = mix.get_array_oo(oo, vvar[vvar['x1']], vvar['x1'])
+            x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
+            data = mix.get_slice(vvars[ivar]['data'], ids_x1, ids_x2)
+
+        curves.new().XS(x1).YS(x2).ZS(data).lev(60).leg(leg)
+    cpr.animation_1d(curves)
 
 

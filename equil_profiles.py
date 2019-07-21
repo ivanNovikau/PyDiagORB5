@@ -95,6 +95,18 @@ def nT_profs(dd):
             .leg(sp_name)
     cpr.plot_curves(curves_T)
 
+    # normalized temperature gradient over temperature
+    curves_T = crv.Curves().xlab('s').ylab('norm.\ \\nabla(T)/T') \
+        .tit('species\ norm.\ temperature\ gradient\n over\ temperature') \
+        .set_diff_styles()
+    curves_T.flag_norm = True
+    for sp_name in dd['species_names']:
+        curves_T.new(sp_name) \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['gradToT']) \
+            .leg(sp_name)
+    cpr.plot_curves(curves_T)
+
     # normalized density gradient
     curves_T = crv.Curves().xlab('s').ylab('norm.\ \\nabla(n)') \
         .tit('species\ norm.\ density\ gradient') \
@@ -128,6 +140,54 @@ def nT_profs(dd):
         curves_T.new(sp_name) \
             .XS(dd[sp_name].nT_equil['s']) \
             .YS(dd[sp_name].nT_equil['grad_logn']) \
+            .leg(sp_name)
+    cpr.plot_curves(curves_T)
+
+
+def n_profs(dd):
+    # electron density averaged in space:
+    ne_avr_m3_loc = ne_avr_m3(dd)
+
+    # output equilibrium density from ORB5 as it is
+    curves_n = crv.Curves().xlab('s').ylab('norm.\ n') \
+        .tit('species\ density').set_diff_styles()
+    for sp_name in dd['species_names']:
+        curves_n.new(sp_name) \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['n']) \
+            .leg(sp_name)
+    cpr.plot_curves(curves_n)
+
+    # normalized equilibrium density from ORB5
+    curves_n = crv.Curves().xlab('s').ylab('norm.\ n') \
+        .tit('species\ norm.\ density').set_diff_styles()
+    curves_n.flag_norm = True
+    for sp_name in dd['species_names']:
+        curves_n.new(sp_name) \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['n']) \
+            .leg(sp_name)
+    cpr.plot_curves(curves_n)
+
+    # density in 1/m3:
+    curves_n = crv.Curves().xlab('s').ylab('n(m^{-3})') \
+        .tit('species\ density\ (m^{-3})').set_diff_styles()
+    for sp_name in dd['species_names']:
+        curves_n.new(sp_name) \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['n'] * ne_avr_m3_loc) \
+            .leg(sp_name)
+    cpr.plot_curves(curves_n)
+
+    # normalized density gradient
+    curves_T = crv.Curves().xlab('s').ylab('norm.\ \\nabla(n)') \
+        .tit('species\ norm.\ density\ gradient') \
+        .set_diff_styles()
+    curves_T.flag_norm = True
+    for sp_name in dd['species_names']:
+        curves_T.new(sp_name) \
+            .XS(dd[sp_name].nT_equil['s']) \
+            .YS(dd[sp_name].nT_equil['gradn']) \
             .leg(sp_name)
     cpr.plot_curves(curves_T)
 
@@ -186,40 +246,82 @@ def B_equil(dd):
     f.close()
 
 
-def choose_var(dd, oo):
-    opt_var = oo.get('opt_var', '')
-    var_name, tit_var = '', ''
-    if opt_var == 'q':
-        var_name = 'q'
-        tit_var = 'q'
-        # tit_var = 'q - q(s=0)'
+# NEW: electron density averaged in space:
+def ne_avr_m3(dd):
+    B0_gauss     = dd['B0'] * 1e4
+    Te_speak_erg = dd['electrons'].T_speak(dd) * 1e7
 
-    vvar = dd[var_name]['data']
-    s    = dd[var_name]['s']
-    res = {
-        'var': vvar,
-        's': s,
-        't': [],
-        'tit': tit_var
-    }
+    res = 1e6 * dd['beta'] * B0_gauss ** 2 / (4 * np.pi * Te_speak_erg)
     return res
+
+
+# NEW: species density (in 1/m3) at a particular point:
+def n_m3_s1(dd, name_sp, s1):
+    s = dd[name_sp].nT_equil['s']
+    n = dd[name_sp].nT_equil['n']
+
+    id_s1, s1_res, _ = mix.get_ids(s, s1)
+    n_res = n[id_s1] * ne_avr_m3(dd)
+    return n_res, s1_res
 
 
 # NEW: choose a variable (s):
 def choose_one_var_ts(ovar, dd):
     opt_var = ovar[0]
-    var_name, tit_var = '', ''
+    tit_var = ''
+    vvar, s, t = [], None, None
     if opt_var == 'q':
         var_name = 'q'
         tit_var = 'q'
-        # tit_var = 'q - q(s=0)'
+        vvar.append(dd[var_name]['data'])
+        s = dd[var_name]['s']
+        t = np.array([0])
 
-    vvar = dd[var_name]['data']
-    s    = dd[var_name]['s']
+    if opt_var == 'T-equ':
+        sp_name = ovar[1]
+        tit_var = sp_name + ':\ T'
+        vvar.append(dd[sp_name].nT_equil['T'])
+        s = dd[sp_name].nT_equil['s']
+        t = np.array([0])
+
+    if opt_var == 'T-equ-keV':
+        sp_name = ovar[1]
+        tit_var = sp_name + ':\ T(keV)'
+        vvar.append(dd[sp_name].nT_equil['T_keV'])
+        s = dd[sp_name].nT_equil['s']
+        t = np.array([0])
+
+    if opt_var == 'n-equ':
+        sp_name = ovar[1]
+        tit_var = sp_name + ':\ n'
+        vvar.append(dd[sp_name].nT_equil['n'])
+        s = dd[sp_name].nT_equil['s']
+        t = np.array([0])
+
+    if opt_var == 'n-equ-m3':
+        sp_name = ovar[1]
+        tit_var = sp_name + ':\ n'
+        vvar.append(dd[sp_name].nT_equil['n'] * ne_avr_m3(dd))
+        s = dd[sp_name].nT_equil['s']
+        t = np.array([0])
+
     res = {
-        'var': vvar,
+        'data': np.array(vvar),
         's': s,
-        't': [],
+        't': t,
         'tit': tit_var
     }
     return res
+
+
+# NEW: get a safety factor value at a radial position s1:
+def q_s1(dd, s1):
+    rd.q(dd)
+
+    s = dd['q']['s']
+    q = dd['q']['data']
+
+    id_s1, s1_new, line_s1 = mix.get_ids(s, s1, '{:0.2f}')
+    value_q_s1 = q[id_s1]
+
+    return value_q_s1, s1_new, line_s1

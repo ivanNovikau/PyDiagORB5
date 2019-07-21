@@ -23,6 +23,8 @@
       <w>filt</w>
       <w>filts</w>
       <w>fres</w>
+      <w>hlength</w>
+      <w>icrv</w>
       <w>jdote</w>
       <w>khat</w>
       <w>krook</w>
@@ -49,6 +51,8 @@
       <w>renormalize</w>
       <w>scipy</w>
       <w>semilogy</w>
+      <w>smax</w>
+      <w>smin</w>
       <w>sqrt</w>
       <w>sugama</w>
       <w>varnz</w>

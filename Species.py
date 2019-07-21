@@ -26,6 +26,8 @@ class Species:
     nT_equil = None
     nT_evol = None
 
+    nbar = None
+
     efluxw_rad = None
     chi = None
 
@@ -66,20 +68,24 @@ class Species:
         T = np.array(f['/equil/profiles/' + self.name + '/t_pic'])
         vp = np.array(f['/equil/profiles/' + self.name + '/v_pic'])
 
+        self.nbar = np.array(f['/equil/scalars/' + self.name + '/nbar'])[0]
+
         T_J   = T * dd['electrons'].T_speak(dd) * self.tau
         T_keV = T_J / (1e3 * constants.elementary_charge)
 
-        gradT    = np.gradient(T, s)
-        grad_logT = np.gradient(np.log(T), s)
-        gradn    = np.gradient(n, s)
-        grad_logn = np.gradient(np.log(n), s)
+        gradT = np.array(f['/equil/profiles/' + self.name + '/gradt_pic'])
+        gradToT = gradT / T
+        gradn = np.array(f['/equil/profiles/' + self.name + '/gradn_pic'])
+
+        grad_logT = np.gradient(np.log(T), s**2)
+        grad_logn = np.gradient(np.log(n), s**2)
 
         self.nT_equil = {
             's': s,
             'psi': psi,
             'rho': rho,
             'T': T, 'T_J': T_J, 'T_keV': T_keV,
-            'gradT': gradT, 'grad_logT': grad_logT,
+            'gradT': gradT, 'gradToT': gradToT, 'grad_logT': grad_logT,
             'n': n,
             'gradn': gradn, 'grad_logn': grad_logn,
             'vp': vp
@@ -145,6 +151,16 @@ class Species:
         T_peak = ymath.find_Ti(self.tau, Lx, a0, B0, mass_pf, Z_pf)
         return T_peak
 
+    def T_s1(self, s1):
+        T = self.nT_equil['T_J']
+        s = self.nT_equil['s']
+
+        id_s1, s1_res, _ = mix.get_ids(s, s1)
+        T_res = T[id_s1]
+        T_res_eV = T_res / constants.elementary_charge
+
+        return T_res, s1_res, T_res_eV
+
     def radial_heat_flux(self, f):
         if self.efluxw_rad is not None:
             return
@@ -162,13 +178,21 @@ class Species:
         var_name = 'jdote_es'
         if 'jdote_es' in self.mpr:
             return self.mpr[var_name]
-        path_to_file = dd['path'] + '/orb5_MPR.h5'
+
+        # path_to_file = dd['path'] + '/orb5_MPR.h5'
+        path_to_file = dd['path'] + '/orb5_res.h5'
+
         f = h5.File(path_to_file, 'r')
 
-        t    = np.array(f['/data/var2d/' + self.name + '/jdote_es/time'])
-        vpar = np.array(f['/data/var2d/' + self.name + '/jdote_es/coord1'])
-        mu   = np.array(f['/data/var2d/' + self.name + '/jdote_es/coord2'])
-        data = np.array(f['/data/var2d/' + self.name + '/jdote_es/data'])
+        # t    = np.array(f['/data/var2d/' + self.name + '/jdote_es/time'])
+        # vpar = np.array(f['/data/var2d/' + self.name + '/jdote_es/coord1'])
+        # mu   = np.array(f['/data/var2d/' + self.name + '/jdote_es/coord2'])
+        # data = np.array(f['/data/var2d/' + self.name + '/jdote_es/data'])
+
+        t    = np.array(f['/data/var2d/' + self.name + '/mpr_jdote_es/time'])
+        vpar = np.array(f['/data/var2d/' + self.name + '/mpr_jdote_es/coord1'])
+        mu   = np.array(f['/data/var2d/' + self.name + '/mpr_jdote_es/coord2'])
+        data = np.array(f['/data/var2d/' + self.name + '/mpr_jdote_es/data'])
 
         self.mpr[var_name] = {
             't': t, 'vpar': vpar, 'mu': mu, 'data': data,

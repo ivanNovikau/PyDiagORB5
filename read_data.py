@@ -171,6 +171,33 @@ def potsc_s1(dd, s_point):
     return var_name
 
 
+# NEW: full potential at t1
+def potsc_t1(dd, t_point):
+    potsc_grids(dd)
+    var_name = 'potsc-t-' + '{:0.3e}'.format(t_point)
+    if var_name in dd:
+        return var_name
+
+    data = read_signal(dd['path_ext'], var_name)
+    if data is None:
+        data = {}
+
+        # read data from orb5 output file
+        f = h5.File(dd['path_orb'], 'r')
+        data['id_t1'], data['t1'] = mix.find(dd['potsc_grids']['t'], t_point)
+        data['data'] = np.array(
+            f['/data/var2d/generic/potsc/data'][data['id_t1'], :, :])  # [t1, chi, s]
+        f.close()
+
+        # save data to an external file
+        desc = 'full potential at phi=0 and t = {:0.3e}'.format(data['t1'])
+        wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
+
+    # save data to the structure
+    dd[var_name] = data
+    return var_name
+
+
 # potential at some time moment
 def potsc_t(dd, oo):
     potsc_grids(dd)
@@ -352,6 +379,7 @@ def init(dd):
 
     # read basic parameters
     dd['Lx'] = f['/parameters/equil/lx'][0]
+    dd['beta'] = f['/parameters/equil/beta'][0]
     dd['sfmin'] = f['/parameters/fields/sfmin'][0]
     dd['sfmax'] = f['/parameters/fields/sfmax'][0]
 
@@ -386,7 +414,7 @@ def species(dd, f):
     ids_attr = list(names_all_species)
 
     dd['species_names'] = [names_all_species[name].decode("utf-8")
-                           for name in ids_attr[1:len(ids_attr)]]
+                           for name in ids_attr[0:len(ids_attr)-1]]
 
     # correct species' names
     if dd['oper_system'] == cn.SYS_WINDOWS:

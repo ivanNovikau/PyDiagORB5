@@ -435,6 +435,25 @@ def phinz_s1(dd, s_point):
     return name_phinz
 
 
+# NEW: nonzonal phi at t1
+def phinz_t1(dd, t_point):
+    phibar_interp(dd)
+    name_potsc = rd.potsc_t1(dd, t_point)
+
+    name_phinz = 'phinz-t-' + '{:0.3e}'.format(t_point)
+    if name_phinz in dd:
+        return name_phinz
+
+    phibar_t1 = dd['phibar_interp']['data'][dd[name_potsc]['id_t1'], :]
+    data      = dd[name_potsc]['data'] - phibar_t1[None, :]
+    dd[name_phinz] = {
+        't1':    dd[name_potsc]['t1'],
+        'id_t1': dd[name_potsc]['id_t1'],
+        'data':  data  # (chi, s)
+    }
+    return name_phinz
+
+
 #  NEW: radial derivative of the nonzonal potential at chi1:
 def ernz_r_chi1(dd, chi_point):
     name_phinz = phinz_chi1(dd, chi_point)
@@ -632,6 +651,66 @@ def choose_one_var_ts(ovar, dd):
     return res
 
 
+# NEW: take signal (r,z)
+def choose_one_var_rz(ovar, dd):
+    opt_var   = ovar[0]
+    var_name, tit_var, line_1 = '', '', ''
+    res = {}
+    if opt_var == 'phinz':
+        t_point = ovar[1]
+        var_name = phinz_t1(dd, t_point)
+        tit_var  = '\widetilde{\Phi}'
+        line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
+        line_1 = '_{' + line_1 + '}'
+
+    vvar = dd[var_name]['data']
+    R    = dd['potsc_grids']['r']
+    Z    = dd['potsc_grids']['z']
+    s    = dd['potsc_grids']['s']
+    chi  = dd['potsc_grids']['chi']
+
+    tit_var += line_1
+
+    res.update({
+        'data': vvar.T,  # (s, chi)
+        'r': R,
+        'z': Z,
+        's': s,
+        'chi': chi,
+        'tit': tit_var
+    })
+
+    return res
+
+
+# NEW: take signal (s,chi)
+def choose_one_var_schi(ovar, dd):
+    opt_var   = ovar[0]
+    var_name, tit_var, line_1 = '', '', ''
+    res = {}
+    if opt_var == 'phinz':
+        t_point = ovar[1]
+        var_name = phinz_t1(dd, t_point)
+        tit_var  = '\widetilde{\Phi}'
+        line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
+        line_1 = '_{' + line_1 + '}'
+
+    vvar = dd[var_name]['data']
+    s    = dd['potsc_grids']['s']
+    chi  = dd['potsc_grids']['chi']
+
+    tit_var += line_1
+
+    res.update({
+        'data': vvar.T,  # (s, chi)
+        's': s,
+        'chi': chi,
+        'tit': tit_var
+    })
+
+    return res
+
+
 # NEW: take signal (t,chi)
 def choose_one_var_tchi(ovar, dd):
     opt_var   = ovar[0]
@@ -663,561 +742,6 @@ def choose_one_var_tchi(ovar, dd):
 
     return res
 
-
-def choose_var(dd, oo):
-    # signal at a chi point
-
-    chi_point = oo.get('chi_point', 0.0)
-    oo_var = {'chi_s': [chi_point]}
-    opt_var = oo.get('opt_var', 'ernz_r')
-    var_name, tit_var = '', ''
-    if opt_var == 'phinz':
-        var_name = phinz(dd, oo_var)[0]
-        tit_var = '(\Phi - \overline{\Phi})'
-    if opt_var == 'ernz_r':
-        var_name = ernz_r(dd, oo_var)[0]
-        tit_var = '-\partial_s(\Phi - \overline{\Phi})'
-    if opt_var == 'ernz_chi':
-        var_name = ernz_chi(dd, oo_var)[0]
-        tit_var = '-s^{-1}\partial_{\chi}(\Phi - \overline{\Phi})'
-
-    vvar = dd[var_name]['data']
-    s = dd['potsc_grids']['s']
-    t = dd['potsc_grids']['t']
-    # line_chi = '\chi = {:0.3f}'.format(dd[var_name]['chi_1'])
-    # tit_var = tit_var + ':\ ' + line_chi
-    tit_var = tit_var
-
-    res = {
-        'var': vvar,
-        's': s,
-        't': t,
-        'tit': tit_var
-    }
-
-    return res
-
-
-def choose_var_t(dd, oo):
-    # signal at some t moment
-
-    t_point = oo.get('t_point', 0.0)
-    oo_var = {'t_points': [t_point]}
-    opt_var = oo.get('opt_var', 'potsc')
-    var_name, tit_var = '', ''
-    if opt_var == 'potsc':
-        var_name = rd.potsc_t(dd, oo_var)[0]
-        tit_var = '\Phi:\ '
-    if opt_var == 'phinz':
-        var_name = phinz_t(dd, oo_var)[0]
-        tit_var = '(\Phi - \overline{\Phi}):\ '
-    vvar = dd[var_name]['data']
-    s   = dd['potsc_grids']['s']
-    chi = dd['potsc_grids']['chi']
-    line_chi = 't[\omega_{ci}^{-1}]' + ' = {:0.3e}'.format(dd[var_name]['t_point'])
-    tit_var = tit_var + line_chi
-
-    res = {
-        'var': vvar,
-        's': s,
-        'chi': chi,
-        'tit': tit_var
-    }
-
-    return res
-
-
-def choose_var_s(dd, oo):
-    # signal at a s point
-
-    s_point = oo.get('s_point', 0.0)
-    oo_var  = {'s_points': [s_point]}
-    opt_var = oo.get('opt_var', 'potsc')
-    var_name, tit_var = '', ''
-    if opt_var == 'potsc':
-        var_name = rd.potsc_s(dd, oo_var)[0]
-        tit_var = '\Phi:\ '
-    if opt_var == 'phinz':
-        var_name = phinz_s(dd, oo_var)[0]
-        tit_var = '(\Phi - \overline{\Phi}):\ '
-    vvar = dd[var_name]['data']
-    t    = dd['potsc_grids']['t']
-    chi  = dd['potsc_grids']['chi']
-    line_s = 's = {:0.3f}'.format(dd[var_name]['s_point'])
-    tit_var = tit_var + line_s
-
-    res = {
-        'var': vvar,
-        't': t,
-        'chi': chi,
-        'tit': tit_var
-    }
-
-    return res
-
-
-def plot_rz(dd, oo):
-    res = choose_var_t(dd, oo)
-    r = dd['potsc_grids']['r']  # create a new reference
-    z = dd['potsc_grids']['z']  # create a new reference
-
-    # form 3d curve:
-    curves = crv.Curves().xlab('r').ylab('z').tit(res['tit'])
-    curves.new('Phi_schi')\
-        .XS(r)\
-        .YS(z)\
-        .ZS(res['var'].T)\
-        .cmp('jet')
-    cpr.plot_curves_3d(curves)
-
-
-def calc_gamma_chi0(dd, oo):
-    # initial signal and grids
-    rd.potsc_grids(dd)
-    t = dd['potsc_grids']['t']
-    s = dd['potsc_grids']['s']
-    chi = dd['potsc_grids']['chi']
-
-    # parameters to treat the results
-    sel_norm = oo.get('sel_norm', 'wci')
-    s_intervals = oo.get('s_intervals', [[0.0, 1.0]])
-    t_intervals = oo.get('t_intervals', [[t[0], t[-1]]])  # taking into account sel_norm
-    filters = oo.get('filters', [None])
-    chi1 = oo.get('chi1', 0.0)
-    flag_est = oo.get('flag_est', True)
-    # flag_adv = oo.get('flag_adv', True)
-
-    # number of t- and s- intervals has to be the same:
-    if np.shape(s_intervals)[0] != np.shape(t_intervals)[0]:
-        return None
-    if np.shape(s_intervals)[0] != np.shape(filters)[0]:
-        return None
-
-    # full potential at a chosen poloidal angle
-    oo_phi = {'chi_s': [chi1]}
-    name_potsc = rd.potsc_chi(dd, oo_phi)[0]
-
-    # time normalization
-    coef_norm = None
-    line_t, line_w, line_g = None, None, None
-    if sel_norm == 'ms':
-        coef_norm = 1.e3 / dd['wc']
-        line_t, line_w, line_g = 't,\ ms', 'w(kHz) = ', 'g(1e3/s) = '
-    if sel_norm == 'wci':
-        coef_norm = 1
-        line_t, line_w, line_g = 't[\omega_c^{-1}]', 'w[wci] = ', 'g[wci] = '
-    if sel_norm == 'csa':
-        coef_norm = (dd['cs'] / dd['a0']) / dd['wc']
-        line_t, line_w, line_g = 't[a_0/c_s]', 'w[cs/a0] = ', 'g[cs/a0 ] = '
-    if sel_norm == 'csr':
-        coef_norm = (dd['cs'] / dd['R0']) / dd['wc']
-        line_t, line_w, line_g = 't[R_0/c_s]', 'w[cs/R0] = ', 'g[cs/R0] = '
-
-    # form s and t intervals
-    n_intervals = np.shape(s_intervals)[0]
-    ids_s_intervals, _, lines_s = \
-        mix.get_interval(s, s_intervals, 's', '0.3f')
-    ids_t_intervals, t_final_intervals, lines_t = \
-        mix.get_interval(t * coef_norm, t_intervals, 't', '0.1e')
-    del s
-
-    # poloidal angle
-    id_chi, chi1 = mix.find(chi, chi1)
-    line_chi1 = '\chi = {:0.1f}'.format(chi1)
-
-    # signal description
-    line_Phi = '\Phi({:s})'.format(line_chi1)
-
-    # --- ESTIMATION ---
-    if not flag_est:
-        return
-
-    wg_est, Phis_init, Phis_filt, Phis_fft_init, Phis_fft_filt, w2_grids = \
-        {}, {}, {}, {}, {}, {}
-    filt, Phi, t_int, w_int, ids_s, ids_t = None, None, None, None, None, None
-    for id_int in range(n_intervals):
-        ids_s, ids_t = ids_s_intervals[id_int], ids_t_intervals[id_int]
-        t_int = t_final_intervals[id_int]
-        oo_filter = filters[id_int]
-
-        # averaging along s axis at a particular angle chi
-        Phi = np.mean(
-            dd[name_potsc]['data'][:, ids_s[0]:ids_s[-1] + 1], axis=1)
-
-        # filtering
-        filt = ymath.filtering(t, Phi, oo_filter)
-
-        Phis_init[str(id_int)] = Phi[ids_t[0]:ids_t[-1] + 1]
-        Phis_filt[str(id_int)] = filt['filt'][ids_t[0]:ids_t[-1] + 1]
-        Phis_fft_init[str(id_int)] = filt['fft_init_2']
-        Phis_fft_filt[str(id_int)] = filt['fft_filt_2']
-        w2_grids[str(id_int)] = filt['w2']
-
-        # estimation of the instability spectrum
-        Phi_work = Phis_filt[str(id_int)]
-        if Phi_work is None:
-            Phi_work = Phi
-        wg_est[str(id_int)] = ymath.estimate_wg(t_int, Phi_work)
-    del filt, Phi, t_int, w_int, ids_s, ids_t
-
-    # plot FFT
-    for id_int in range(n_intervals):
-        curves_est = crv.Curves().xlab(line_t).ylab('FFT:\ \Phi')\
-            .tit('FFT:\ ' + line_Phi + ':\ ' + lines_s[id_int])
-        curves_est.new('init') \
-            .XS(w2_grids[str(id_int)]) \
-            .YS(Phis_fft_init[str(id_int)]) \
-            .leg('init').col('grey')
-        curves_est.new('init') \
-            .XS(w2_grids[str(id_int)]) \
-            .YS(Phis_fft_filt[str(id_int)]) \
-            .leg('filt').col('blue').sty(':')
-        cpr.plot_curves(curves_est)
-
-    # plot time evolution
-    for id_int in range(n_intervals):
-        curves_est = crv.Curves().xlab(line_t).ylab('\Phi')\
-            .tit(line_Phi + ':\ ' + lines_s[id_int])
-        curves_est.flag_semilogy = True
-        curves_est.new('init')\
-            .XS(t_final_intervals[id_int])\
-            .YS(Phis_init[str(id_int)])\
-            .leg('init').col('grey')
-        curves_est.new('init') \
-            .XS(t_final_intervals[id_int]) \
-            .YS(Phis_filt[str(id_int)]) \
-            .leg('filt').col('blue').sty(':')
-        curves_est.new('peaks')\
-            .XS(wg_est[str(id_int)]['x_peaks'])\
-            .YS(wg_est[str(id_int)]['y_peaks'])\
-            .leg('peaks').sty('o').col('green')
-        curves_est.new('fitting')\
-            .XS(wg_est[str(id_int)]['x_fit'])\
-            .YS(wg_est[str(id_int)]['y_fit'])\
-            .leg('fitting').col('red').sty('--')
-        cpr.plot_curves(curves_est)
-
-    print('--- Estimation ---')
-    for id_int in range(n_intervals):
-        print('E -> *** ' + lines_s[id_int] + ':\ ' + lines_t[id_int] + ' ***')
-        print('E -> ' + line_w + '{:0.3e}'.format(wg_est[str(id_int)]['w']))
-        print('E -> ' + line_g + '{:0.3e}'.format(wg_est[str(id_int)]['g']))
-
-
-def calc_wg(dd, oo):
-    # initial signal and grids
-    rd.potsc_grids(dd)
-    t = dd['potsc_grids']['t']
-    s = dd['potsc_grids']['s']
-    chi = dd['potsc_grids']['chi']
-
-    # parameters to treat the results
-    sel_norm = oo.get('sel_norm', 'wc')
-    oo_filter_g = oo.get('filter_g', {'sel_filt': None})
-    oo_filter_w = oo.get('filter_w', {'sel_filt': None})
-    chi1 = oo.get('chi1', 0.0)
-
-    oo_w_fft = oo.get('w_fft', None)
-    n_max_w_fft = None
-    if oo_w_fft is None:
-        flag_w_fft = False
-    else:
-        flag_w_fft = True
-        n_max_w_fft = oo_w_fft.get('n_max', 1)
-
-    # full potential at a chosen poloidal angle
-    oo_phi = {'chi_s': [chi1]}
-    name_potsc = rd.potsc_chi(dd, oo_phi)[0]
-
-    # time normalization
-    coef_norm_t, coef_norm_w = None, None
-    line_norm_t, line_norm_w, line_norm_g = None, None, None
-    label_norm_t, label_norm_w, label_norm_g = None, None, None
-    if sel_norm == 'khz':
-        coef_norm_t = 1.e3 / dd['wc']
-        coef_norm_w = 1
-        line_norm_t,  line_norm_w,  line_norm_g  = 't(ms)', 'w(kHz)', 'g(1e3/s)'
-        label_norm_t, label_norm_w, label_norm_g = \
-            't, ms', '\omega(kHz)', '\gamma(1e3/s)'
-    if sel_norm == 'wc':
-        coef_norm_t = 1
-        coef_norm_w = 2 * np.pi
-        line_norm_t, line_norm_w,   line_norm_g  = 't[1/wc]', 'w[wci]', 'g[wci]'
-        label_norm_t, label_norm_w, label_norm_g = \
-            't[\omega_c^{-1}]', '\omega[\omega_c]', '\gamma[\omega]'
-    if sel_norm == 'csa':
-        coef_norm_t = (dd['cs'] / dd['a0']) / dd['wc']
-        coef_norm_w = 2 * np.pi
-        line_norm_t, line_norm_w, line_norm_g = 't[a0/cs]', 'w[cs/a0]', 'g[cs/a0 ]'
-        label_norm_t, label_norm_w, label_norm_g = \
-            't[a_0/c_s]', '\omega[c_a/a_0]', '\gamma[c_s/a_0]'
-    if sel_norm == 'csr':
-        coef_norm_t = (dd['cs'] / dd['R0']) / dd['wc']
-        coef_norm_w = 2 * np.pi
-        line_norm_t, line_norm_w, line_norm_g = 't[R0/cs]', 'w[cs/R0]', 'g[cs/R0]'
-        label_norm_t, label_norm_w, label_norm_g = \
-            't[R_0/c_s]', '\omega[c_a/R_0]', '\gamma[c_s/R_0]'
-
-    oo_filter_g['norm_w'] = coef_norm_w
-    oo_filter_w['norm_w'] = coef_norm_w
-
-    # radial domain
-    s, ids_s = mix.get_array_oo(oo, s, 's')
-    line_s = 's = [{:0.3f}, {:0.3f}]'.format(s[0], s[-1])
-
-    # time renormalization
-    t_full = t * coef_norm_t
-    del t
-
-    # poloidal angle
-    id_chi, chi1 = mix.find(chi, chi1)
-    line_chi1 = '\chi = {:0.1f}'.format(chi1)
-
-    # signal description
-    line_Phi = '\Phi({:s})'.format(line_chi1)
-    line_Phi_w = '\Phi({:s}) \cdot \exp(-g t)'.format(line_chi1)
-
-    # averaging along s axis at a particular angle chi
-    Phi_init_g = np.mean(dd[name_potsc]['data'][:, ids_s[0]:ids_s[-1] + 1], axis=1)
-
-    # filtering of the growing signal
-    filt_g = ymath.filtering(t_full, Phi_init_g, oo_filter_g)
-
-    # information about the time domain, where the filtering of the growing signal
-    # has been performed
-    line_filt_tg = label_norm_t + ' = [{:0.3e}, {:0.3e}]' \
-        .format(filt_g['x'][0], filt_g['x'][-1])
-
-    # chose a time interval inside of the time domain
-    # where the filtering has been performed
-    tg, ids_tg = mix.get_array_oo(oo, filt_g['x'], 't')
-
-    # information about the time domain where the growth rate is estimated:
-    line_tg = line_norm_t + ' = [{:0.3e}, {:0.3e}]'.format(tg[0], tg[-1])
-    if filt_g['filt'] is None:
-        Phi_filt_g = None
-        Phi_work_g = Phi_init_g[ids_tg[0]:ids_tg[-1] + 1]
-    else:
-        Phi_filt_g = filt_g['filt']
-        Phi_work_g = Phi_filt_g[ids_tg[0]:ids_tg[-1] + 1]
-
-    # estimation of the instability growth rate
-    g_est = ymath.estimate_g(tg, Phi_work_g)
-
-    # get rid of the growth:
-    Phi_init_w = Phi_init_g * np.exp(- g_est['g'] * t_full)
-
-    # filtering of the oscillating signal
-    filt_w = ymath.filtering(t_full, Phi_init_w, oo_filter_w)
-
-    # information about the time domain, where the filtering of the oscillating signal
-    # has been performed
-    line_filt_tw = label_norm_t + ' = [{:0.3e}, {:0.3e}]' \
-        .format(filt_w['x'][0], filt_w['x'][-1])
-
-    # chose a time interval inside of the time domain
-    # where the filtering has been performed
-    tw, ids_tw = mix.get_array_oo(oo, filt_w['x'], 't')
-
-    # information about the time domain where the frequency is estimated:
-    line_tw = line_norm_t + ' = [{:0.3e}, {:0.3e}]'.format(tw[0], tw[-1])
-    if filt_w['filt'] is None:
-        Phi_filt_w = None
-        Phi_work_w = Phi_init_w[ids_tw[0]:ids_tw[-1] + 1]
-    else:
-        Phi_filt_w = filt_w['filt']
-        Phi_work_w = Phi_filt_w[ids_tw[0]:ids_tw[-1] + 1]
-
-    # estimation of the frequency:
-    if flag_w_fft:
-        w_est_fft = ymath.estimate_w_max_fft(filt_w['w'],
-                                             filt_w['fft_filt'], {'n_max': n_max_w_fft})
-    w_est = ymath.estimate_w(tw, Phi_work_w)
-
-    # plot FFT
-    curves = crv.Curves().xlab(label_norm_w).ylab('FFT:\ \Phi')\
-        .tit('FFT:\ ' + line_Phi)\
-        .titn(line_s + ', ' + line_filt_tg)
-    curves.new() \
-        .XS(filt_g['w2']) \
-        .YS(filt_g['fft_init_2']) \
-        .leg('initial').col('grey')
-    curves.new() \
-        .XS(filt_g['w2']) \
-        .YS(filt_g['fft_filt_2']) \
-        .leg('filtered').col('blue').sty(':')
-    cpr.plot_curves(curves)
-
-    curves = crv.Curves().xlab(label_norm_w).ylab('FFT:\ \Phi') \
-        .tit('FFT:\ ' + line_Phi_w)\
-        .titn(line_s + ', ' + line_filt_tw)
-    curves.new() \
-        .XS(filt_w['w2']) \
-        .YS(filt_w['fft_init_2']) \
-        .leg('initial').col('grey')
-    curves.new() \
-        .XS(filt_w['w2']) \
-        .YS(filt_w['fft_filt_2']) \
-        .leg('filtered').col('blue').sty(':')
-    cpr.plot_curves(curves)
-
-    if flag_w_fft:
-        curves = crv.Curves().xlab(label_norm_w).ylab('FFT:\ \Phi') \
-            .tit('FFT:\ ' + line_Phi_w) \
-            .titn(line_s + ', ' + line_filt_tw)
-        curves.new() \
-            .XS(filt_w['w']) \
-            .YS(filt_w['fft_filt']) \
-            .leg('filtered').col('blue').sty('-')
-        curves.new() \
-            .XS(w_est_fft['w_max']) \
-            .YS(w_est_fft['f_max']) \
-            .leg('chosen\ fft\ peaks').col('orange').sty('o')
-        cpr.plot_curves(curves)
-
-    # plot filtered signals
-    curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi)\
-        .tit(line_Phi + '\ (-> G)\ VS\ ' + line_Phi_w + '\ (-> W)')\
-        .titn(line_s)
-    curves.flag_semilogy = True
-    curves.new() \
-        .XS(t_full) \
-        .YS(Phi_init_g) \
-        .leg('G:\ init.').col('grey')
-    curves.new() \
-        .XS(filt_g['x']) \
-        .YS(Phi_filt_g) \
-        .leg('G:\ filt.').col('blue').sty(':')
-    curves.new() \
-        .XS(t_full) \
-        .YS(Phi_init_w) \
-        .leg('W:\ init.').col('red')
-    curves.new() \
-        .XS(filt_w['x']) \
-        .YS(Phi_filt_w) \
-        .leg('W:\ filt.').col('green').sty(':')
-    cpr.plot_curves(curves)
-
-    # plot fitted signals
-    curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi) \
-        .tit(line_Phi + ':\ ' + line_s)\
-        .titn(label_norm_g + ' = {:0.3e}'.format(g_est['g']))
-    curves.flag_semilogy = True
-    curves.new() \
-        .XS(tg) \
-        .YS(Phi_work_g) \
-        .leg('signal').col('blue')
-    curves.new() \
-        .XS(g_est['x_peaks']) \
-        .YS(g_est['y_peaks']) \
-        .leg('peaks').sty('o').col('green')
-    curves.new() \
-        .XS(g_est['x_fit']) \
-        .YS(g_est['y_fit']) \
-        .leg('fitting').col('red').sty('--')
-    cpr.plot_curves(curves)
-
-    if w_est is not None:
-        curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi) \
-            .tit(line_Phi_w + ':\ ' + line_s) \
-            .titn(label_norm_w + ' = {:0.3e}'.format(w_est['w']))
-    else:
-        curves = crv.Curves().xlab(label_norm_t).ylab(line_Phi) \
-            .tit(line_Phi_w + ':\ ' + line_s)
-    curves.flag_semilogy = True
-    curves.new() \
-        .XS(tw) \
-        .YS(Phi_work_w) \
-        .leg('signal').col('blue')
-    if w_est is not None:
-        curves.new('peaks') \
-            .XS(w_est['x_peaks']) \
-            .YS(w_est['y_peaks']) \
-            .leg('peaks').sty('o').col('green')
-        curves.new('fitting') \
-            .XS(w_est['x_fit']) \
-            .YS(w_est['y_fit']) \
-            .leg('fitting').col('red').sty('--')
-    cpr.plot_curves(curves)
-
-    print('--- Estimation ---')
-    print('*** Growth rate: ' + line_s + ':\ ' + line_tg + ' ***')
-    print('E -> ' + line_norm_g + ' = {:0.3e}'.format(g_est['g']))
-    if w_est is not None:
-        print('*** Frequency: '   + line_s + ':\ ' + line_tw + ' ***')
-        print('E -> ' + line_norm_w + ' = {:0.3e}'.format(w_est['w']))
-    if flag_w_fft:
-        for i_w_fft in range(n_max_w_fft):
-            print(
-                    'w_fft(id_max = {:d}) = {:0.3e},   max(id_max = {:d}) = {:0.3e}'
-                        .format(i_w_fft, w_est_fft['w_max'][i_w_fft],
-                                i_w_fft, w_est_fft['f_max'][i_w_fft])
-                  )
-
-
-def anim_st_chi0(dd, chi0, oo):
-    rd.potsc(dd)
-    t = dd['potsc']['t']  # create a new reference
-    s = dd['potsc']['s']  # create a new reference
-    chi = dd['potsc']['chi']  # create a new reference
-
-    # intervals
-    s, ids_s = mix.get_array_oo(oo, s, 's')
-    t, ids_t = mix.get_array_oo(oo, t, 't')
-    id_chi1, _ = mix.find(chi, chi0)
-
-    # signal in the chosen intervals
-    pot_nz = mix.get_slice(dd['potsc']['data'], ids_t, id_chi1, ids_s)
-
-    # form 2d curve:
-    curves = crv.Curves().xlab('s').wlab('t').zlab('\Phi').tit('\Phi')
-    curves.new('anim_Phi_st').XS(s).WS(t).ZS(pot_nz).leg('\Phi')
-    curves.set_limits()
-    curves.flag_norm = True
-
-    # animation:
-    cpr.animation_curves_2d(curves)
-
-
-def test_correlation(dd):
-    Nt = 401
-    t_min = 1.0
-    t_max = 4.3
-    t = np.linspace(t_min, t_max, Nt)
-
-    delta_t = 0.05
-    T1, T2 = 0.25, 0.25
-    w1, w2 = 2*np.pi/T1, 2*np.pi/T2
-    y1, y2 = np.sin(w1 * t), np.sin(w1 * (t + delta_t))
-
-    oo_dt = {
-        'var1': y1, 'var2': y2,
-        'grid_t1': t, 'grid_t2': t,
-        'vars_names': ['y1', 'y2']
-    }
-    gn.find_time_delay(dd, oo_dt)
-
-
-def test1_bicoherence():
-    N = 5001
-    t = np.linspace(0, 100, N)
-    fs = 1 / (t[1] - t[0])
-    s1 = np.cos(2 * np.pi * 4 * t + 0.2)
-    s2 = 3 * np.cos(2 * np.pi * 5 * t + 0.5)
-    np.random.seed(0)
-    noise = 5 * np.random.normal(0, 1, N)
-    signal = s1 + s2 + 0.5 * s1 * s2 + noise
-    _plot_signal(t, signal)
-
-    kw = dict(nperseg=N // 10, noverlap=N // 20, nfft=next_fast_len(N // 2))
-    freq1, freq2, bicoh = polycoherence(signal, fs, **kw)
-    plot_polycoherence(freq1, freq2, bicoh)
-
-    freq1, fre2, bispec = polycoherence(signal, fs, norm=None, **kw)
-    plot_polycoherence(freq1, fre2, bispec)
-
-    # freq1, freq2, bicoh = polycoherence(signal, fs, flim1=(0, 30), flim2=(0, 30), **kw)
-    # plot_polycoherence(freq1, freq2, bicoh)
 
 
 

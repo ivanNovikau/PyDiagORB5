@@ -11,7 +11,6 @@ import Geom
 import numpy as np
 import scipy.io
 from scipy.stats import norm as stat_norm
-import matplotlib.mlab as mlab
 import scipy.signal
 
 
@@ -44,25 +43,28 @@ def choose_one_var_vparmu(ovar, dd):
 
         vvar = np.mean(jdote_es_dict['data'][ids_t, :, :], axis=0)
 
-        tit_var  = species_name + ':\ <J*E>_{t}'
+        tit_var  = species_name + ':\ <(' + 'J\cdot E' + ')>_{t}'
         tit_var = 't = ' + line_t + ':\ ' + tit_var
 
     res = {
         'data': vvar,  # (t, mu, vpar)
         'vpar': vpar,
         'mu': mu,
-        'tit': tit_var
+        'tit': tit_var,
+        't': t
     }
 
     return res
 
 
 # NEW: variable (t)
-def choose_one_var_t(ovar, dd):
+def choose_one_var_t(ovar, dd, flag_vpar_boundaries=False):
     # --- read energy transfer signal ---
     def jdote_es_species(dd, species_name, mu_int, vpar_int):
         jdote_es_dict = dd[species_name].jdote_es(dd)
-        t, vpar, mu = jdote_es_dict['t'], jdote_es_dict['vpar'], jdote_es_dict['mu']
+        t       = np.array(jdote_es_dict['t'])
+        vpar    = np.array(jdote_es_dict['vpar'])
+        mu      = np.array(jdote_es_dict['mu'])
 
         mu_int_work, vpar_int_work = mu_int, vpar_int
         if len(mu_int_work) == 0:
@@ -70,21 +72,31 @@ def choose_one_var_t(ovar, dd):
         if len(vpar_int_work) == 0:
             vpar_int_work = vpar
 
-        ids_mu,   mu_int_work,   line_mu   = mix.get_ids(mu,   mu_int_work, '{:0.2f}')
-        ids_vpar, vpar_int_work, line_vpar = mix.get_ids(vpar, vpar_int_work, '{:0.1f}')
+        line_mu, line_vpar = '', ''
+        if not flag_vpar_boundaries:
+            ids_mu, mu_int_work,     line_mu   = mix.get_ids(mu, mu_int_work, '{:0.2f}')
+            ids_vpar, vpar_int_work, line_vpar = mix.get_ids(vpar, vpar_int_work, '{:0.1f}')
 
-        vvar_loc = \
-            jdote_es_dict['data'][:, ids_mu[0]:ids_mu[-1]+1, ids_vpar[0]:ids_vpar[-1]+1]
-        vvar_loc = np.sum(vvar_loc, axis=2)
-        vvar_loc = np.sum(vvar_loc[:, :], axis=1)
+            vvar_loc = \
+                jdote_es_dict['data'][:, ids_mu[0]:ids_mu[-1]+1, ids_vpar[0]:ids_vpar[-1]+1]
+            vvar_loc = np.sum(vvar_loc, axis=2)
+            vvar_loc = np.sum(vvar_loc[:, :], axis=1)
+        else:
+            vvar_loc_area = np.full([len(t), len(mu)], np.nan)
+            for imu in range(len(mu)):
+                ids_mu1_area = np.array(ids_vpar_area[imu]).astype(int)
+                vvar_loc_area[:, imu] = np.squeeze(np.nansum(
+                        jdote_es_dict['data'][:, imu, ids_mu1_area], axis=1
+                ))
+            vvar_loc = np.nansum(vvar_loc_area[:, :], axis=1)
 
         return vvar_loc, t, line_mu, line_vpar
 
     # --- read field energy ---
     def efield_species(dd, species_name):
         efield_dict = dd[species_name].efield(dd)
-        t        = efield_dict['t']
-        vvar_loc = efield_dict['data']
+        t        = np.array(efield_dict['t'])
+        vvar_loc = np.array(efield_dict['data'])
 
         return vvar_loc, t
 
@@ -94,9 +106,13 @@ def choose_one_var_t(ovar, dd):
 
     # --- velocity domains ---
     mu_int, vpar_int = [], []
-    if len(ovar) > 2:
-        mu_int = ovar[2]
-        vpar_int = ovar[3]
+    if not flag_vpar_boundaries:
+        if len(ovar) > 2:
+            mu_int   = ovar[2]
+            vpar_int = ovar[3]
+    else:
+        ids_vpar_area = ovar[2]
+        line_name_area = ovar[3]
 
     # --- Create empty result dictionary ---
     res = {}
@@ -114,8 +130,11 @@ def choose_one_var_t(ovar, dd):
             for sp_name in sp_names[1:]:
                 vvar_sp, _, _, _ = jdote_es_species(dd, sp_name, mu_int, vpar_int)
                 vvar += vvar_sp
-        tit_var = species_name + ':\ <\mathcal{P}>_{\mu, v_{\parallel}}'
-        res['line_sum'] = '\mu = ' + line_mu + '$\n$ v_{\parallel} = ' + line_vpar
+        tit_var = species_name + ':\ <(' + 'J\cdot E' + ')>_{\mu, v_{\parallel}}'
+        if not flag_vpar_boundaries:
+            res['line_sum'] = '\mu = ' + line_mu + '$\n$ v_{\parallel} = ' + line_vpar
+        else:
+            res['line_sum'] = line_name_area
 
     if opt_var == 'efield':
         if species_name is not 'total':
@@ -227,43 +246,8 @@ def comparison_with_GENE_CPS2019(dd, oo):
     cpr.plot_curves(curves)
 
 
-# Test histogram:
-def test_histogram():
-    # # --- TEST plotting of a histogram ---
-    # data = np.array([1, 2, 3, 12, 14, 16, 18, 28, 29])
-    # data2 = np.array([1, 2, 3, 5, 12, 12, 12, 14, 16, 18, 20])
-    # bbins = np.array([0, 10, 20, 30])
-    # hist = np.histogram(data, bins=bbins)
-    #
-    # curves = crv.Curves().xlab('x').ylab('n')
-    # curves.new().XS(bbins).YS(data).set_hist().alpha(1).leg('data1')
-    # curves.new().XS(10).YS(data2).set_hist().alpha(0.8).leg('data2')
-    # cpr.plot_curves(curves)
-
-    # --- TEST fitting to gaussian function ---
-    mean_x = 2
-    sigma_x = 1
-    data_x = np.random.normal(mean_x, sigma_x, 1000)
-
-    n_bins = 20
-    hist = np.histogram(data_x, bins=n_bins)
-    bins = hist[1]
-    hist_res = hist[0]
-
-    fit_mean_x, fit_sigma_x = stat_norm.fit(data_x)
-    f_data_x = mlab.normpdf(bins, fit_mean_x, fit_sigma_x)
-
-    test_mean_x = data_x.mean()
-    test_sigma_x = data_x.std()
-
-    curves = crv.Curves().xlab('x').ylab('n')
-    curves.new().XS(n_bins).YS(data_x).set_hist().alpha(1).leg('data-x')
-    curves.new().XS(bins).YS(f_data_x).col('red')
-    cpr.plot_curves(curves)
-
-
 # Calculate the growth/damping rate, using the MPR diagnostic
-def calc_gamma(oo_wg, oo_plot, oo_desc):
+def calc_gamma(dd, oo_wg, oo_plot, oo_desc):
     # --- DESCRIPTION ---
     # See common.MPR_gamma for description
 
@@ -276,8 +260,22 @@ def calc_gamma(oo_wg, oo_plot, oo_desc):
     naive_n_periods = oo_wg.get('naive_n_periods', 3)
     w_init = oo_wg.get('gam-w', None)
 
+    flag_inv_peaks = oo_wg.get('flag_inv_peaks', False)
+
     flag_t_right = oo_wg.get('flag_t_right', False)
     flag_stat = oo_wg.get('flag_stat', False)
+
+    sel_norm = oo_wg.get('sel_norm', 'wc')
+    coef_norm_global, line_norm = None, ''
+    if sel_norm == 'wc':
+        line_norm = '[wci]'
+        coef_norm_global = 1
+    if sel_norm == 'vt':
+        line_norm = '[sqrt(2)*vt/R0]'
+        coef_norm_global = dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
+
+    flag_norm = oo_plot.get('flag_norm', False)
+    flag_semilogy = oo_plot.get('flag_semilogy', False)
 
     # --- DATA ---
     je_dict = oo_wg.get('je_dict', None)
@@ -299,7 +297,10 @@ def calc_gamma(oo_wg, oo_plot, oo_desc):
     ef_work = ef[ids_t_work]
 
     # - initial domain of calculation -
-    ids_je_peaks, _     = scipy.signal.find_peaks(je_work)  # here, DON'T include np.abs
+    if not flag_inv_peaks:
+        ids_je_peaks, _ = scipy.signal.find_peaks(je_work)
+    else:
+        ids_je_peaks, _ = scipy.signal.find_peaks(-je_work)
     ids_all_je_peaks, _ = scipy.signal.find_peaks(np.abs(je_work))
 
     if flag_naive_t_peaks:
@@ -332,7 +333,10 @@ def calc_gamma(oo_wg, oo_plot, oo_desc):
 
     # - Ef -
     curves = crv.Curves() \
-        .xlab('t[\omega_{ci}^{-1}]').tit(ef_dict['tit'])
+        .xlab('t[\omega_{ci}^{-1}]')\
+        .tit(ef_dict['tit'])
+    curves.flag_norm = flag_norm
+    curves.flag_semilogy = flag_semilogy
     curves.newg(area_work)
     curves.newg(area_calc)
     curves.new() \
@@ -342,13 +346,17 @@ def calc_gamma(oo_wg, oo_plot, oo_desc):
     # - JE -
     curves = crv.Curves() \
         .xlab('t[\omega_{ci}^{-1}]').tit(je_dict['tit'])
+    curves.flag_norm = flag_norm
+    curves.flag_semilogy = flag_semilogy
     curves.newg(area_work)
     curves.newg(area_calc)
     curves.new() \
-        .XS(t_plot).YS(je[ids_t_plot]) \
+        .XS(t_plot)\
+        .YS(je[ids_t_plot]) \
         .leg(je_dict['line_sum'])
-    curves.new() \
-        .XS(t_work[ids_je_peaks]).YS(je_work[ids_je_peaks]) \
+    curves.new().norm_to(je[ids_t_plot]) \
+        .XS(t_work[ids_je_peaks])\
+        .YS(je_work[ids_je_peaks]) \
         .leg('peaks').sty('o')
     cpr.plot_curves(curves)
 
@@ -478,7 +486,7 @@ def calc_gamma(oo_wg, oo_plot, oo_desc):
         bins = hist[1]
 
         fit_mean_x, fit_sigma_x = stat_norm.fit(gs)
-        f_data_x = mlab.normpdf(bins, fit_mean_x, fit_sigma_x)
+        f_data_x = stat_norm.pdf(bins, fit_mean_x, fit_sigma_x)
 
         stat_res = {
             'gamma': fit_mean_x,
@@ -500,20 +508,28 @@ def calc_gamma(oo_wg, oo_plot, oo_desc):
             .col('red').leg('normal\ distribution')
         cpr.plot_curves(curves)
 
+    # --- NORMALIZATION ---
+    g_init *= coef_norm_global
+
+    g_stat, err_g_stat = None, None
+    if flag_stat:
+        g_stat      = stat_res['gamma']         * coef_norm_global
+        err_g_stat  = stat_res['conf_int_95']   * coef_norm_global
+
     # --- PRINTING RESULT ---
+    line_init = 'velocity domain: ' + je_dict['line_sum'] + '\n'
+
     # - trivial result -
     sp_name = oo_desc['species'] + ': '
-    line_init = sp_name + 'Initial: '
-    line_init += 'g[wci] = ' + '{:0.3e}'.format(g_init)
+    line_init += sp_name + 'Initial: '
+    line_init += 'g' + line_norm + ' = ' + '{:0.3e}'.format(g_init)
     print(line_init)
 
     # - with statistics -
     if flag_stat:
         line_stat = sp_name + 'Statistics: '
-        line_stat += 'g[wci] = ' + '{:0.3e}'.format(stat_res['gamma'])\
-                     + '+-' + '{:0.3e}'.format(stat_res['conf_int_95']) + '\n'
-        line_stat += 'OLD confidence interval (3*sigma) = ' \
-                     + '{:0.3e}'.format(stat_res['old_errorbar'])
+        line_stat += 'g' + line_norm + ' = ' + '{:0.3e}'.format(g_stat)\
+                     + '+-' + '{:0.3e}'.format(err_g_stat) + '\n'
         print(line_stat)
 
     return

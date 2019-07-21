@@ -239,74 +239,24 @@ def build_vpp_profile(path_to_read, path_to_write, file_names):
     write_profiles(path_to_write, file_names, res_profs)
 
 
-def build_new_profiles(path_to_read, path_to_write, file_names):
+def build_new_profiles(path_to_read, path_to_write, file_names, funcs):
+    # len(funcs) must be equal to len(file_names)
+
     # read initial profiles
     sp_profs = read_profiles(path_to_read, file_names)
 
     # modify profiles
+    count_sp = -1
     for one_name in file_names:
-        prof = sp_profs[one_name]
+        count_sp += 1
+
+        # prof = sp_profs[one_name]
+        funcs[count_sp](sp_profs[one_name])
 
         # region *** Flat profiles ***
-        n_value, T_value, vp_value = 1, 1, 1
+        # n_value, T_value, vp_value = 1, 1, 1
         # prof['T']  = flat_profile(prof['ns'], T_value)
         # prof['n']  = flat_profile(prof['ns'], n_value)
-        prof['vp'] = flat_profile(prof['ns'], vp_value)
-
-        # endregion
-
-        # region *** Gaussian n-profiles (edge) for fast species ***
-
-        # # * edge *
-        # A0, mu, sig = 1.0, 0.8, 0.05
-        # prof['n'] = gaussian_profile(prof['psi'], A0, mu, sig)
-
-        # # * center *
-        # A0, mu, sig = 1.0, 0.3, 0.09
-        # prof['n'] = gaussian_profile(prof['psi'], A0, mu, sig)
-
-        # # * s = 0.8 *
-        # A0, mu, sig, Ab = 1.0, 0.64, 0.05, 1e-3
-        # prof['n'] = gaussian_profile_WITH_background(
-        #     prof['psi'], A0, mu, sig, Ab)
-
-        # # * s = 0.8, ds = 2 *
-        # A0, mu, sig, Ab = 1.0, 0.64, 0.1, 1e-3
-        # prof['n'] = gaussian_profile_WITH_background(
-        #     prof['psi'], A0, mu, sig, Ab)
-
-        # # * s = 0.75, ds = 0.25 *
-        # A0, mu, sig, Ab = 1.0, 0.5625, 0.15, 1e-3
-        # prof['n'] = gaussian_profile_WITH_background(
-        #     prof['psi'], A0, mu, sig, Ab)
-
-        # # * s = 0.7, ds = 0.3 *
-        # A0, mu, sig, Ab = 1.0, 0.49, 0.19, 1e-3
-        # prof['n'] = gaussian_profile_WITH_background(
-        #     prof['psi'], A0, mu, sig, Ab)
-
-        # # * s = 0.4, ds = 0.6 *
-        # # A0, mu, sigL, sigR, Ab = 1.0, 0.36, 0.12, 0.2, 1e-3
-        # A0, mu, sigL, sigR, Ab = 1.0, 0.16, 0.07, 0.3, 1e-3
-        # prof['n'] = gaussian_profile_asym(prof['psi'], A0, mu, sigL, sigR, Ab)
-
-        # # * s = 0.35 *
-        # A0, mu, sig, Ab = 1.0, 0.1225, 0.04, 1e-3
-        # prof['ns'] = 201
-        # prof['psi'] = rescale_psi(prof['ns'])
-        # prof['n'] = gaussian_profile_WITH_background(
-        #     prof['psi'], A0, mu, sig, Ab)
-
-        # # * s = 0.45 *
-        # A0, mu, sig, Ab = 1.0, 0.2025, 0.05, 1e-3
-        # prof['ns'] = 121
-        # prof['psi'] = rescale_psi(prof['ns'])
-        # prof['n'] = gaussian_profile_WITH_background(
-        #     prof['psi'], A0, mu, sig, Ab)
-        #
-        # # and flat T, vp profiles
-        # T_value, vp_value = 1, 0
-        # prof['T'] = flat_profile(prof['ns'], T_value)
         # prof['vp'] = flat_profile(prof['ns'], vp_value)
 
         # endregion
@@ -333,6 +283,30 @@ def build_new_profiles(path_to_read, path_to_write, file_names):
 
     # write result profiles
     write_profiles(path_to_write, file_names, sp_profs)
+
+
+def impose_quasineutrality(path_to_read_bulk, path_to_read_fast, path_to_write,
+                           file_name_to_change, file_name_bulk, file_name_fast, f_bulk):
+    # read profiles
+    prof_change = read_profiles(path_to_read_bulk, [file_name_to_change])[file_name_to_change]
+    prof_bulk = read_profiles(path_to_read_bulk, [file_name_bulk])[file_name_bulk]
+    prof_fast = read_profiles(path_to_read_fast, [file_name_fast])[file_name_fast]
+
+    psi = prof_change['psi']
+    nb = np.interp(psi, prof_bulk['psi'], prof_bulk['n'])
+    nf = np.interp(psi, prof_fast['psi'], prof_fast['n'])
+
+    nb = nb / np.max(nb)
+    nf = nf / np.max(nf)
+
+    f_fast = 1 - f_bulk
+
+    prof_change['n'] = f_bulk * nb + f_fast * nf
+
+    # write result profile
+    prof_res = {file_name_to_change: prof_change}
+    write_profiles(path_to_write, [file_name_to_change], prof_res)
+
 
 
 def copy_T_from_project_to_file(dd, path_to_file, file_name,

@@ -51,6 +51,9 @@ str_comp = {
 
     'path_ITPA_7': '/EM-m800-ns2-dt05',
     'project_name_7': 'EM-m800-ns2-dt05',
+
+    'path_ITPA_8': '/EM-m400-dt1-ni1',
+    'project_name_8': 'EM-m400-dt1-ni1',
 }
 
 # endregion
@@ -119,25 +122,11 @@ dd_m800_ns2.update({
 })
 rd.init(dd_m800_ns2)
 
-# dd_es_flux = dict(dd_init)
-# dd_es_flux.update({
-#     'path': root_path + str_comp['path_ITPA_2'],
-#     'project_name': str_comp['project_name_2'],
-# })
-# rd.init(dd_es_flux)
-
-# dd_kt08 = dict(dd_init)
-# dd_kt08.update({
-#     'path': root_path + str_comp['path_ITPA_2'],
-#     'project_name': str_comp['project_name_2'],
-# })
-# rd.init(dd_kt08)
-
-# dd_kn04 = dict(dd_init)
-# dd_kn04.update({
-#     'path': root_path + str_comp['path_ITPA_2'],
-#     'project_name': str_comp['project_name_2'],
-# })
-# rd.init(dd_kn04)
+dd_m400 = dict(dd_init)
+dd_m400.update({
+    'path': root_path + str_comp['path_ITPA_8'],
+    'project_name': str_comp['project_name_8'],
+})
+rd.init(dd_m400)
 
 # endregion
