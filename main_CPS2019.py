@@ -8,9 +8,6 @@ import work_profiles
 import ITG_gamma as itg
 import general
 import common
-import MPR as mpr
-import matplotlib.pyplot as mpl
-import numpy as np
 from scipy import constants
 
 

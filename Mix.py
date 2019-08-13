@@ -300,7 +300,7 @@ def is_unique(y):
 
 
 # Create an array with different time intervals
-def get_t_intervals(oo):
+def get_t_intervals(oo, flag_print):
     # ---------------------------------------------------------
     # Create an array with several random time intervals within
     # a particular working time domain. Every time interval
@@ -397,7 +397,7 @@ def get_t_intervals(oo):
             t_work[one_ids_time_interval[0]:one_ids_time_interval[-1] + 1]
         )
 
-    if is_unique(ids_chosen_points):
+    if is_unique(ids_chosen_points) and flag_print:
         print('All chosen time intervals are unique.')
 
     res = {

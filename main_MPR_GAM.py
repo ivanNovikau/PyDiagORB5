@@ -8,9 +8,6 @@ import work_profiles
 import ITG_gamma as itg
 import general
 import common
-import MPR as mpr
-import matplotlib.pyplot as mpl
-import numpy as np
 from scipy import constants
 
 
@@ -49,14 +46,27 @@ dd_init = {
 }
 
 # --- GAM --
-q15_dt20_ns64_N17  = set_dd(dict(dd_init), root_ref,  '/conv/q15-dt20-ns64-N1e7',
-                            'dt = 20, ns = 64, N=1e7')
-q15_dt10  = set_dd(dict(dd_init), root_ref,  '/conv/q15-dt10',
-                            'dt = 10')
-q15_dt15  = set_dd(dict(dd_init), root_ref,  '/conv/q15-dt15',
-                            'dt = 15')
-q15_N2e7  = set_dd(dict(dd_init), root_ref,  '/conv/q15-N2e7',
-                            'N = 2e7')
-q15_ns120_N3e7  = set_dd(dict(dd_init), root_ref,  '/conv/q15-ns120',
-                            'ns = 120, N = 3e7')
+q15 = set_dd(dict(dd_init), root_ref,  '/q15-mpr',  'ES:\ q = 1.5')
+q3 = set_dd(dict(dd_init), root_ref,   '/q3-mpr',   'ES:\ q = 3.0')
+q5 = set_dd(dict(dd_init), root_ref,   '/q5-mpr',   'ES:\ q = 5.0')
+q15k = set_dd(dict(dd_init), root_ref, '/q15k-mpr', 'EM:\ q = 1.5')
+q3k = set_dd(dict(dd_init), root_ref,  '/q3k-mpr',  'EM:\ q = 3.0')
+q5k = set_dd(dict(dd_init), root_ref,  '/q5k-mpr',  'EM:\ q = 5.0')
+
+# q15_dt20_ns64_N17  = set_dd(dict(dd_init), root_ref,  '/conv/q15-dt20-ns64-N1e7',
+#                             'dt = 20, ns = 64, N=1e7')
+# q15_dt10  = set_dd(dict(dd_init), root_ref,  '/conv/q15-dt10',
+#                             'dt = 10')
+# q15_dt15  = set_dd(dict(dd_init), root_ref,  '/conv/q15-dt15',
+#                             'dt = 15')
+# q15_N2e7  = set_dd(dict(dd_init), root_ref,  '/conv/q15-N2e7',
+#                             'N = 2e7')
+# q15_ns100_N3e7  = set_dd(dict(dd_init), root_ref,  '/conv/q15-ns100',
+#                             'ns = 100, N = 3e7')
+# q15_ns120_N3e7  = set_dd(dict(dd_init), root_ref,  '/conv/q15-ns120',
+#                             'ns = 120, N = 3e7')
+# q15_ns150_N45e7  = set_dd(dict(dd_init), root_ref,  '/conv/q15-ns150',
+#                             'ns = 150, N = 45e7')
+# q15_ns200_N45e7  = set_dd(dict(dd_init), root_ref,  '/conv/q15-ns200',
+#                             'ns = 200, N = 6e7')
 

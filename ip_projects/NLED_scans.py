@@ -15,7 +15,9 @@ def reload():
 
 
 def es_egam_fpart_scan(oo):
-    dd = oo.get('dd_tcv', None)
+    # ES EGAMb:  v|| = 8.0: scan on fpart
+
+    dd = oo.get('dd', None)
     sel_norm = oo.get('sel_norm', 'wc')
 
     fs, ws, ws_err, gs, gs_err = [], [], [], [], []
@@ -59,10 +61,10 @@ def es_egam_fpart_scan(oo):
 
     data_plot['leg'].append('ES\ EGAMb:\ s = 0.50')
     reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot)
-    # plot_scan_n(data_plot['f'][-1],
-    #             data_plot['w'][-1], data_plot['w_err'][-1],
-    #             data_plot['g'][-1], data_plot['g_err'][-1],
-    #             sel_norm)
+    plot_scan_n(data_plot['f'][-1],
+                data_plot['w'][-1], data_plot['w_err'][-1],
+                data_plot['g'][-1], data_plot['g_err'][-1],
+                sel_norm)
 
     # --- B: s = 0.60: w, g are normalized to wci ---
     fs, ws, gs = [], [], []
@@ -141,11 +143,245 @@ def es_egam_fpart_scan(oo):
     data_plot['leg'].append('ES\ EGAMm:\ s = 0.60')
     reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot)
 
-    # *** combined plot ***
-    plot_several_scans(data_plot, sel_norm, xlim=[0.0, 0.1])
+    # # *** combined plot ***
+    # plot_several_scans(data_plot, sel_norm, xlim=[0.0, 0.1])
+
+
+def es_egam_vp_scan(oo):
+    # ES EGAMb: f = 0.01, rho_f = 0.25, scan on v_parallel
+
+    dd = oo.get('dd', None)
+    sel_norm = oo.get('sel_norm', 'wc')
+
+    fs, ws, ws_err, gs, gs_err = [], [], [], [], []
+    data_plot = {
+        'f': [],
+        'w': [], 'w_err': [],
+        'g': [], 'g_err': [],
+        'leg': []
+    }
+
+    # ws[i] and gs[i] should have the same size
+    def add_f(f, w, w_err, g, g_err):
+        fs.append(f)
+        ws.append(w)
+        ws_err.append(w_err)
+        gs.append(g)
+        gs_err.append(g_err)
+
+    # --- Er(s1): w, g are normalized to wci ---
+    fs, ws, gs = [], [], []
+    add_f(7.0,
+          [2.652e-03], [1.884e-05],
+          [1.316e-04], [2.818e-06]
+    )
+    add_f(7.5,
+          [2.763e-03], [3.188e-06],
+          [1.483e-04], [2.606e-06]
+          )
+    add_f(7.8,
+          [2.830e-03], [3.203e-06],
+          [1.537e-04], [4.429e-06]
+          )
+    add_f(8.0,
+          [2.876e-03], [2.247e-06],
+          [1.508e-04], [3.596e-06]
+    )
+    add_f(8.2,
+          [2.918e-03], [1.951e-06],
+          [1.487e-04], [3.689e-06]
+          )
+    add_f(8.5,
+          [2.988e-03], [3.114e-05],
+          [1.382e-04], [4.353e-06]
+          )
+    add_f(9.0,
+          [3.102e-03], [5.984e-06],
+          [1.052e-04], [4.224e-06]
+          )
+
+    data_plot['leg'].append('\overline{E}_r(s = 0.5)')
+    reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot)
+    # plot_scan_n(data_plot['f'][-1],
+    #             data_plot['w'][-1], data_plot['w_err'][-1],
+    #             data_plot['g'][-1], data_plot['g_err'][-1],
+    #             sel_norm, xlab='v_{\parallel, f}')
+
+    # --- MPR: TOT: g are normalized to wci ---
+    fs, ws, gs = [], [], []
+    add_f(7.0, [np.nan], [np.nan],
+          [1.263e-04], [4.267e-06]
+    )
+    add_f(7.5, [np.nan], [np.nan],
+          [1.455e-04], [2.866e-06]
+          )
+    add_f(7.8, [np.nan], [np.nan],
+          [1.509e-04], [5.397e-06]
+          )
+    add_f(8.0, [np.nan], [np.nan],
+          [1.487e-04], [2.796e-06]
+    )
+    add_f(8.2, [np.nan], [np.nan],
+          [1.462e-04], [4.858e-06]
+          )
+    add_f(8.5, [np.nan], [np.nan],
+          [1.366e-04], [6.874e-06]
+          )
+    add_f(9.0, [np.nan], [np.nan],
+          [1.025e-04], [5.031e-06]
+          )
+
+    data_plot['leg'].append('MPR:\ Total')
+    reorganise_data(fs, [], [], gs, gs_err, sel_norm, dd, data_plot)
+    # plot_scan_n(data_plot['f'][-1],
+    #             data_plot['w'][-1], data_plot['w_err'][-1],
+    #             data_plot['g'][-1], data_plot['g_err'][-1],
+    #             sel_norm, xlab='v_{\parallel, f}')
+
+    # --- MPR: DEUTERIUM: g are normalized to wci ---
+    fs, ws, gs = [], [], []
+    add_f(7.0, [np.nan], [np.nan],
+          [-5.304e-04], [7.938e-06]
+          )
+    add_f(7.5, [np.nan], [np.nan],
+          [-5.001e-04], [5.246e-06]
+          )
+    add_f(7.8, [np.nan], [np.nan],
+          [-4.719e-04], [4.041e-06]
+          )
+    add_f(8.0, [np.nan], [np.nan],
+          [-4.550e-04], [4.624e-06]
+          )
+    add_f(8.2, [np.nan], [np.nan],
+          [-4.288e-04], [3.504e-06]
+          )
+    add_f(8.5, [np.nan], [np.nan],
+          [-3.923e-04], [5.716e-06]
+          )
+    add_f(9.0, [np.nan], [np.nan],
+          [-3.223e-04], [5.491e-06]
+          )
+
+    gs = np.abs(gs)
+
+    data_plot['leg'].append('MPR:\ Deuterium: |\gamma|')
+    reorganise_data(fs, [], [], gs, gs_err, sel_norm, dd, data_plot)
+    # plot_scan_n(data_plot['f'][-1],
+    #             data_plot['w'][-1], data_plot['w_err'][-1],
+    #             data_plot['g'][-1], data_plot['g_err'][-1],
+    #             sel_norm, xlab='v_{\parallel, f}')
+
+    # --- MPR: FAST: g are normalized to wci ---
+    fs, ws, gs = [], [], []
+    add_f(7.0, [np.nan], [np.nan],
+          [6.569e-04], [4.802e-06]
+          )
+    add_f(7.5, [np.nan], [np.nan],
+          [6.460e-04], [5.626e-06]
+          )
+    add_f(7.8, [np.nan], [np.nan],
+          [6.219e-04], [4.478e-06]
+          )
+    add_f(8.0, [np.nan], [np.nan],
+          [6.038e-04], [1.533e-06]
+          )
+    add_f(8.2, [np.nan], [np.nan],
+          [5.755e-04], [2.573e-06]
+          )
+    add_f(8.5, [np.nan], [np.nan],
+          [5.282e-04], [2.108e-06]
+          )
+    add_f(9.0, [np.nan], [np.nan],
+          [4.250e-04], [1.707e-06]
+          )
+
+    data_plot['leg'].append('MPR:\ Fast')
+    reorganise_data(fs, [], [], gs, gs_err, sel_norm, dd, data_plot)
+    # plot_scan_n(data_plot['f'][-1],
+    #             data_plot['w'][-1], data_plot['w_err'][-1],
+    #             data_plot['g'][-1], data_plot['g_err'][-1],
+    #             sel_norm, xlab='v_{\parallel, f}')
+
+    # # *** combined plot ***
+    plot_several_scans(data_plot, sel_norm, xlim=[6.8, 9.2],
+                       xlab='v_{\parallel,f}', ylab_g='dynamic\ rates')
+
+
+def es_egam_fpart_scan_rho025(oo):
+    # ES EGAMb: rho_f = 0.25, v|| = 8.0: scan on fpart
+
+    dd = oo.get('dd', None)
+    sel_norm = oo.get('sel_norm', 'wc')
+
+    fs, ws, ws_err, gs, gs_err = [], [], [], [], []
+    data_plot = {
+        'f': [],
+        'w': [], 'w_err': [],
+        'g': [], 'g_err': [],
+        'leg': []
+    }
+
+    # ws[i] and gs[i] should have the same size
+    def add_f(f, w, w_err, g, g_err):
+        fs.append(f)
+        ws.append(w)
+        ws_err.append(w_err)
+        gs.append(g)
+        gs_err.append(g_err)
+
+    # --- B: s = 0.50: w, g are normalized to wci ---
+    fs, ws, gs = [], [], []
+    add_f(0.004,
+          [2.978e-03], [6.040e-06],
+          [2.210e-05], [5.217e-06]
+          )
+    add_f(0.006,
+          [2.939e-03], [2.530e-06],
+          [8.123e-05], [5.416e-06]
+          )
+    add_f(0.008,
+          [2.904e-03], [8.635e-06],
+          [1.214e-04], [3.571e-06]
+          )
+    add_f(0.01,
+          [2.875e-03], [2.414e-06],
+          [1.520e-04], [4.687e-06]
+        )
+    add_f(0.02,
+          [2.754e-03], [3.013e-06],
+          [2.452e-04], [6.985e-06]
+          )
+    add_f(0.05,
+          [2.539e-03], [5.065e-06],
+          [3.251e-04], [7.383e-06]
+          )
+    add_f(0.07,
+          [2.453e-03], [9.048e-06],
+          [3.364e-04], [9.816e-06]
+          )
+    add_f(0.09,
+          [2.375e-03], [4.630e-05],
+          [3.477e-04], [4.980e-05]
+          )
+
+    data_plot['leg'].append('ES\ EGAMb:\ s = 0.50')
+    reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot)
+    plot_scan_n(data_plot['f'][-1],
+                data_plot['w'][-1], data_plot['w_err'][-1],
+                data_plot['g'][-1], data_plot['g_err'][-1],
+                sel_norm, xlab='f_{EP}')
+
+    # # *** combined plot ***
+    # plot_several_scans(data_plot, sel_norm, xlim=[0.0, 0.1])
 
 
 def reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot):
+    flag_no_freq = False
+    if len(ws) == 0:
+        ws = np.array(gs)
+        ws_err = np.array(gs_err)
+        flag_no_freq = True
+
     # reorganise and save data as np.array
     fs_plot, ws_plot, ws_err_plot, gs_plot, gs_err_plot = [], [], [], [], []
     for id_n in range(len(fs)):
@@ -177,6 +413,10 @@ def reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot):
     gs_plot = gs_plot * coef_norm_g
     gs_err_plot = gs_err_plot * coef_norm_g
 
+    if flag_no_freq:
+        ws_plot = []
+        ws_err_plot = []
+
     data_plot['f'].append(fs_plot)
     data_plot['w'].append(ws_plot)
     data_plot['w_err'].append(ws_err_plot)
@@ -184,12 +424,13 @@ def reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot):
     data_plot['g_err'].append(gs_err_plot)
 
 
-def plot_scan_n(fs_plot, ws_plot, ws_err_plot, gs_plot, gs_err_plot, sel_norm):
+def plot_scan_n(fs_plot, ws_plot, ws_err_plot, gs_plot, gs_err_plot,
+                sel_norm, xlab='n'):
     # normalization:
     line_w, line_g = '', ''
     if sel_norm == 'khz':
-        line_w = '\omega,\ kHz',
-        line_g = '\gamma,\ 1e3/s',
+        line_w = '\omega,\ kHz'
+        line_g = '\gamma,\ 10^3/s'
     if sel_norm == 'wc':
         line_w = '\omega[\omega_c]'
         line_g = '\gamma[\omega_c]'
@@ -201,32 +442,34 @@ def plot_scan_n(fs_plot, ws_plot, ws_err_plot, gs_plot, gs_err_plot, sel_norm):
         line_g = '\gamma[c_s/R_0]'
 
     # plotting
-    curves_w = crv.Curves()\
-        .xlab('n')\
-        .ylab(line_w)\
-        .tit('frequency').xsty('plain')
-    curves_w.new('w')\
-        .XS(fs_plot)\
-        .YS(ws_plot)\
-        .set_errorbar(True, ys=ws_err_plot)\
-        .sty('o')
-    cpr.plot_curves(curves_w)
+    if len(ws_plot) > 0:
+        curves_w = crv.Curves()\
+            .xlab(xlab)\
+            .ylab(line_w)\
+            .tit('frequency').xsty('plain')
+        curves_w.new('w')\
+            .XS(fs_plot)\
+            .YS(ws_plot)\
+            .set_errorbar(True, ys=ws_err_plot)\
+            .sty('o')
+        cpr.plot_curves(curves_w)
 
-    curves_g = crv.Curves()\
-        .xlab('n')\
-        .ylab(line_g)\
-        .tit('growth\ rate').xsty('plain')
-    curves_g.new('g')\
-        .XS(fs_plot)\
-        .YS(gs_plot) \
-        .set_errorbar(True, ys=gs_err_plot) \
-        .sty('o')
-    cpr.plot_curves(curves_g)
+    if len(gs_plot) > 0:
+        curves_g = crv.Curves()\
+            .xlab(xlab)\
+            .ylab(line_g)\
+            .tit('growth\ rate').xsty('plain')
+        curves_g.new('g')\
+            .XS(fs_plot)\
+            .YS(gs_plot) \
+            .set_errorbar(True, ys=gs_err_plot) \
+            .sty('o')
+        cpr.plot_curves(curves_g)
 
     return
 
 
-def plot_several_scans(data_plot, sel_norm, xlim=[0, 1]):
+def plot_several_scans(data_plot, sel_norm, xlim=[0, 1], xlab='f_{part}', ylab_g='growth\ rate'):
     # normalization:
     line_w, line_g = '', ''
     if sel_norm == 'khz':
@@ -247,14 +490,14 @@ def plot_several_scans(data_plot, sel_norm, xlim=[0, 1]):
     marker_styles = ['o', 's', "x", '*', "v", "<"]
 
     curves_w = crv.Curves() \
-        .xlab('f_{part}') \
+        .xlab(xlab) \
         .ylab(line_w) \
         .tit('frequency').xsty('plain')\
         .xlim(xlim)
     curves_g = crv.Curves() \
-        .xlab('f_{part}') \
+        .xlab(xlab) \
         .ylab(line_g) \
-        .tit('growth\ rate').xsty('plain')\
+        .tit(ylab_g).xsty('plain')\
         .xlim(xlim)
     for i_scan in range(number_scans):
         f = data_plot['f'][i_scan]
@@ -264,9 +507,10 @@ def plot_several_scans(data_plot, sel_norm, xlim=[0, 1]):
         g_err = data_plot['g_err'][i_scan]
         leg = data_plot['leg'][i_scan]
         msty = marker_styles[i_scan]
-        curves_w.new('w')\
-            .XS(f).YS(w).set_errorbar(True, ys=w_err)\
-            .sty(msty).leg(leg)
+        if len(w) > 0:
+            curves_w.new('w')\
+                .XS(f).YS(w).set_errorbar(True, ys=w_err)\
+                .sty(msty).leg(leg)
         curves_g.new('g')\
             .XS(f).YS(g).set_errorbar(True, ys=g_err)\
             .sty(msty).leg(leg)

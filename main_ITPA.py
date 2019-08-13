@@ -8,9 +8,6 @@ import work_profiles
 import ITG_gamma as itg
 import general
 import common
-import ITPA_GENE
-import matplotlib.pyplot as mpl
-import numpy as np
 from scipy import constants
 
 
@@ -26,56 +23,20 @@ def reload():
     mix.reload_module(itg)
     mix.reload_module(general)
     mix.reload_module(common)
-    mix.reload_module(ITPA_GENE)
 
 
-# region --- NL SIMULATIONS ---
+def set_dd(dd_loc, root, path_loc, name_loc):
+    proj_loc = {
+        'path': root + path_loc,
+        'name': name_loc,
+    }
+    dd_loc.update({'path': proj_loc['path'], 'project_name': proj_loc['name']})
+    rd.init(dd_loc)
+    return dd_loc
 
+
+reload()
 root_path = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/ITPA/'
-str_comp = {
-    'path_ITPA_1': '/ES/',
-    'project_name_1': 'ES',
-    # 'path_ITPA_1': '/ES-lin-n26/',
-    # 'project_name_1': 'ES-LINER-n26',
-    # 'path_ITPA_2': '/EM/',
-    # 'project_name_2': 'EM',
-    # 'path_ITPA_2': '/EM-fast/',
-    # 'project_name_2': 'EM',
-
-    'path_ITPA_2': '/EM-woFast-canMaxw/',
-    'project_name_2': 'EM',
-
-    # 'path_ITPA_2': '/EM-m3670-woFast/',
-    # 'project_name_2': 'EM-m3670',
-
-    # 'path_ITPA_2': '/ES-flux-n25/',
-    # 'project_name_2': 'ES-n25',
-
-    # 'path_ITPA_2': '/ES-kT08/',
-    # 'project_name_2': 'ES-kT08',
-
-    # 'path_ITPA_2': '/ES-kn04/',
-    # 'project_name_2': 'ES-kn04',
-}
-
-# endregion
-
-# region --- LINEAR SIMULATIONS ---
-
-# root_path = 'd:/Work-Projects/MyProgs/ORB_data/turbulence/ITPA/'
-# str_comp = {
-#     # 'path_ITPA_1': '/linear/n30-m200/',
-#     # 'path_ITPA_1': '/linear/n30-m3670-dt3/',
-#
-#     # 'path_ITPA_1': '/linear/ES/kt08-kn03/n30',
-#     'path_ITPA_1': '/linear/ES/kn04-kt10/n10',
-#
-#     'project_name_1': 'LIN-n10',
-# }
-
-# endregion
-
-# region --- Project structure initialization ---
 
 dd_init = {
     'a0': 1.0,
@@ -84,57 +45,8 @@ dd_init = {
     'mass_pf': 2 * constants.proton_mass
 }
 
-# endregion
+# --- Alessandro's simulation --
+dd_noise = set_dd(dict(dd_init), root_path,
+                  '/s256-chi384-phi192-t050-part8-krook-0-initnoise',
+                  'ORB5')
 
-# region --- NON-LINEAR STRUCTURES ---
-
-reload()
-
-dd_es = dict(dd_init)
-dd_es.update({
-    'path': root_path + str_comp['path_ITPA_1'],
-    'project_name': str_comp['project_name_1'],
-})
-rd.init(dd_es)
-
-dd_em = dict(dd_init)
-dd_em.update({
-    'path': root_path + str_comp['path_ITPA_2'],
-    'project_name': str_comp['project_name_2'],
-})
-rd.init(dd_em)
-
-# dd_es_flux = dict(dd_init)
-# dd_es_flux.update({
-#     'path': root_path + str_comp['path_ITPA_2'],
-#     'project_name': str_comp['project_name_2'],
-# })
-# rd.init(dd_es_flux)
-
-# dd_kt08 = dict(dd_init)
-# dd_kt08.update({
-#     'path': root_path + str_comp['path_ITPA_2'],
-#     'project_name': str_comp['project_name_2'],
-# })
-# rd.init(dd_kt08)
-
-# dd_kn04 = dict(dd_init)
-# dd_kn04.update({
-#     'path': root_path + str_comp['path_ITPA_2'],
-#     'project_name': str_comp['project_name_2'],
-# })
-# rd.init(dd_kn04)
-
-# endregion
-
-# region --- LINEAR STRUCTURES ---
-
-# reload()
-# dd = dict(dd_init)
-# dd.update({
-#     'path': root_path + str_comp['path_ITPA_1'],
-#     'project_name': str_comp['project_name_1'],
-# })
-# rd.init(dd)
-
-# endregion

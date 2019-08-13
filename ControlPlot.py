@@ -11,26 +11,33 @@ from matplotlib.ticker import FormatStrFormatter
 import types
 from matplotlib import animation, rc
 from IPython.display import HTML
+from IPython.core.getipython import get_ipython
 
-FIG_SIZE_W = 15
-FIG_SIZE_H = 9.5
-LEG_SCALE = 1
-FONT_SIZE = 28
-FLAG_LATEX = True
-FONT_SIZE_LABELS = FONT_SIZE * 1.5
-FONT_SIZE_TICKS  = FONT_SIZE * 1.0
-FONT_SIZE_ORDER  = FONT_SIZE * 1.2
-FONT_SIZE_TITLE  = FONT_SIZE * 1.3
+if 'Terminal' in get_ipython().__class__.__name__:
+    FLAG_LATEX = True
+else:
+    FLAG_LATEX = False
 
-FIG_SIZE_W = 10
-FIG_SIZE_H = 6
-LEG_SCALE = 0.5
-FONT_SIZE = 22
-FLAG_LATEX = False
-FONT_SIZE_LABELS = FONT_SIZE * 0.6
-FONT_SIZE_TICKS  = FONT_SIZE * 0.6
-FONT_SIZE_ORDER  = FONT_SIZE * 0.6
-FONT_SIZE_TITLE  = FONT_SIZE * 0.6
+if FLAG_LATEX:
+    FIG_SIZE_W = 15
+    FIG_SIZE_H = 9.5
+    LEG_SCALE = 1
+    FONT_SIZE = 28
+    FLAG_LATEX = True
+    FONT_SIZE_LABELS = FONT_SIZE * 1.5
+    FONT_SIZE_TICKS  = FONT_SIZE * 1.0
+    FONT_SIZE_ORDER  = FONT_SIZE * 1.2
+    FONT_SIZE_TITLE  = FONT_SIZE * 1.3
+else:
+    FIG_SIZE_W = 10
+    FIG_SIZE_H = 6
+    LEG_SCALE = 0.5
+    FONT_SIZE = 22
+    FLAG_LATEX = False
+    FONT_SIZE_LABELS = FONT_SIZE * 0.6
+    FONT_SIZE_TICKS  = FONT_SIZE * 0.6
+    FONT_SIZE_ORDER  = FONT_SIZE * 0.6
+    FONT_SIZE_TITLE  = FONT_SIZE * 0.6
 
 
 def reload():
@@ -41,6 +48,9 @@ def reload():
 
 
 def plot_curves(curves):
+    if curves.is_empty():
+        return
+
     # number of curves
     ncurves = curves.n()
 
@@ -100,6 +110,9 @@ def plot_curves(curves):
 
 
 def plot_curves_3d(curves):
+    if curves.is_empty():
+        return
+
     # number of curves
     ncurves = curves.n()
 
@@ -367,7 +380,8 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
     # draw geometrical figures:
     for igeom in range(ngeoms):
         one_geom = curves.list_geoms[igeom]
-        one_geom.draw(mpl, ax, axes, {})
+        if one_geom is not None:
+            one_geom.draw(mpl, ax, axes, {})
 
     # add text:
     for itext in range(ntexts):

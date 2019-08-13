@@ -470,6 +470,22 @@ def ernz_r_chi1(dd, chi_point):
     return name_ernz_chi
 
 
+#  NEW: radial derivative of the full potential at chi1:
+def er_r_chi1(dd, chi_point):
+    name_phi = rd.potsc_chi1(dd, chi_point)
+    name_er_chi = 'er_r-chi-{:0.3f}'.format(chi_point)
+    if name_er_chi in dd:
+        return name_er_chi
+
+    data = - np.gradient(
+        dd[name_phi]['data'], dd['potsc_grids']['s'], axis=1)
+    dd[name_er_chi] = {
+        'chi_1':    dd[name_phi]['chi_1'],
+        'id_chi_1': dd[name_phi]['id_chi_1'],
+        'data': data}
+    return name_er_chi
+
+
 #  NEW: radial derivative of the nonzonal potential at s1:
 def ernz_r_s1(dd, s_point):
     phibar_interp(dd)
@@ -608,18 +624,30 @@ def choose_one_var_ts(ovar, dd):
         tit_var  = '\widetilde{\Phi}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{' + line_chi + '}'
+    if opt_var == 'potsc':
+        chi_point = ovar[1]
+        var_name = rd.potsc_chi1(dd, chi_point)
+        tit_var  = '\Phi'
+        line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
+        line_chi = '_{' + line_chi + '}'
     if opt_var == 'ernz_r':
         chi_point = ovar[1]
         var_name = ernz_r_chi1(dd, chi_point)
-        tit_var  = '\widetilde{E}_r'
+        tit_var  = '\widetilde{E}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
-        line_chi = '_{' + line_chi + '}'
+        line_chi = '_{r,' + line_chi + '}'
+    if opt_var == 'er_r':  # full radial electric field along radial coordinate
+        chi_point = ovar[1]
+        var_name = er_r_chi1(dd, chi_point)
+        tit_var  = 'E'
+        line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
+        line_chi = '_{r, ' + line_chi + '}'
     if opt_var == 'ernz_chi':
         chi_point = ovar[1]
         var_name = ernz_chi_chi1(dd, chi_point)
-        tit_var  = '\widetilde{E}_{\chi}'
+        tit_var  = '\widetilde{E}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
-        line_chi = '_{' + line_chi + '}'
+        line_chi = '_{\chi,' + line_chi + '}'
     if opt_var == 'phinz-max-chi':
         var_name = phinz_abs_max_along_chi(dd)
         tit_var  = 'max_{\chi}:\ \widetilde{\Phi}'
@@ -662,6 +690,12 @@ def choose_one_var_rz(ovar, dd):
         tit_var  = '\widetilde{\Phi}'
         line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
         line_1 = '_{' + line_1 + '}'
+    if opt_var == 'potsc':
+        t_point = ovar[1]
+        var_name = rd.potsc_t1(dd, t_point)
+        tit_var = '\Phi'
+        line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
+        line_1 = '_{' + line_1 + '}'
 
     vvar = dd[var_name]['data']
     R    = dd['potsc_grids']['r']
@@ -675,34 +709,6 @@ def choose_one_var_rz(ovar, dd):
         'data': vvar.T,  # (s, chi)
         'r': R,
         'z': Z,
-        's': s,
-        'chi': chi,
-        'tit': tit_var
-    })
-
-    return res
-
-
-# NEW: take signal (s,chi)
-def choose_one_var_schi(ovar, dd):
-    opt_var   = ovar[0]
-    var_name, tit_var, line_1 = '', '', ''
-    res = {}
-    if opt_var == 'phinz':
-        t_point = ovar[1]
-        var_name = phinz_t1(dd, t_point)
-        tit_var  = '\widetilde{\Phi}'
-        line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
-        line_1 = '_{' + line_1 + '}'
-
-    vvar = dd[var_name]['data']
-    s    = dd['potsc_grids']['s']
-    chi  = dd['potsc_grids']['chi']
-
-    tit_var += line_1
-
-    res.update({
-        'data': vvar.T,  # (s, chi)
         's': s,
         'chi': chi,
         'tit': tit_var

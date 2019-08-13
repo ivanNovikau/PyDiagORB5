@@ -145,7 +145,7 @@ def choose_one_var_t(ovar, dd, flag_vpar_boundaries=False):
             for sp_name in sp_names[1:]:
                 vvar_sp, _ = efield_species(dd, sp_name)
                 vvar += vvar_sp
-        tit_var = species_name + ':\ \mathcal{E}}'
+        tit_var = species_name + ':\ \mathcal{E}'
 
     # --- save signal ---
     res.update({
@@ -153,6 +153,57 @@ def choose_one_var_t(ovar, dd, flag_vpar_boundaries=False):
         'x': t,
         'tit': tit_var
     })
+
+    return res
+
+
+# NEW: variable (t, vpar)
+def choose_one_var_tvpar(ovar, dd):
+    # --- read energy transfer signal ---
+    def jdote_es_species(dd, species_name, mu_int, vpar_int):
+        jdote_es_dict = dd[species_name].jdote_es(dd)
+        t = np.array(jdote_es_dict['t'])
+        vpar = np.array(jdote_es_dict['vpar'])
+        mu = np.array(jdote_es_dict['mu'])
+
+        mu_int_work, vpar_int_work = mu_int, vpar_int
+        if len(mu_int_work) == 0:
+            mu_int_work = mu
+        if len(vpar_int_work) == 0:
+            vpar_int_work = vpar
+
+        ids_mu, mu_int_work, line_mu   = mix.get_ids(mu, mu_int_work, '{:0.1e}')
+        ids_vpar, vpar_work, line_vpar = mix.get_ids(vpar, vpar_int_work, '{:0.1f}')
+
+        vvar_loc = jdote_es_dict['data'][:, ids_mu[0]:ids_mu[-1] + 1, ids_vpar[0]:ids_vpar[-1] + 1]
+        vvar_loc = np.squeeze(np.nansum(vvar_loc, axis=1))
+
+        return vvar_loc, t, vpar_work, line_mu
+
+    # --- name of a signal ---
+    opt_var = ovar[0]
+    species_name = ovar[1]
+
+    # --- velocity domains ---
+    mu_int, vpar_int = [], []
+    if len(ovar) > 2:
+        mu_int   = ovar[2]
+        vpar_int = ovar[3]
+
+    # integration in mu:
+    data, t, tit_var, vpar = [], [], [], []
+    if opt_var.lower() == 'je':
+        data, t, vpar, line_mu = \
+            jdote_es_species(dd, species_name, mu_int, vpar_int)
+        tit_var = species_name + ':\ <(' + 'J\cdot E' + ')>_{\mu}'
+        tit_var += '$\n$ \mu = ' + line_mu
+
+    res = {
+        'data': data,
+        't':   t,
+        'vpar': vpar,
+        'tit': tit_var
+    }
 
     return res
 
@@ -430,7 +481,7 @@ def calc_gamma(dd, oo_wg, oo_plot, oo_desc):
             'min_n_periods': min_gam_n_periods,
             't_period': gam_T_init
         }
-        dict_intervals = mix.get_t_intervals(oo_get_intervals)
+        dict_intervals = mix.get_t_intervals(oo_get_intervals, True)
 
         t_intervals     = dict_intervals['t_intervals']
         ids_t_intervals = dict_intervals['ids_intervals']

@@ -132,7 +132,7 @@ def potsc_chi1(dd, chi_point):
         data['id_chi_1'], data['chi_1'] = \
             mix.find(dd['potsc_grids']['chi'], chi_point)
         data['data'] = np.array(
-            f['/data/var2d/generic/potsc/data'][:, data['id_chi_1'], :])
+            f['/data/var2d/generic/potsc/data'][:, data['id_chi_1'], :])  # [t,s]
         f.close()
 
         # save data to an external file
@@ -159,7 +159,7 @@ def potsc_s1(dd, s_point):
         f = h5.File(dd['path_orb'], 'r')
         data['id_s1'], data['s1'] = mix.find(dd['potsc_grids']['s'], s_point)
         data['data'] = np.array(
-            f['/data/var2d/generic/potsc/data'][:, :, data['id_s1']])
+            f['/data/var2d/generic/potsc/data'][:, :, data['id_s1']])  # [t,chi]
         f.close()
 
         # save data to an external file
@@ -184,7 +184,8 @@ def potsc_t1(dd, t_point):
 
         # read data from orb5 output file
         f = h5.File(dd['path_orb'], 'r')
-        data['id_t1'], data['t1'] = mix.find(dd['potsc_grids']['t'], t_point)
+        # data['id_t1'], data['t1'] = mix.find(dd['potsc_grids']['t'], t_point)
+        data['id_t1'], data['t1'], _ = mix.get_ids(dd['potsc_grids']['t'], t_point)
         data['data'] = np.array(
             f['/data/var2d/generic/potsc/data'][data['id_t1'], :, :])  # [t1, chi, s]
         f.close()
@@ -376,6 +377,9 @@ def init(dd):
 
     # initialization of the species:
     species(dd, f)
+
+    # initialize 3d data
+    dd['3d'] = {}
 
     # read basic parameters
     dd['Lx'] = f['/parameters/equil/lx'][0]

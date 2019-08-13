@@ -212,7 +212,7 @@ def B_equil(dd):
     equ_file = f['/parameters/equil/fname'].attrs
     ids_attr = list(equ_file)
     equ_file = [equ_file[name].decode("utf-8")
-                           for name in ids_attr[1:len(ids_attr)]]
+                           for name in ids_attr[0:len(ids_attr)]]
     equ_file = equ_file[0]
 
     f.close()
@@ -239,7 +239,14 @@ def B_equil(dd):
         Z_new[:, i] = np.append(Z[:, i], Z[0, i])
         R_new[:, i] = np.append(R[:, i], R[0, i])
 
-    curves = crv.Curves().xlab('R(m)').ylab('Z(m)').tit('|B|(T)')
+    # R_new *= dd['R0']
+    # B_new *= dd['B0']
+
+    labx = 'R(m)'
+    laby = 'Z(m)'
+    tit = '|B|(T)'
+
+    curves = crv.Curves().xlab(labx).ylab(laby).tit(tit)
     curves.new().XS(R_new).YS(Z_new).ZS(B_new.T).lev(60)
     cpr.plot_curves_3d(curves)
 
@@ -271,6 +278,7 @@ def choose_one_var_ts(ovar, dd):
     tit_var = ''
     vvar, s, t = [], None, None
     if opt_var == 'q':
+        rd.q(dd)
         var_name = 'q'
         tit_var = 'q'
         vvar.append(dd[var_name]['data'])

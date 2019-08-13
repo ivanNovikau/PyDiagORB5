@@ -61,6 +61,34 @@ class Line(Geom):
             ax.add_line(one_line)
 
 
+class Curve(Geom):
+    geom_type = 'CURVE'
+    xs = None
+    ys = None
+
+    def add_curve(self, xs1, ys1):
+        # xs1 - 1d array of x-coordinates
+        # ys1 - 1d array of y-coordinates
+        if self.xs is None:
+            self.xs = []
+            self.ys = []
+        self.xs.append(xs1)
+        self.ys.append(ys1)
+
+    def draw(self, mpl, ax, axes, oo):
+        n_curves = len(self.ys)
+
+        for i in range(n_curves):
+            one_line = mlines.Line2D(
+                self.xs[i], self.ys[i],
+                color=self.color,
+                linestyle=self.style,
+                linewidth=self.width
+            )
+            one_line.set_dashes([0.6, 0.6])
+            ax.add_line(one_line)
+
+
 class Fill(Geom):
     geom_type = 'FILL'
 

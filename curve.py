@@ -164,7 +164,7 @@ class Curves:
                   'y', 'k', 'cyan', 'Purple', 'gray',
                   'lightcoral']
     flag_diff_styles = False
-    def_styles = ['-', '--', '-.']
+    def_styles = ['-', ':', '-.', ':']
 
     x_style = 'sci'  # 'sci', 'plain'
     y_style = 'sci'  # 'sci', 'plain'
@@ -266,14 +266,21 @@ class Curves:
         if v is not None:
             if self.title is None:
                 self.title = ''
-            self.title += v
+
+            if isinstance(v, list):
+                self.title += v[0]
+                for i_line in range(1, np.shape(v)[0]):
+                    self.titn(v[i_line])
+            else:
+                self.title += v
+
         return self
 
     def titn(self, v):
         if v is not None:
             if self.title is None:
                 self.title = ''
-            self.title += '$\n$' + v
+            self.title += '$\n \\boldmath $' + v
         return self
 
     def new_tit(self, v):
@@ -370,6 +377,12 @@ class Curves:
                 new_list_curves.append(one_curve)
         new_list_curves.extend(list_curves_emp_leg)
         self.list_curves = new_list_curves
+
+    def is_empty(self):
+        if len(self.list_curves) == 0:
+            return True
+        else:
+            return False
 
 
 class PlText:

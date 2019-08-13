@@ -30,6 +30,14 @@ def choose_one_var_tvpar(ovar, dd):
         tit_var = species_name + ':\ f(v_{\parallel})'
         t = dd[species_name].f_1d['t']
         vpar = dd[species_name].f_1d['vpar']
+    if opt_var == 'df_vel_1d-dv':
+        rd.distribution_1d(dd, species_name)
+        data = dd[species_name].f_1d['f_vel_1d']
+        tit_var = species_name + ':\ f(v_{\parallel})'
+        t = dd[species_name].f_1d['t']
+        vpar = dd[species_name].f_1d['vpar']
+
+        data = np.gradient(data, vpar, axis=1)
     if opt_var == 'df_vel_1d':
         rd.distribution_1d(dd, species_name)
         data = dd[species_name].f_1d['df_vel_1d']

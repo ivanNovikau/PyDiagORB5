@@ -14,9 +14,11 @@ import MPR
 import gam_theory
 import gam_exp
 import Geom as geom
+import fields3d
 import numpy as np
 import scipy.signal
 from scipy.stats import norm as stat_norm
+import sys
 
 
 def reload():
@@ -37,9 +39,10 @@ def reload():
     mix.reload_module(gam_theory)
     mix.reload_module(gam_exp)
     mix.reload_module(geom)
+    mix.reload_module(fields3d)
 
 
-# find correlation between two signals:
+# OLD: find correlation between two signals:
 def correlation_two_vars(dd, oo):
     def aver_var(vvar, s, s_interval, tit_var, flag_aver):
         ids_s, _, lines_s = \
@@ -137,7 +140,7 @@ def correlation_two_vars(dd, oo):
         lines_s.append(line_s)
 
 
-# choose variables:
+# OLD: choose variables:
 def choose_signals(dd, oo):
     n_vars = oo.get('nvars', 1)
     vvars, ts, ss, tit_vars, lines_avr = [], [], [], [], []
@@ -194,7 +197,7 @@ def choose_signals(dd, oo):
     return res
 
 
-# choose a signal for comparison:
+# OLD: choose a signal for comparison:
 def choose_signal_for_comparison(dd, oo):
     opt_type = oo.get('opt_type', 'zonal')
     oo_var = dict(oo)
@@ -291,6 +294,7 @@ def plot_vars_1d(oo):
     # additional data:
     labx       = oo.get('labx', None)  # x-label
     laby       = oo.get('laby', None)  # y-label
+    leg_pos    = oo.get('leg_pos', None)
     tit_plot   = oo.get('tit_plot', None)  # title
     stys       = oo.get('stys', None)
 
@@ -300,7 +304,8 @@ def plot_vars_1d(oo):
     func_mod = oo.get('func_mod', None)
 
     # plotting:
-    curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)
+    curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)\
+        .leg_pos(leg_pos)
     curves.flag_norm     = flag_norm
     curves.flag_semilogy = flag_semilogy
     count_line = -1
@@ -345,6 +350,8 @@ def plot_fft_1d(oo):
 
     # Domains (oo.x_fft_domains), where FFT will be found, are the same for all
     # variables.
+
+    # number of dds has to be equal to n_points * n_x_fft_domains
 
     # choose variables and their averaging:
     vvars = get_fft_1d(oo)
@@ -525,9 +532,9 @@ def find_gamma(oo):
     vvars = choose_vars(oo)
     nvars = len(vvars)
 
-    tit_plot = oo.get('tit_plot', '')  # title
+    tit_plot = oo.get('tit_plot', None)  # title
     labx = oo.get('labx', 't[wci^{-1}]')
-    laby = oo.get('laby', '')  # y-label
+    laby = oo.get('laby', None)  # y-label
     flag_semilogy = oo.get('flag_semilogy', True)
     line_g = '\gamma[\omega_{ci}]'
 
@@ -632,6 +639,8 @@ def calc_wg(oo_var, oo_wg, oo_plot):
     # -------------------------------------------------------------------------------
     # -> oo_wg - dictionary with parameters to calculate frequency and dynamic rate:
     # 't_work' - work time domain
+    # 'sel_wg' - line, name of a method to calculate frequency and rate:
+    #   'wg-adv', 'w-adv', 'g-adv', 'wg-est', 'w-est', 'g-est'
     # 'flag_two_stages' = True:
     #       Firstly, one calculates gamma,
     #       then create a signal = initial_signal * exp(-gamma*t) and
@@ -726,6 +735,35 @@ def calc_wg(oo_var, oo_wg, oo_plot):
 
         return value_res, line_value
 
+    # - FUNCTION: different options of w and g measurement -
+    def find_wg(t, y, sel_wg, flag_print=True):
+        if sel_wg == 'wg-adv':
+            res_dict = ymath.advanced_wg(t, y, flag_print=flag_print)
+        elif sel_wg == 'w-adv':
+            res_dict = ymath.advanced_w(t, y, flag_print=flag_print)
+        elif sel_wg == 'g-adv':
+            res_dict = ymath.advanced_g(t, y, flag_print=flag_print)
+        elif sel_wg == 'wg-est':
+            res_dict = {
+                'est': ymath.estimate_wg(t, y),
+                'adv': None
+            }
+        elif sel_wg == 'w-est':
+            res_dict = {
+                'est': ymath.estimate_w(t, y),
+                'adv': None
+            }
+        elif sel_wg == 'g-est':
+            res_dict = {
+                'est': ymath.estimate_g(t, y),
+                'adv': None
+            }
+        else:
+            print('Error:\ Wrong wg-selector: check oo_wg[''sel_wg'']')
+            sys.exit(1)
+
+        return res_dict
+
     # - project structure -
     dd = oo_var.get('dds', None)[0]
 
@@ -739,10 +777,14 @@ def calc_wg(oo_var, oo_wg, oo_plot):
 
     # --- Frequency/rate calculation PARAMETERS ---
     t_work = oo_wg.get('t_work', [])
+    sel_wg = oo_wg.get('sel_wg', 'wg-adv')
 
     if len(t_work) == 0 or t_work is None:
         t_work = t_init
     flag_two_stages = oo_wg.get('flag_two_stages', False)
+    if sel_wg == 'w-adv' or sel_wg == 'w-est' or\
+            sel_wg == 'g-adv' or sel_wg == 'g-est':
+        flag_two_stages = False
 
     oo_filt_global = oo_wg.get('filt_global', None)
     oo_filt_gamma = oo_wg.get('filt_gamma', None)
@@ -859,7 +901,13 @@ def calc_wg(oo_var, oo_wg, oo_plot):
 
     # --- NAIVE CALCULATION ---
     if not flag_two_stages:
-        dict_wg = ymath.advanced_wg(t_work, data_work)
+        dict_wg = find_wg(t_work, data_work, sel_wg=sel_wg)
+
+        # - results -
+        w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
+        g_est, line_g_est = give_res(dict_wg, 'est', 'g', coef_norm_global_g)
+        w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
+        g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
 
         if flag_plot_print:
             # - plotting -
@@ -878,7 +926,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
                 .XS(t_work[dict_wg['est']['ids_peaks']]) \
                 .YS(data_work[dict_wg['est']['ids_peaks']]) \
                 .leg('peaks').sty('o')
-            curves.new() \
+            curves.new().norm_to(data_work)  \
                 .XS(dict_wg['est']['x_fit']) \
                 .YS(dict_wg['est']['y_fit']) \
                 .leg('LIN.\ REGRESSION').sty(':')
@@ -888,12 +936,6 @@ def calc_wg(oo_var, oo_wg, oo_plot):
                     .YS(dict_wg['adv']['y_fit']) \
                     .leg('NL\ FITTING').sty(':')
             cpr.plot_curves(curves)
-
-            # - results -
-            w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
-            g_est, line_g_est = give_res(dict_wg, 'est', 'g', coef_norm_global_g)
-            w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
-            g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
 
             line_res = '--- NAIVE CALCULATION ---\n'
             line_res += '--- ESTIMATION ---\n'
@@ -908,7 +950,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
         dict_gamma_filt = one_stage_filtering(t_work, data_work, oo_filt_gamma)
         data_gamma = dict_gamma_filt['filt']
         t_gamma    = dict_gamma_filt['x']
-        dict_gamma = ymath.advanced_wg(t_gamma, data_gamma)
+        dict_gamma = find_wg(t_gamma, data_gamma, sel_wg)
 
         w_est_prel, line_w_est_prel = give_res(dict_gamma, 'est', 'w', coef_norm_global_w)
         g_est, line_g_est           = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
@@ -928,7 +970,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
         )
         data_freq = dict_freq_filt['filt']
         t_freq    = dict_freq_filt['x']
-        dict_freq = ymath.advanced_wg(t_freq, data_freq)
+        dict_freq = find_wg(t_freq, data_freq, sel_wg)
 
         w_est, line_w_est           = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
         g_est_zero, line_g_est_zero = give_res(dict_freq, 'est', 'g', coef_norm_global_g)
@@ -987,7 +1029,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
                 .XS(t_work[dict_gamma['est']['ids_peaks']]) \
                 .YS(data_work[dict_gamma['est']['ids_peaks']]) \
                 .leg('peaks').sty('o')
-            curves.new() \
+            curves.new().norm_to(data_work) \
                 .XS(dict_gamma['est']['x_fit']) \
                 .YS(dict_gamma['est']['y_fit']) \
                 .leg('LIN.\ REGRESSION').sty(':')
@@ -1092,7 +1134,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
             'min_n_periods': min_n_peaks,
             't_period': np.mean(np.diff(t_peaks_work))
         }
-        dict_intervals = mix.get_t_intervals(oo_get_intervals)
+        dict_intervals = mix.get_t_intervals(oo_get_intervals, flag_plot_print)
         t_intervals = dict_intervals['t_intervals']
 
         # plot time intervals
@@ -1133,9 +1175,10 @@ def calc_wg(oo_var, oo_wg, oo_plot):
             ids_one_t_interval, t_one_interval, _ = \
                 mix.get_ids(t_work, t_intervals[i_sample])
 
-            dict_wg = ymath.advanced_wg(
+            dict_wg = find_wg(
                 t_one_interval,
                 data_work[ids_one_t_interval],
+                sel_wg,
                 flag_print=False
             )
             w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
@@ -1143,12 +1186,18 @@ def calc_wg(oo_var, oo_wg, oo_plot):
             w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
             g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
 
-            if w_adv is not None:
-                if np.abs((w_adv - w_est)/w_est) <= threshold_w:
-                    ws.append(w_adv)
-            if g_adv is not None:
-                if np.abs((g_adv - g_est) / g_est) <= threshold_g:
-                    gs.append(g_adv)
+            if 'est' not in sel_wg:
+                if w_adv is not None:
+                    if np.abs((w_adv - w_est)/w_est) <= threshold_w:
+                        ws.append(w_adv)
+                if g_adv is not None:
+                    if np.abs((g_adv - g_est) / g_est) <= threshold_g:
+                        gs.append(g_adv)
+            else:
+                if w_est is not None:
+                    ws.append(w_est)
+                if g_est is not None:
+                    gs.append(g_est)
         ws = np.array(ws)
         gs = np.array(gs)
 
@@ -1160,17 +1209,22 @@ def calc_wg(oo_var, oo_wg, oo_plot):
             ids_one_t_interval, t_one_interval, _ = \
                 mix.get_ids(t_gamma, t_intervals[i_sample])
 
-            dict_gamma = ymath.advanced_wg(
+            dict_gamma = find_wg(
                 t_one_interval,
                 data_gamma[ids_one_t_interval],
+                sel_wg,
                 flag_print=False
             )
 
             g_est, line_g_est = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
             g_adv, line_g_adv = give_res(dict_gamma, 'adv', 'g', coef_norm_global_g)
-            if g_adv is not None:
-                if np.abs((g_adv - g_est) / g_est) <= threshold_g:
-                    gs.append(g_adv)
+            if 'est' not in sel_wg:
+                if g_adv is not None:
+                    if np.abs((g_adv - g_est) / g_est) <= threshold_g:
+                        gs.append(g_adv)
+            else:
+                if g_est is not None:
+                    gs.append(g_est)
 
             # - FIND FREQUENCY -
             g_mult = g_est
@@ -1188,17 +1242,22 @@ def calc_wg(oo_var, oo_wg, oo_plot):
             ids_one_t_interval, t_one_interval, _ = \
                 mix.get_ids(t_freq, t_intervals[i_sample])
 
-            dict_freq = ymath.advanced_wg(
+            dict_freq = find_wg(
                 t_one_interval,  # calculation is performed in one of the time domains
                 data_freq[ids_one_t_interval],
+                sel_wg,
                 flag_print=False
             )
 
             w_est, line_w_est = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
             w_adv, line_w_adv = give_res(dict_freq, 'adv', 'w', coef_norm_global_w)
-            if w_adv is not None:
-                if np.abs((w_adv - w_est)/w_est) <= threshold_w:
-                    ws.append(w_adv)
+            if 'est' not in sel_wg:
+                if w_adv is not None:
+                    if np.abs((w_adv - w_est)/w_est) <= threshold_w:
+                        ws.append(w_adv)
+            else:
+                if w_est is not None:
+                    ws.append(w_est)
         ws = np.array(ws)
         gs = np.array(gs)
 
@@ -1379,6 +1438,290 @@ def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
     return
 
 
+# NEW: calculation of the w/g in different time intervals:
+def calc_wg_t(oo_wg_t, oo_plot):
+    # configurations
+    oo_cong_names = oo_wg_t['conf_names']
+    oo_ts   = oo_wg_t['oo_ts']
+    oo_vars = oo_wg_t['oo_vars']
+    oo_wgs  = oo_wg_t['oo_wgs']
+
+    # number of configurations
+    n_conf = len(oo_cong_names)
+
+    # output properties
+    tit_plot = oo_plot.get('tit_plot', None)
+    stys_plot = oo_plot.get('stys_plot', [':'])
+    sel_norm_w = oo_plot.get('sel_norm_w', 'wc')
+    sel_norm_t = oo_plot.get('sel_norm_t', 'wc')  # 'wc', 's'
+
+    # calculate data for different configurations
+    conf_res = []
+    label_f = ''
+    for i_conf in range(n_conf):
+        conf_name = oo_cong_names[i_conf]
+
+        print('Calculation: ' + conf_name)
+
+        oo_t   = dict(oo_ts[i_conf])
+        oo_var = dict(oo_vars[i_conf])
+        oo_wg  = dict(oo_wgs[i_conf])
+
+        dd = oo_var['dds'][0]
+        s1 = oo_var['avrs'][0][2][0]
+
+        tmin = oo_t['tmin']
+        tmax = oo_t['tmax']
+        width_t = oo_t['width_t']
+        step_t = oo_t['step_t']
+        flag_inc_boundary = oo_t.get('flag_inc_boundary', False)
+        sel_fv = oo_t.get('sel_fv', 'none')  # 'none', [species_name] + '_' + 'f_res_t0',
+                                             # 'f_res_t',
+                                             # 'dfdv_res_t0', 'dfdv_res_t'
+                                             # if '_minus' then investigate -|vres|
+        sel_je = oo_t.get('sel_je', 'none')  # 'none', [species_name] + '_' + 'je',
+        je_n_vpar_res_to_draw = oo_t.get('je_n_vpar_res_to_draw', 1)
+
+        half_width_t = width_t/2
+
+        flag_stat = oo_wg.get('flag_stat', False)
+        sel_wg = oo_wg.get('sel_wg', 'wg-adv')
+
+        # normalization:
+        coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = choose_wg_normalization(dd, sel_norm_w)
+
+        # time normalization for plotting
+        coef_norm_t, line_norm_t = None, ''
+        if sel_norm_t == 'wc':
+            coef_norm_t, line_norm_t = 1, '[\omega_{ci}]'
+        if sel_norm_t == 's':
+            coef_norm_t, line_norm_t = 1.e3 / dd['wc'], '(ms)'
+
+        # create time intervals:
+        t_right = tmin + width_t
+        t_ints  = [[tmin, t_right]]
+        t_center = tmin + half_width_t
+        while t_right < tmax:
+            t_center += step_t
+
+            t_left  = t_center - half_width_t
+            t_right = t_center + half_width_t
+            if t_right > tmax:
+                if not flag_inc_boundary:
+                    break
+                else:
+                    t_right = tmax
+            t_ints.append([t_left, t_right])
+
+        # result number of time intervals:
+        nt = len(t_ints)
+
+        # precise method of w,g calculation
+        if 'adv' in  sel_wg:
+            line_res_method = '_adv'
+        else:
+            line_res_method = '_est'
+
+        line_res = 'naive'
+        if flag_stat:
+            line_res = 'stat'
+            line_res_method = ''
+
+        # --- CALCULATION of w(t) ---
+        t = np.zeros(nt)
+        ws, ws_err = np.zeros(nt), np.zeros(nt)
+        gs, gs_err = np.zeros(nt), np.zeros(nt)
+        t[:], ws[:], ws_err[:], gs[:], gs_err[:] = [np.nan]*5
+        for i_int in range(nt):
+            t_int = t_ints[i_int]
+            t[i_int] = t_int[0] + (t_int[1] - t_int[0])/2.
+
+            oo_wg.update({
+                't_work': t_int,
+            })
+            res_wg =  calc_wg(oo_var, oo_wg, {'flag_plot_print': False})
+
+            if flag_stat:
+                ws_err[i_int] = res_wg[line_res]['err_w']
+                gs_err[i_int] = res_wg[line_res]['err_g']
+            ws[i_int] = res_wg[line_res]['w' + line_res_method]
+            gs[i_int] = res_wg[line_res]['g' + line_res_method]
+
+        conf_res_one = {
+            'name': conf_name,
+            't': t,
+            'ws': ws,
+            'gs': gs,
+            'ws_err': ws_err,
+            'gs_err': gs_err
+        }
+
+        # --- Investigate time evolution of a species distribution function ---
+        if sel_fv == 'none':
+            conf_res_one.update({
+                'vres': None,
+                'fres': None,
+            })
+        else:
+            # species name
+            species_name = sel_fv.split('_', 1)[0]
+
+            # find resonant velocity
+            vres = np.zeros(nt)
+            if 't0' in sel_fv:
+                vres1 = get_v_res(dd, s1, ws[0], species_name)
+                vres[:] = vres1
+            else:
+                for i_tint in range(nt):
+                    vres1 = get_v_res(dd, s1, ws[i_tint], species_name)
+                    vres[i_tint] = vres1
+
+            if 'minus' in sel_fv:
+                vres = -vres
+
+            # find distribution function or its derivative on v_parallel
+            oo_get_f = {
+                'avrs': [['tvpar', 'none-']],
+                'dds': [dd],
+            }
+
+            if 'f_res' in sel_fv:
+                oo_get_f['ovars'] = [['distribution', 'f_vel_1d', species_name]]
+                label_f = 'f(t, v_{res})'
+            if 'dfdv_res' in sel_fv:
+                oo_get_f['ovars'] = [['distribution', 'df_vel_1d-dv', species_name]]
+                label_f = 'df(t, v_{res})/dv'
+
+            vvar_f = choose_vars(oo_get_f)[0]
+            f_res_tvpar = vvar_f['data']
+            t_f_res     = vvar_f['t']
+            vpar = vvar_f['vpar']
+
+            # find time evolution of the distribution at vres
+            fres = np.zeros(nt)
+            for i_tint in range(nt):
+                id_t1, _, _    = mix.get_ids(t_f_res, t[i_tint])
+                id_vres, _, _  = mix.get_ids(vpar, vres[i_tint])
+                fres[i_tint]   = f_res_tvpar[id_t1, id_vres]
+
+            conf_res_one.update({
+                'vres': vres,
+                'fres': fres,
+            })
+
+        # --- Investigate time evolution of a species J*E signal: <JE(t, vpar)>_{nT_gam} ---
+        if sel_je == 'none':
+            conf_res_one.update({
+                'je_tvpar': None,
+            })
+        else:
+            species_name = sel_je.split('_', 1)[0]
+            oo_get_je = {
+                'ovars': [['mpr', 'je', species_name]],
+                'avrs': [['tvpar', 'none-']],
+                'dds': [dd],
+            }
+            vvar_je = choose_vars(oo_get_je)[0]
+            vpar = vvar_je['vpar']
+
+            je_data = np.zeros([nt, len(vpar)])
+            vres_for_je = np.zeros(nt)
+            for i_int in range(nt):
+                tmin1 = t_ints[i_int][0]
+                tmax1 = t_ints[i_int][-1]
+                T_loc = 2*np.pi / ws[i_int]
+                n_periods = np.floor((tmax1 - tmin1)/T_loc)
+                ids_min1, tmin1, _ = mix.get_ids(vvar_je['t'], tmin1)
+                ids_max1, tmax1, _ = mix.get_ids(vvar_je['t'],
+                                                 tmin1 + T_loc * n_periods
+                                                 )
+                je_data[i_int, :] = np.squeeze(np.nansum(
+                    vvar_je['data'][ids_min1:ids_max1+1, :], axis=0
+                ))
+
+                vres_for_je[i_int] = get_v_res(dd, s1, ws[i_int], species_name)
+
+            # analytical resonance velocity
+            curves_draw_vres = geom.Curve()
+            for i_vres in range(je_n_vpar_res_to_draw):
+                vres_data_1 = vres_for_je/(i_vres + 1)
+                curves_draw_vres.add_curve(t * coef_norm_t, + vres_data_1)
+                curves_draw_vres.add_curve(t * coef_norm_t, - vres_data_1)
+            curves_draw_vres.color = 'grey'
+            curves_draw_vres.style = ':'
+            curves_draw_vres.width = 4
+
+            conf_res_one.update({
+                'je_tvpar': je_data,
+                'vpar_je': vpar,
+                'tit_je': vvar_je['tit'],
+                'vres_for_je': vres_for_je,
+                'curves_draw_vres': curves_draw_vres,
+            })
+
+        # --- RESULTS ---
+        conf_res.append(conf_res_one)
+
+    # --- PLOT RESULTS ---
+    if len(stys_plot) < n_conf:
+        last_sty = stys_plot[-1]
+        stys_plot += [last_sty] * (n_conf - len(stys_plot))
+
+    # frequency
+    curves = crv.Curves().xlab('t' + line_norm_t).ylab('\omega' + line_norm_w).tit(tit_plot)
+    for i_conf in range(n_conf):
+        one_conf = conf_res[i_conf]
+        curves.new()\
+            .XS(one_conf['t'] * coef_norm_t)\
+            .YS(one_conf['ws'] * coef_norm_w)\
+            .set_errorbar(True, ys=one_conf['ws_err'] * coef_norm_w)\
+            .leg(one_conf['name'])\
+            .sty(stys_plot[i_conf])
+    cpr.plot_curves(curves)
+
+    # distribution function
+    curves = crv.Curves().xlab('t' + line_norm_t).ylab(label_f)
+    for i_conf in range(n_conf):
+        one_conf = conf_res[i_conf]
+        if one_conf['fres'] is not None:
+            curves.new() \
+                .XS(one_conf['t'] * coef_norm_t) \
+                .YS(one_conf['fres']) \
+                .leg(one_conf['name']) \
+                .sty(stys_plot[i_conf])
+    cpr.plot_curves(curves)
+
+    # resonant velocity
+    curves = crv.Curves().xlab('t' + line_norm_t).ylab('v_{res}(t)')
+    for i_conf in range(n_conf):
+        one_conf = conf_res[i_conf]
+        if one_conf['vres'] is not None:
+            curves.new() \
+                .XS(one_conf['t'] * coef_norm_t) \
+                .YS(one_conf['vres']) \
+                .leg(one_conf['name']) \
+                .sty(stys_plot[i_conf])
+    cpr.plot_curves(curves)
+
+    # <je(t,vpar)>_nT
+    for i_conf in range(n_conf):
+        one_conf = conf_res[i_conf]
+        if one_conf['je_tvpar'] is not None:
+            vpar_plot, ids_vpar_plot = mix.get_array_oo(
+                oo_plot, one_conf['vpar_je'], 'vpar')
+
+            curves = crv.Curves()\
+                .xlab('t' + line_norm_t).ylab('v_{\parallel}')\
+                .tit(one_conf['name'] + ':\ ' + one_conf['tit_je'])
+            curves.new() \
+                .XS(one_conf['t'] * coef_norm_t) \
+                .YS(vpar_plot) \
+                .ZS(one_conf['je_tvpar'][:, ids_vpar_plot[0]:ids_vpar_plot[-1]+1]) \
+                .lev(60)
+            curves.newg(one_conf['curves_draw_vres'])
+            cpr.plot_curves_3d(curves)
+
+
 # NEW: choose variables:
 def choose_vars(oo):
     # oo.ovars = [[type1 var1 species1 ...], ...]
@@ -1501,6 +1844,8 @@ def choose_one_var_ts(ovar, dd):
         vvar = itg.choose_one_var_ts(oovar, dd)
     if opt_type == 'equ-profile':
         vvar = equil_profiles.choose_one_var_ts(oovar, dd)
+    if opt_type == 'fields3d':
+        vvar = fields3d.choose_one_var_ts(oovar, dd)
 
     # save information about coordinate system:
     vvar['x1'], vvar['fx1'], vvar['labx'] = 't', '{:0.3e}', 't'
@@ -1517,6 +1862,8 @@ def choose_one_var_rz(ovar, dd):
     vvar = {}
     if opt_type == 'nonzonal':
         vvar = itg.choose_one_var_rz(oovar, dd)
+    if opt_type == 'fields3d':
+        vvar = fields3d.choose_one_var_rz(oovar, dd)
 
     # save information about coordinate system:
     vvar['x1'], vvar['fx1'], vvar['labx'] = 'r', '{:0.3f}', 'R'
@@ -1532,7 +1879,9 @@ def choose_one_var_schi(ovar, dd):
 
     vvar = {}
     if opt_type == 'nonzonal':
-        vvar = itg.choose_one_var_schi(oovar, dd)
+        vvar = itg.choose_one_var_rz(oovar, dd)
+    if opt_type == 'fields3d':
+        vvar = fields3d.choose_one_var_rz(oovar, dd)
 
     # save information about coordinate system:
     vvar['x1'], vvar['fx1'], vvar['labx'] = 's', '{:0.3f}', 's'
@@ -1563,10 +1912,10 @@ def choose_one_var_tvpar(ovar, dd):
     oovar = ovar[1:len(ovar)]
 
     vvar = {}
-    if opt_type == 'distribution':
+    if opt_type.lower() == 'distribution':
         vvar = distribution.choose_one_var_tvpar(oovar, dd)
-    # if opt_type == 'mpr':
-    #     vvar = mpr.choose_one_var_tvpar(oovar, dd)
+    if opt_type.lower() == 'mpr':
+        vvar = MPR.choose_one_var_tvpar(oovar, dd)
 
     # save information about coordinate system:
     vvar['x1'], vvar['fx1'], vvar['labx'] = 't',    '{:0.3e}', 't'
@@ -2265,8 +2614,11 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
 
     mu_plot = oo_plot.get('mu_plot', [])
     vpar_plot = oo_plot.get('vpar_plot', [])
+    n_vpar_res = oo_plot.get('n_vpar_res', 0)
     oo_texts = oo_plot.get('texts_plot', [])
     oo_geoms = oo_plot.get('geoms_plot', [])
+    tit_vmu = oo_plot.get('tit_vmu', [])
+    flag_pass_trap_cone = oo_plot.get('flag_pass_trap_cone', True)
 
     # velocity normalization:
     coef_max = np.max(dd[sel_species].nT_equil['T'])
@@ -2297,11 +2649,15 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
     q_s1, _, line_s1 = equil_profiles.q_s1(dd, s1)
     vres = (q_s1 * dd['R0'] * w0) * norm_v
 
-    gHLines = geom.HLine()
-    # gHLines.ys = [-vres, -vres/2, vres/2, vres]
-    gHLines.ys = [-vres, vres]
-    gHLines.color = 'white'
-    gHLines.style = '--'
+    gHLines = None
+    if n_vpar_res is not 0:
+        gHLines = geom.HLine()
+        gHLines.ys = []
+        for i_res in range(n_vpar_res):
+            # gHLines.ys = [-vres, -vres/2, vres/2, vres]
+            gHLines.ys += [-vres/(i_res+1), vres/(i_res+1)]
+        gHLines.color = 'white'
+        gHLines.style = '--'
 
     # --- Passing-Trapped boundary ---
     cone_pt, mu_pt, pt_bottom, pt_up = geom.pass_trap_boundary(dd, mu)
@@ -2400,10 +2756,16 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
     else:
         _, vpar_plot, _ = mix.get_ids(vpar, vpar_plot)
 
+    tit_vmu_res = tit_vmu
+    if tit_vmu_res is None:
+        tit_vmu_res = je_dict['tit']
+    elif len(tit_vmu_res) is 0:
+        tit_vmu_res = je_dict['tit']
+
     color_area = 'white'
     curves = crv.Curves()\
         .xlab('\mu').ylab('v_\parallel') \
-        .tit(je_dict['tit'])
+        .tit(tit_vmu_res)
     curves.flag_legend = False
     curves.newg(gHLines)
     curves.xlim([mu_plot[0],   mu_plot[-1]])
@@ -2438,14 +2800,16 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
             oGeom = geom.Annotate(oo_geom)
         if oGeom is not None:
             curves.newg(oGeom)
-    curves.new() \
-        .XS(mu_pt) \
-        .YS(cone_pt) \
-        .col('red').sty(':')
+    if flag_pass_trap_cone:
+        curves.new() \
+            .XS(mu_pt) \
+            .YS(cone_pt) \
+            .col('red').sty(':')
     cpr.plot_curves_3d(curves)
 
     # --- Plot areas ---
-    gHLines.color = 'black'
+    if gHLines is not None:
+        gHLines.color = 'black'
     for i_area in range(n_areas):
         curves = crv.Curves() \
             .xlab('\mu').ylab('v_\parallel') \
@@ -2466,13 +2830,13 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
             .col('black').sty('-')
         cpr.plot_curves_3d(curves)
 
-    # # --- Calculate gamma in chosen velocity domains ---
-    # oo_vars['flag_given_signal_je'] = True
-    # for i_area in range(n_areas):
-    #     ovar_loc = ['jdote_es', sel_species, ids_je_areas[i_area], names_areas[i_area]]
-    #     oo_vars['signal_je'] = MPR.choose_one_var_t(ovar_loc, dd, flag_vpar_boundaries=True)
-    #     oo_vars['signal_je']['legs'] = ['_']
-    #     MPR_gamma(dd, oo_vars, oo_wg, oo_plot)
+    # --- Calculate gamma in chosen velocity domains ---
+    oo_vars['flag_given_signal_je'] = True
+    for i_area in range(n_areas):
+        ovar_loc = ['jdote_es', sel_species, ids_je_areas[i_area], names_areas[i_area]]
+        oo_vars['signal_je'] = MPR.choose_one_var_t(ovar_loc, dd, flag_vpar_boundaries=True)
+        oo_vars['signal_je']['legs'] = ['_']
+        MPR_gamma(dd, oo_vars, oo_wg, oo_plot)
 
     return
 
@@ -2641,6 +3005,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
 
     oo_filt_je = oo_wg.get('filt_je', None)
     oo_filt_ef = oo_wg.get('filt_ef', None)
+    oo_filt_er = oo_wg.get('filt_er', None)  # !!! don't filter out residue component !!!
 
     flag_norm = oo_plot.get('flag_norm', False)
     flag_semilogy = oo_plot.get('flag_semilogy', False)
@@ -2717,7 +3082,13 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
             'sel_legs1': 'woPr',
         }
         erbar_dict = choose_vars(oo_erbar)[0]
-        erbar = np.interp(t, erbar_dict['x'], erbar_dict['data'][0])
+
+        erbar_dict_to_filt = dict(erbar_dict)
+        erbar_dict_to_filt['data'] = np.array(erbar_dict['data'][0])
+        erbar_dict = filter_signal(erbar_dict_to_filt, oo_filt_er, oo_plot)
+        erbar = np.interp(t, erbar_dict['x'], erbar_dict['data'])
+
+        # erbar = np.interp(t, erbar_dict['x'], erbar_dict['data'][0])
 
         # - estimate GAM, ZFZF amplitdes in Erbar -
         res_e = estimate_GAM_ZFZF_amplitudes(gam_g, erbar, t, t_point_inf)
@@ -2737,7 +3108,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         curves.new() \
             .XS(t).YS(res_e['e_gam_cos']) \
             .leg('GAM:\ cos')
-        curves.new() \
+        curves.new().norm_to(res_e['e_gam_cos']) \
             .XS(res_e['t_peaks']).YS(res_e['e_gam_peaks']) \
             .leg('GAM:\ cos:\ peaks').sty('o')
         curves.new() \
@@ -2756,8 +3127,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         curves.new() \
             .XS(t[ids_t_plot[0]:ids_t_plot[-1]+1]) \
             .YS(res_e['e_gam'][ids_t_plot[0]:ids_t_plot[-1]+1])\
-            .leg('Er')
-            # .leg(erbar_dict['legs'][0]).sty(':')
+            .leg(erbar_dict['legs'][0]).sty(':')
         curves.new()\
             .XS(t[ids_t_plot[0]:ids_t_plot[-1]+1])\
             .YS(ef[ids_t_plot[0]:ids_t_plot[-1]+1])\
@@ -2803,7 +3173,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         curves = crv.Curves() \
             .xlab('t[\omega_{ci}^{-1}]') \
             .ylab('norm.') \
-            .tit('Signals\ with\ only\ GAM\ component')
+            .tit('\mathcal{P}\ with\ only\ GAM\ component')
         curves.flag_norm = True
         curves.new()\
             .XS(t[ids_t_plot])\
@@ -2818,7 +3188,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         curves = crv.Curves() \
             .xlab('t[\omega_{ci}^{-1}]') \
             .ylab('norm.') \
-            .tit('Signals\ with\ GAM\ and\ ZFZF\ components')
+            .tit('\mathcal{P}\ with\ GAM\ and\ ZFZF\ components')
         curves.flag_norm = True
         curves.new() \
             .XS(t[ids_t_plot]) \
@@ -2851,150 +3221,6 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
         'species': sel_species
     }
     MPR.calc_gamma(dd, oo_wg, oo_plot, oo_desc)
-
-    return
-
-
-# NEW: test GAM from ZF:
-def MPR_test_gam_zf():
-    # --- TEST CONTRIBUTION OF ZFs ---
-    def obtain_gam(w, g, e, E, t, t_point_inf):
-        id_t_inf, t_point_inf, _ = mix.get_ids(t, t_point_inf)
-        id_t_inf = id_t_inf[0]
-
-        # electric field
-        e0 = np.mean(e[id_t_inf:])
-        e_gam = e - e0
-        e_gam_cos = e_gam * np.exp(-g * t)
-
-        ids_peaks, e_gam_peaks = scipy.signal.find_peaks(e_gam_cos, height=0)
-        e_gam_peaks = e_gam_peaks['peak_heights']
-        t_peaks = t[ids_peaks]
-
-        e1 = np.mean(e_gam_peaks)
-
-        E_gam = E - 0.5 * e0 ** 2 - e0 * e1 * np.cos(w * t) * np.exp(g * t)
-
-        res = {
-            'E_gam': E_gam, 'e_gam': e_gam,
-            'e_gam_cos': e_gam_cos,
-            't_peaks': t_peaks, 'e_gam_peaks': e_gam_peaks,
-        }
-
-        return res
-
-    # - FREQUENCY and DAMPING RATE -
-    w = 3.9e-3
-    g = -1.1e-4
-    t = np.linspace(0, 2e4, 20000)
-
-    # --- TEST SIGNALS: use electric field itself to eliminate ZFZF ---
-    e1 = 1
-    e0 = 0.2
-    e_zf = e0 + e1 * np.cos(w * t) * np.exp(g * t)
-    E_gam = 0.25 * e1 ** 2 * (1 + np.cos(2 * w * t)) * np.exp(2 * g * t)
-    E_zf = 0.5 * e0 ** 2 + e0 * e1 * np.cos(w * t) * np.exp(g * t) \
-           + 0.25 * e1 ** 2 * (1 + np.cos(2 * w * t)) * np.exp(2 * g * t)
-
-    t_point_inf = 1.5e4
-    res = obtain_gam(w, g, e_zf, E_zf, t, t_point_inf)
-
-    curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit('Eelctric field')
-    curves.flag_norm = False
-    curves.new() \
-        .XS(t).YS(e_zf) \
-        .leg('ZF + GAM')
-    curves.new() \
-        .XS(t).YS(res['e_gam_cos']) \
-        .leg('GAM:\ cos')
-    curves.new() \
-        .XS(res['t_peaks']).YS(res['e_gam_peaks']) \
-        .leg('GAM:\ cos:\ peaks').sty('o')
-    curves.new() \
-        .XS(t).YS(res['e_gam']) \
-        .leg('GAM')
-    cpr.plot_curves(curves)
-
-    curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit('Field\ energy')
-    curves.flag_norm = False
-    curves.new().XS(t).YS(E_gam).leg('GAM')
-    curves.new().XS(t).YS(E_zf).leg('ZF+GAM')
-    curves.new().XS(t).YS(res['E_gam']).leg('GAM\ from\ ZF').sty(':')
-    cpr.plot_curves(curves)
-
-    # --- TEST SIGNALS: several components on frequency, E0 and E1 ---
-
-    return
-
-
-# NEW: test GAM from ZF:
-def MPR_test_gam_zf_efield():
-    # --- TEST CONTRIBUTION OF ZFs ---
-    def obtain_gam(w, g, E, t, id_peak, eta):
-        ids_peaks, _ = scipy.signal.find_peaks(E, height=0)
-
-        E_peak1 = E[ids_peaks[id_peak]]
-        E_peak2 = E[ids_peaks[id_peak+1]]
-
-        if eta > 0:
-            idd = np.array([E_peak1, E_peak2]).argmax()
-        else:
-            # in this case you should take at the beginning where
-            # there are still alternating peaks
-            idd = np.array([E_peak1, E_peak2]).argmin()
-        if idd == 1:
-            id_peak += 1
-
-        t_peak = t[ids_peaks[id_peak]]
-        Eref   = E[ids_peaks[id_peak]]
-
-        e12 = Eref / (0.5 * eta**2 + eta * np.exp(g*t_peak) + 0.5 * np.exp(2*g*t_peak))
-        e1 = np.sqrt(e12)
-        e0 = e1 * eta
-
-        Egam = E - 0.5 * e0 ** 2 - e0 * e1 * np.cos(w * t) * np.exp(g * t)
-
-        res = {
-            'ids_peaks': ids_peaks,
-            'id_peak': id_peak,
-            'Egam': Egam
-        }
-        return res
-
-    # - FREQUENCY and DAMPING RATE -
-    w = 3.9e-3
-    g = -1.1e-4
-    t = np.linspace(0, 2e4, 20000)
-
-    # --- TEST SIGNALS: use electric field itself to eliminate ZFZF ---
-    e1 = 1
-    e0 = -0.2
-    E_gam = 0.25 * e1 ** 2 * (1 + np.cos(2 * w * t)) * np.exp(2 * g * t)
-    E_zf = 0.5 * e0 ** 2 + e0 * e1 * np.cos(w * t) * np.exp(g * t) \
-           + 0.25 * e1 ** 2 * (1 + np.cos(2 * w * t)) * np.exp(2 * g * t)
-
-    eta = e0 / e1
-    id_peak = 10
-
-    res = obtain_gam(w, g, E_zf, t, id_peak, eta)
-
-    curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit('Field\ energy')
-    curves.flag_norm = False
-    curves.flag_semilogy = False
-    curves.new().XS(t).YS(E_gam).leg('GAM')
-    curves.new().XS(t).YS(E_zf).leg('ZF+GAM')
-    curves.new()\
-        .XS(t[res['ids_peaks']])\
-        .YS(E_zf[res['ids_peaks']])\
-        .leg('peaks').sty('o')
-    curves.new() \
-        .XS( t[ res['ids_peaks'][res['id_peak']] ]  ) \
-        .YS( E_zf[ res['ids_peaks'][res['id_peak']] ] ) \
-        .leg('chosen\ peak').sty('s')
-    curves.new().XS(t).YS(res['Egam']).leg('GAM\ from\ ZF').sty(':')
-    cpr.plot_curves(curves)
-
-    # --- TEST SIGNALS: several components on frequency, E0 and E1 ---
 
     return
 
@@ -3124,5 +3350,43 @@ def animation_1d(oo):
 
         curves.new().XS(x1).YS(x2).ZS(data).lev(60).leg(leg)
     cpr.animation_1d(curves)
+
+
+# NEW: resonant velocity:
+def get_v_res(dd, s1, w_wci, sel_species):
+    coef_max = np.max(dd[sel_species].nT_equil['T'])
+    Te_speak = dd['electrons'].T_speak(dd)
+    cs_speak = np.sqrt(Te_speak / dd['pf'].mass)
+    norm_v = coef_max / cs_speak
+
+    # Te_max = np.max(dd['electrons'].nT_equil['T_J'])
+    # cs_max = np.sqrt(Te_max / dd['pf'].mass)
+    # norm_v = 1 / cs_max
+
+    w0 = w_wci * dd['wc']
+
+    q_s1, _, line_s1 = equil_profiles.q_s1(dd, s1)
+    vres = (q_s1 * dd['R0'] * w0) * norm_v
+
+    return vres
+
+
+# get normalization:
+def choose_wg_normalization(dd, sel_norm):
+    coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = \
+        None, None, '', ''
+    if sel_norm.lower() == 'wc':
+        line_norm_w = line_norm_g = '[\omega_{ci}]'
+        coef_norm_w = coef_norm_g = 1
+    if sel_norm.lower() == 'vt':
+        line_norm_w = line_norm_g = '[sqrt(2)*v_{th,i}/R_0]'
+        coef_norm_w = coef_norm_g = \
+            dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
+    if sel_norm.lower() == 'khz':
+        line_norm_w = '(kHz)'
+        line_norm_g = '(10^3 s)'
+        coef_norm_w = dd['wc'] / (1e3 * 2 * np.pi)
+        coef_norm_g = dd['wc'] / 1e3
+    return coef_norm_w, coef_norm_g, line_norm_w, line_norm_g
 
 

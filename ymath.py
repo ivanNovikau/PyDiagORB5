@@ -11,7 +11,7 @@ from scipy.fftpack import fft as sci_fft
 
 MIN_N_PEAKS = 3
 COEF_ERR = 1.96   # alpha-quantile of the standard normal distribution
-CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval, that corresponds to the alpha qunatile
+CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval, that corresponds to the alpha quantile
 
 
 def reload():
@@ -36,8 +36,9 @@ def estimate_w(x, y):
     x_fit += x[ids_peaks[0]]
 
     # results
-    out = {'ids_peak': ids_peaks,
-           'w': w,
+    out = {'ids_peaks': ids_peaks,
+           'w': w,        'g': None,
+           'w_err': None, 'g_err': None,
            'y_fit': y_fit, 'x_fit': x_fit}
     return out
 
@@ -88,7 +89,9 @@ def estimate_g(x, y):
 
     # results
     out['g'] = g
+    out['w'] = None
     out['g_err'] = np.abs(g - g_err)
+    out['w_err'] = None
     out['y_fit'] = y_fit
     out['x_fit'] = x_fit
 
@@ -127,26 +130,36 @@ def estimate_wg(x, y):
                'y_fit': y_fit, 'x_fit': x_fit}
     else:
         out = estimate_g(x, y)
-        out.update({
-            'w': None, 'w_err': None
-        })
 
     return out
 
 
-def advanced_wg(x, y, flag_print=True):
-    def advanced_fitting(x, y, F, p0):
-        # p0 = [A00, g0, w0]
-        popt, pcov = curve_fit(F, x, y, p0=p0)
-        y_fit = F(x, *popt)
-        wg_errs = np.sqrt(np.diag(pcov))
-        res_adv = {
-            'g': popt[1], 'w': popt[2],
-            'g_err': COEF_ERR*wg_errs[1], 'w_err': COEF_ERR*wg_errs[2],
-            'y_fit': y_fit, 'x_fit': x
-        }
-        return res_adv
+def advanced_fitting(x, y, F, p0, id_w, id_g):
+    popt, pcov = curve_fit(F, x, y, p0=p0)
+    y_fit = F(x, *popt)
+    wg_errs = np.sqrt(np.diag(pcov))
 
+    if id_w is None:
+        w, w_err = None, None
+    else:
+        id_w = np.int(id_w)
+        w, w_err = popt[id_w], COEF_ERR*wg_errs[id_w]
+
+    if id_g is None:
+        g, g_err = None, None
+    else:
+        id_g = np.int(id_g)
+        g, g_err = popt[id_g], COEF_ERR*wg_errs[id_g]
+
+    res_adv = {
+        'g': g,         'w': w,
+        'g_err': g_err, 'w_err': w_err,
+        'y_fit': y_fit, 'x_fit': x
+    }
+    return res_adv
+
+
+def advanced_wg(x, y, flag_print=True):
     # estimation of w,g
     wg_est = estimate_wg(x, y)
 
@@ -156,16 +169,18 @@ def advanced_wg(x, y, flag_print=True):
         'est': wg_est
     }
 
-    if len(wg_est['ids_peaks']) < MIN_N_PEAKS:
-        # fitting with only gamma
-        F = lambda x_loc, A0, g: A0 * np.exp(g * x_loc)
-        p0 = [y[0], wg_est['g'], None]
-    else:
-        # fitting with gamma and frequency
-        F = lambda x_loc, A0, g, w: A0 * np.cos(w * x_loc) * np.exp(g * x_loc)
-        p0 = [y[0], wg_est['g'], wg_est['w']]
     try:
-        out_adv = advanced_fitting(x, y, F, p0)
+        if len(wg_est['ids_peaks']) < MIN_N_PEAKS:
+            # fitting with only gamma
+            F = lambda x_loc, A0, g: A0 * np.exp(g * x_loc)
+            p0 = [y[0], wg_est['g']]
+            out_adv = advanced_fitting(x, y, F, p0, None, 1)
+        else:
+            # fitting with gamma and frequency
+            F = lambda x_loc, A0, g, w, Phase0: \
+                A0 * np.cos(w * x_loc + Phase0) * np.exp(g * x_loc)
+            p0 = [y[0], wg_est['g'], wg_est['w'], 0]
+            out_adv = advanced_fitting(x, y, F, p0, 2, 1)
         out.update({'adv': out_adv})
     except:
         if flag_print:
@@ -173,13 +188,59 @@ def advanced_wg(x, y, flag_print=True):
         try:
             if len(wg_est['ids_peaks']) >= MIN_N_PEAKS:
                 # fitting with frequency
-                F = lambda x_loc, A0, g, w: A0 * np.cos(w * x_loc)
-                p0 = [y[0], None, wg_est['w']]
-                out_adv = advanced_fitting(x, y, F, p0)
+                F = lambda x_loc, A0, w, Phase0: A0 * np.cos(w * x_loc + Phase0)
+                p0 = [y[0], wg_est['w'], 0]
+                out_adv = advanced_fitting(x, y, F, p0, 1, None)
                 out.update({'adv': out_adv})
         except:
             if flag_print:
                 print('Advanced fitting with frequency failed.')
+    return out
+
+
+def advanced_w(x, y, flag_print=True):
+    # estimation of w,g
+    wg_est = estimate_w(x, y)
+
+    # initial result dictionary
+    out = {
+        'adv': None,
+        'est': wg_est
+    }
+
+    # fitting with only frequency
+    if len(wg_est['ids_peaks']) >= MIN_N_PEAKS:
+        F = lambda x_loc, A0, w, Phase0: A0 * np.cos(w * x_loc + Phase0)
+        p0 = [y[0], wg_est['w'], 0]
+        try:
+            out_adv = advanced_fitting(x, y, F, p0, 1, None)
+            out.update({'adv': out_adv})
+        except:
+            if flag_print:
+                print('Advanced fitting with frequency failed.')
+    return out
+
+
+def advanced_g(x, y, flag_print=True):
+    # estimation of w,g
+    wg_est = estimate_wg(x, y)
+
+    # initial result dictionary
+    out = {
+        'adv': None,
+        'est': wg_est
+    }
+
+    # fitting with only gamma
+    F = lambda x_loc, A0, g: A0 * np.exp(g * x_loc)
+    p0 = [y[0], wg_est['g'], None]
+
+    try:
+        out_adv = advanced_fitting(x, y, F, p0)
+        out.update({'adv': out_adv})
+    except:
+        if flag_print:
+            print('Advanced fitting with dynamic rate failed.')
     return out
 
 
@@ -723,6 +784,7 @@ def avr_x1x2(vvar, oavr):
     }
 
     return vvar_avr
+
 
 
 
