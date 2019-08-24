@@ -58,11 +58,23 @@ class Curve:
         return self
 
     def leg(self, v):
-        self.legend = v
+        if v is not None:
+            if self.legend == "_":
+                self.legend = ''
+
+            if isinstance(v, list):
+                self.legend += v[0]
+                for i_line in range(1, np.shape(v)[0]):
+                    self.legn(v[i_line])
+            else:
+                self.legend += v
         return self
 
     def legn(self, v):
-        self.legend += '$\n$' + v
+        if v is not None:
+            if self.legend == "_":
+                self.legend = ''
+            self.legend += '$\n \\boldmath $' + v
         return self
 
     def sty(self, v):
@@ -160,8 +172,8 @@ class Curves:
     legend_position = 'best'
     legend_fcol = 'lightgray'
 
-    def_colors = ['b', 'r', 'g', 'c', 'm',
-                  'y', 'k', 'cyan', 'Purple', 'gray',
+    def_colors = ['b', 'r', 'g', 'black', 'm', 'c',
+                  'y', 'k', 'cyan', 'Purple', 'gray'
                   'lightcoral']
     flag_diff_styles = False
     def_styles = ['-', ':', '-.', ':']

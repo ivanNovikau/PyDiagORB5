@@ -286,7 +286,7 @@ def build_new_profiles(path_to_read, path_to_write, file_names, funcs):
 
 
 def impose_quasineutrality(path_to_read_bulk, path_to_read_fast, path_to_write,
-                           file_name_to_change, file_name_bulk, file_name_fast, f_bulk):
+                           file_name_to_change, file_name_bulk, file_name_fast, fs_fast):
     # read profiles
     prof_change = read_profiles(path_to_read_bulk, [file_name_to_change])[file_name_to_change]
     prof_bulk = read_profiles(path_to_read_bulk, [file_name_bulk])[file_name_bulk]
@@ -299,14 +299,23 @@ def impose_quasineutrality(path_to_read_bulk, path_to_read_fast, path_to_write,
     nb = nb / np.max(nb)
     nf = nf / np.max(nf)
 
-    f_fast = 1 - f_bulk
+    sum_fast = 0
+    sum_n_fast = 0
+    for id_prof in range(len(fs_fast)):
+        sum_fast   += fs_fast[id_prof]
+        sum_n_fast += fs_fast[id_prof] * nf
+    f_bulk = 1 - sum_fast
 
-    prof_change['n'] = f_bulk * nb + f_fast * nf
+    prof_change['n'] = f_bulk * nb + sum_n_fast
 
     # write result profile
-    prof_res = {file_name_to_change: prof_change}
-    write_profiles(path_to_write, [file_name_to_change], prof_res)
-
+    prof_res = {
+        file_name_to_change: prof_change,
+        file_name_bulk: prof_bulk,
+        file_name_fast: prof_fast
+    }
+    file_names_res = list(prof_res.keys())
+    write_profiles(path_to_write, file_names_res, prof_res)
 
 
 def copy_T_from_project_to_file(dd, path_to_file, file_name,

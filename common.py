@@ -44,177 +44,102 @@ def reload():
 
 # OLD: find correlation between two signals:
 def correlation_two_vars(dd, oo):
-    def aver_var(vvar, s, s_interval, tit_var, flag_aver):
-        ids_s, _, lines_s = \
-            mix.get_interval(s, [s_interval], 's', '0.3f')
-        tit_var += ':\ ' + lines_s[0]
+    # def aver_var(vvar, s, s_interval, tit_var, flag_aver):
+    #     ids_s, _, lines_s = \
+    #         mix.get_interval(s, [s_interval], 's', '0.3f')
+    #     tit_var += ':\ ' + lines_s[0]
+    #
+    #     ids_s = ids_s[0]
+    #     var_avr = vvar[:, ids_s[0]:ids_s[-1]+1]
+    #
+    #     if flag_aver == 'mean':
+    #         var_avr = np.mean(var_avr, axis=1)
+    #     if flag_aver == 'rms':
+    #         var_avr = np.sqrt(np.mean(var_avr ** 2, axis=1))
+    #     return var_avr, tit_var
+    #
+    # # --- var1 ---
+    # oo_var = dict(oo)
+    # oo_var.update({
+    #     'opt_var':      oo['opt_var1'],
+    #     'opt_type':     oo['opt_type1'],
+    #     'species_name': oo.get('species_name1', 'deuterium')
+    # })
+    # # var1 = choose_signal_for_comparison(dd, oo_var)
+    #
+    # # --- var2 ---
+    # oo_var = dict(oo)
+    # oo_var.update({
+    #     'opt_var':      oo['opt_var2'],
+    #     'opt_type':     oo['opt_type2'],
+    #     'species_name': oo.get('species_name2', 'deuterium')
+    # })
+    # # var2 = choose_signal_for_comparison(dd, oo_var)
+    #
+    # # --- take the signals in some radial intervals:
+    # s_interval1 = oo.get('s_interval1', None)
+    # flag_aver1 = oo.get('flag_aver1', 'mean')
+    # s_interval2 = oo.get('s_interval2', None)
+    # flag_aver2 = oo.get('flag_aver2', 'mean')
+    #
+    # var1_avr, tit1_var = \
+    #     aver_var(var1['var'], var1['s'], s_interval1, var1['tit'], flag_aver1)
+    # var2_avr, tit2_var = \
+    #     aver_var(var2['var'], var2['s'], s_interval2, var2['tit'], flag_aver2)
+    #
+    # # --- calculate a time delay ---
+    # oo_dt = dict(oo)
+    # oo_dt.update({
+    #     'var1':    var1_avr,  'var2':    var2_avr,
+    #     'grid_t1': var1['t'], 'grid_t2': var2['t'],
+    #     'vars_names': [tit1_var, tit2_var]
+    # })
+    # gn.find_time_delay(dd, oo_dt)
+    # n_vars = oo.get('nvars', 1)
+    # vvars, ts, tit_vars, lines_s = [], [], [], []
+    # for i_var in range(n_vars):
+    #     line_id_var = '{:d}'.format(i_var + 1)
+    #
+    #     # choose a signal
+    #     opt_type = oo.get('opt_type' + line_id_var, None)
+    #     opt_var = oo.get('opt_var' + line_id_var, None)
+    #     species_name = oo.get('species_name' + line_id_var, None)
+    #     oo_var = {
+    #         'opt_type': opt_type,
+    #         'opt_var': opt_var,
+    #         'species_name': species_name,
+    #     }
+    #     res = choose_signal_for_comparison(dd, oo_var)
+    #     data, s, t, tit = res['var'], res['s'], res['t'], res['tit']
+    #
+    #     # average the signal or take it at particular radial points:
+    #     opt_av = oo.get('opt_av' + line_id_var, 's1')
+    #     line_s = ''
+    #     if opt_av == 'rms' or opt_av == 'mean':
+    #         oo_avs = dict(oo)
+    #         s_interval = oo.get('s_interval' + line_id_var, None)
+    #         oo_avs.update({
+    #             'vars': [data], 'ts': [t], 'ss': [s],
+    #             'opts_av': [opt_av],
+    #             'tit': tit, 'vars_names': [tit],
+    #             'ns_av': 1,
+    #             's_av1_start': s_interval[0], 's_av1_end': s_interval[-1]
+    #         })
+    #         res = mix.find_avs(oo_avs)[0]
+    #         data, line_s = res['data'][0], res['lines_avs'][0]
+    #     if opt_av == 's1':
+    #         s1 = oo.get('s_point', None)
+    #         ids_s, s1 = mix.find(s, s1)
+    #         data = data[:, ids_s[0]:ids_s[-1] + 1]
+    #         line_s = 's = {:0.3f}'.format(s1)
+    #
+    #     # save the signal
+    #     vvars.append(data)
+    #     ts.append(t)
+    #     tit_vars.append(tit)
+    #     lines_s.append(line_s)
 
-        ids_s = ids_s[0]
-        var_avr = vvar[:, ids_s[0]:ids_s[-1]+1]
-
-        if flag_aver == 'mean':
-            var_avr = np.mean(var_avr, axis=1)
-        if flag_aver == 'rms':
-            var_avr = np.sqrt(np.mean(var_avr ** 2, axis=1))
-        return var_avr, tit_var
-
-    # --- var1 ---
-    oo_var = dict(oo)
-    oo_var.update({
-        'opt_var':      oo['opt_var1'],
-        'opt_type':     oo['opt_type1'],
-        'species_name': oo.get('species_name1', 'deuterium')
-    })
-    var1 = choose_signal_for_comparison(dd, oo_var)
-
-    # --- var2 ---
-    oo_var = dict(oo)
-    oo_var.update({
-        'opt_var':      oo['opt_var2'],
-        'opt_type':     oo['opt_type2'],
-        'species_name': oo.get('species_name2', 'deuterium')
-    })
-    var2 = choose_signal_for_comparison(dd, oo_var)
-
-    # --- take the signals in some radial intervals:
-    s_interval1 = oo.get('s_interval1', None)
-    flag_aver1 = oo.get('flag_aver1', 'mean')
-    s_interval2 = oo.get('s_interval2', None)
-    flag_aver2 = oo.get('flag_aver2', 'mean')
-
-    var1_avr, tit1_var = \
-        aver_var(var1['var'], var1['s'], s_interval1, var1['tit'], flag_aver1)
-    var2_avr, tit2_var = \
-        aver_var(var2['var'], var2['s'], s_interval2, var2['tit'], flag_aver2)
-
-    # --- calculate a time delay ---
-    oo_dt = dict(oo)
-    oo_dt.update({
-        'var1':    var1_avr,  'var2':    var2_avr,
-        'grid_t1': var1['t'], 'grid_t2': var2['t'],
-        'vars_names': [tit1_var, tit2_var]
-    })
-    gn.find_time_delay(dd, oo_dt)
-    n_vars = oo.get('nvars', 1)
-    vvars, ts, tit_vars, lines_s = [], [], [], []
-    for i_var in range(n_vars):
-        line_id_var = '{:d}'.format(i_var + 1)
-
-        # choose a signal
-        opt_type = oo.get('opt_type' + line_id_var, None)
-        opt_var = oo.get('opt_var' + line_id_var, None)
-        species_name = oo.get('species_name' + line_id_var, None)
-        oo_var = {
-            'opt_type': opt_type,
-            'opt_var': opt_var,
-            'species_name': species_name,
-        }
-        res = choose_signal_for_comparison(dd, oo_var)
-        data, s, t, tit = res['var'], res['s'], res['t'], res['tit']
-
-        # average the signal or take it at particular radial points:
-        opt_av = oo.get('opt_av' + line_id_var, 's1')
-        line_s = ''
-        if opt_av == 'rms' or opt_av == 'mean':
-            oo_avs = dict(oo)
-            s_interval = oo.get('s_interval' + line_id_var, None)
-            oo_avs.update({
-                'vars': [data], 'ts': [t], 'ss': [s],
-                'opts_av': [opt_av],
-                'tit': tit, 'vars_names': [tit],
-                'ns_av': 1,
-                's_av1_start': s_interval[0], 's_av1_end': s_interval[-1]
-            })
-            res = mix.find_avs(oo_avs)[0]
-            data, line_s = res['data'][0], res['lines_avs'][0]
-        if opt_av == 's1':
-            s1 = oo.get('s_point', None)
-            ids_s, s1 = mix.find(s, s1)
-            data = data[:, ids_s[0]:ids_s[-1] + 1]
-            line_s = 's = {:0.3f}'.format(s1)
-
-        # save the signal
-        vvars.append(data)
-        ts.append(t)
-        tit_vars.append(tit)
-        lines_s.append(line_s)
-
-
-# OLD: choose variables:
-def choose_signals(dd, oo):
-    n_vars = oo.get('nvars', 1)
-    vvars, ts, ss, tit_vars, lines_avr = [], [], [], [], []
-    for i_var in range(n_vars):
-        line_id_var = '{:d}'.format(i_var + 1)
-
-        # choose a signal
-        opt_type     = oo.get('opt_type'     + line_id_var, None)
-        opt_var      = oo.get('opt_var'      + line_id_var, None)
-        species_name = oo.get('species_name' + line_id_var, None)
-        oo_var = {
-            'opt_type':     opt_type,
-            'opt_var':      opt_var,
-            'species_name': species_name,
-        }
-        res = choose_signal_for_comparison(dd, oo_var)
-        data, s, t, tit = res['var'], res['s'], res['t'], res['tit']
-
-        # average the signal or take it at particular radial points:
-        opt_av = oo.get('opt_av' + line_id_var, '')
-        line_avr = ''
-        if opt_av is None:
-            line_avr = ''
-        if opt_av == 'rms' or opt_av == 'mean':
-            oo_avs = dict(oo)
-            s_interval = oo.get('s_interval' + line_id_var, None)
-            oo_avs.update({
-                'vars': [data], 'ts': [t], 'ss': [s],
-                'opts_av': [opt_av],
-                'tit': tit, 'vars_names': [tit],
-                'ns_av': 1,
-                's_av1_start': s_interval[0], 's_av1_end': s_interval[-1]
-            })
-            res = mix.find_avs(oo_avs)[0]
-            data, line_avr = res['data'][0], res['lines_avs'][0]
-        if opt_av == 's1':
-            s1 = oo.get('s_point', None)
-            ids_s, s1 = mix.find(s, s1)
-            data = data[:, ids_s[0]:ids_s[-1] + 1]
-            line_avr = 's = {:0.3f}'.format(s1)
-
-        # save the signal
-        vvars.append(data)
-        ts.append(t)
-        ss.append(s)
-        tit_vars.append(tit)
-        lines_avr.append(line_avr)
-
-    # results:
-    res = {
-        'vars': vvars, 'ts': ts, 'ss': ss,
-        'tit_vars': tit_vars, 'lines_avr': lines_avr
-    }
-    return res
-
-
-# OLD: choose a signal for comparison:
-def choose_signal_for_comparison(dd, oo):
-    opt_type = oo.get('opt_type', 'zonal')
-    oo_var = dict(oo)
-
-    out = {}
-    if opt_type == 'zonal':
-        out = zf.choose_var(dd, oo_var)
-    if opt_type == 'transport':
-        out = transport.choose_var(dd, oo_var)
-    if opt_type == 'nonzonal':
-        out = itg.choose_var(dd, oo_var)
-    if opt_type == 'nonzonal-s':
-        out = itg.choose_var_s(dd, oo_var)
-    if opt_type == 'equ-profile':
-        out = equil_profiles.choose_var(dd, oo_var)
-
-    return out
+    return
 
 
 # NEW: 2d plot: (x,y)
@@ -303,8 +228,20 @@ def plot_vars_1d(oo):
 
     func_mod = oo.get('func_mod', None)
 
+    sel_norm = oo.get('sel_norm', 'orig')
+
+    dds = oo.get('dds', None)
+
+    # normalization (first stage):
+    coef_x_norm, line_x_norm = None, None
+    if sel_norm == 'orig':
+        coef_x_norm = 1
+        line_x_norm = ''
+    if sel_norm == 't-mili-seconds':
+        line_x_norm = '(ms)'
+
     # plotting:
-    curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)\
+    curves = crv.Curves().xlab(labx + line_x_norm).ylab(laby).tit(tit_plot)\
         .leg_pos(leg_pos)
     curves.flag_norm     = flag_norm
     curves.flag_semilogy = flag_semilogy
@@ -315,6 +252,12 @@ def plot_vars_1d(oo):
         x_init, ids_x = mix.get_array_oo(oo, vvar['x'], 'x')
         legs  = vvar['legs']
         ns_av = len(datas)
+
+        # normalization (second stage):
+        dd_one = dds[ivar]
+        if sel_norm == 't-mili-seconds':
+            coef_x_norm = 1. / dd_one['wc'] * 1e3
+
         for is_av in range(ns_av):
             count_line += 1
 
@@ -323,6 +266,14 @@ def plot_vars_1d(oo):
             x = x_init
             if func_mod is not None:
                 x, data = func_mod(x_init, data)
+
+            x = x * coef_x_norm
+
+            # if ivar == 3:  # !!!!!!
+            #     data = np.array(data) * 1e6
+            #
+            # if ivar == 2:  # !!!!!!
+            #     data = np.array(data) * 4e6
 
             sty_current = '-'
             if stys is not None:
@@ -333,6 +284,204 @@ def plot_vars_1d(oo):
     # curves.set_colors_styles()
     if len(curves.list_curves) is not 0:
         cpr.plot_curves(curves)
+
+
+# NEW: 1d plot: localisation:
+def plot_vars_1d_localisation(oo):
+    oo_use = dict(oo)
+
+    n_vars = len(oo['ovars'])
+
+    # correct averaging parameter
+    avrs_use = list(oo['avrs'])
+    for ivar in range(n_vars):
+        if len(avrs_use[ivar]) >= 2:
+            avrs_use[ivar][1] = 'none-'
+        else:
+            avrs_use[ivar].append('none-')
+    oo_use.update({
+        'avrs': avrs_use,
+    })
+
+    vvars  = choose_vars(oo_use)
+    n_vars = len(vvars)
+
+    # additional data:
+    name_axis_loc = oo.get('name_axis_loc', None)
+
+    labx       = oo.get('labx', None)  # x-label
+    laby       = oo.get('laby', None)  # y-label
+    leg_pos    = oo.get('leg_pos', None)
+    tit_plot   = oo.get('tit_plot', None)  # title
+    stys       = oo.get('stys', None)
+
+    flag_norm     = oo.get('flag_norm', False)
+    flag_semilogy = oo.get('flag_semilogy', False)
+    sel_norm      = oo.get('sel_norm', 'orig')
+
+    dds = oo.get('dds', None)
+
+    # normalization (first stage):
+    coef_x_norm, line_x_norm = None, None
+    if sel_norm == 'orig':
+        coef_x_norm = 1
+        line_x_norm = ''
+    if sel_norm == 't-mili-seconds':
+        line_x_norm = '(ms)'
+
+    # plotting:
+    curves = crv.Curves().xlab(labx + line_x_norm).ylab(laby).tit(tit_plot)\
+        .leg_pos(leg_pos)
+    curves.flag_norm     = flag_norm
+    curves.flag_semilogy = flag_semilogy
+    count_line = -1
+    for ivar in range(n_vars):
+        count_line += 1
+
+        vvar = vvars[ivar]
+        data_2d = vvar['data']
+        leg_one = vvar['legs']
+
+        x1, ids_x1 = mix.get_array_oo(oo, vvar[vvar['x1']], vvar['x1'])
+        x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
+        data_2d = mix.get_slice(data_2d, ids_x1, ids_x2)
+
+        # find localisation
+        x_loc, dir_loc, x_evo, dir_evo = None, None, None, None
+        # func_data = None
+        if name_axis_loc == vvar['x1']:
+            x_loc, dir_loc = x1, 0
+            x_evo, dir_evo = x2, 1
+            func_data = lambda f, id_ev, id_loc: f[id_loc, id_ev]
+        if name_axis_loc == vvar['x2']:
+            x_loc, dir_loc = x2, 1
+            x_evo, dir_evo = x1, 0
+            func_data = lambda f, id_ev, id_loc: f[id_ev, id_loc]
+
+        # find absolute maximums at every evolution-moment
+        ids_max = np.argmax(np.abs(data_2d), axis=dir_loc)
+
+        # find locations of these maximums at every evolution-moment
+        locs = np.zeros(len(x_evo))
+        for id_evol in range(len(x_evo)):
+            locs[id_evol] = x_loc[ids_max[id_evol]]
+
+        # maximum values at every evolution-moment
+        data_max = np.zeros(len(x_evo))
+        data_2d_abs = np.abs(data_2d)
+        for id_evol in range(len(x_evo)):
+            data_max[id_evol] = func_data(data_2d_abs, id_evol, ids_max[id_evol])
+
+        # find peaks among maximums:
+        ids_max_peaks, _ = scipy.signal.find_peaks(data_max)
+        x_evo_peaks = x_evo[ids_max_peaks]
+        data_max_peaks = data_max[ids_max_peaks]
+
+        # find space locations of these peaks:
+        locs_peaks = locs[ids_max_peaks]
+
+        # normalization (second stage):
+        dd_one = dds[ivar]
+        if sel_norm == 't-mili-seconds':
+            coef_x_norm = 1. / dd_one['wc'] * 1e3
+
+        # plotting
+        sty_current = 'o'
+        if stys is not None:
+            if count_line < len(stys):
+                sty_current = stys[count_line]
+
+        # curves.new().XS(x_evo * coef_x_norm).YS(locs).leg(leg_one).sty(sty_current)
+        curves.new().XS(x_evo_peaks * coef_x_norm).YS(locs_peaks) \
+            .leg(leg_one).sty(sty_current)
+
+        # curves.new().XS(x_evo * coef_x_norm).YS(data_max) \
+        #     .leg(leg_one).sty(sty_current)
+        # curves.new().XS(x_evo_peaks * coef_x_norm).YS(data_max_peaks) \
+        #     .leg(leg_one).sty('o')
+
+    if len(curves.list_curves) is not 0:
+        cpr.plot_curves(curves)
+
+
+# Get some properties of a signal:
+def get_value_signal(oo):
+    vvars = choose_vars(oo)
+    n_vars = len(vvars)
+    oo_operations = oo.get('oo_operations', None)  # for every var (not averging)
+
+    def perform_operation(data, x, oo_one_operation):
+        sel_operation = oo_one_operation[0]
+        x_domain      = oo_one_operation[1]
+
+        ids_x_op, x_op, line_x_op = mix.get_ids(x, x_domain)
+        ids_x_op = range(ids_x_op[0], ids_x_op[-1] + 1)
+        x_work = x[ids_x_op]
+
+        value_res, var_res = np.nan, np.nan
+        if sel_operation == 'mean':
+            value_res = np.mean(data[ids_x_op])
+        if sel_operation == 'mean-abs':
+            value_res = np.mean(np.abs(data[ids_x_op]))
+        if sel_operation == 'abs-peaks-mean':
+            data_work = data[ids_x_op]
+            ids_peaks, _ = scipy.signal.find_peaks(np.abs(data_work))
+            data_abs_peaks = np.abs(data_work[ids_peaks])
+            value_res = np.mean(data_abs_peaks)
+            var_res   = np.var(data_abs_peaks)
+
+            curves = crv.Curves()
+            curves.new().XS(x_work).YS(data_work)
+            curves.new().XS(x_work[ids_peaks]).YS(data_work[ids_peaks]).sty('o')
+            curves.new().XS(x_work[ids_peaks]).YS(data_abs_peaks).sty('s')
+            curves.flag_semilogy = True
+            cpr.plot_curves(curves)
+        if sel_operation == 'abs-peaks-peaks-mean':
+            data_work = data[ids_x_op]
+            ids_peaks, _ = scipy.signal.find_peaks(np.abs(data_work))
+            data_abs_peaks = np.abs(data_work[ids_peaks])
+
+            ids_peaks_peaks, _ = scipy.signal.find_peaks(data_abs_peaks)
+            data_abs_peaks_peaks = data_abs_peaks[ids_peaks_peaks]
+            value_res = np.mean(data_abs_peaks_peaks)
+            var_res = np.var(data_abs_peaks_peaks)
+
+            curves = crv.Curves()
+            curves.new().XS(x_work).YS(data_work)
+            curves.new()\
+                .XS(x_work[ids_peaks])\
+                .YS(data_abs_peaks)\
+                .sty('o').leg('peaks')
+            curves.new()\
+                .XS(x_work[ids_peaks][ids_peaks_peaks])\
+                .YS(data_abs_peaks_peaks)\
+                .sty('s').leg('peaks-peaks')
+            curves.flag_semilogy = True
+            cpr.plot_curves(curves)
+
+        return value_res, var_res, line_x_op
+
+    count_line = -1
+    props, desc, vars_res = [], [], []
+    for ivar in range(n_vars):
+        vvar = vvars[ivar]
+        datas = vvar['data']
+        x     = vvar['x']
+        legs  = vvar['legs']
+        ns_av = len(datas)
+        oo_one_operation = oo_operations[ivar]
+        for is_av in range(ns_av):
+            count_line += 1
+            data = datas[is_av]
+            prop_res, var_res, line_oper = perform_operation(
+                data, x, oo_one_operation)
+            props.append(prop_res)
+            vars_res.append(var_res)
+            desc.append(legs[is_av] + ':\ ' + line_oper)
+
+    for id_res in range(len(props)):
+        print(desc[id_res] + ':\ ' + '{:0.3e} +- {:0.3e}'
+              .format(props[id_res], vars_res[id_res]))
 
 
 # NEW: FFT 1d:
@@ -1457,7 +1606,6 @@ def calc_wg_t(oo_wg_t, oo_plot):
 
     # calculate data for different configurations
     conf_res = []
-    label_f = ''
     for i_conf in range(n_conf):
         conf_name = oo_cong_names[i_conf]
 
@@ -1468,19 +1616,17 @@ def calc_wg_t(oo_wg_t, oo_plot):
         oo_wg  = dict(oo_wgs[i_conf])
 
         dd = oo_var['dds'][0]
-        s1 = oo_var['avrs'][0][2][0]
 
         tmin = oo_t['tmin']
         tmax = oo_t['tmax']
         width_t = oo_t['width_t']
         step_t = oo_t['step_t']
         flag_inc_boundary = oo_t.get('flag_inc_boundary', False)
-        sel_fv = oo_t.get('sel_fv', 'none')  # 'none', [species_name] + '_' + 'f_res_t0',
-                                             # 'f_res_t',
-                                             # 'dfdv_res_t0', 'dfdv_res_t'
-                                             # if '_minus' then investigate -|vres|
-        sel_je = oo_t.get('sel_je', 'none')  # 'none', [species_name] + '_' + 'je',
-        je_n_vpar_res_to_draw = oo_t.get('je_n_vpar_res_to_draw', 1)
+        species_name = oo_t.get('species_name', None)
+        flag_fv = oo_t.get('flag_fv', False)
+        flag_je = oo_t.get('flag_je', False)
+        s1_q    = oo_t.get('s1_q', None)
+        n_analyt_vres = oo_t.get('n_analyt_vres', 1)
 
         half_width_t = width_t/2
 
@@ -1547,85 +1693,110 @@ def calc_wg_t(oo_wg_t, oo_plot):
             ws[i_int] = res_wg[line_res]['w' + line_res_method]
             gs[i_int] = res_wg[line_res]['g' + line_res_method]
 
+        # analytical resonance velocity
+        vres = get_v_res(dd, s1_q, ws, species_name)
+        curves_draw_vres = geom.Curve()
+        for i_vres in range(n_analyt_vres):
+            vres_data_1 = vres / (i_vres + 1)
+            curves_draw_vres.add_curve(t * coef_norm_t, + vres_data_1)
+            curves_draw_vres.add_curve(t * coef_norm_t, - vres_data_1)
+        curves_draw_vres.color = 'grey'
+        curves_draw_vres.style = ':'
+        curves_draw_vres.width = 4
+
         conf_res_one = {
             'name': conf_name,
             't': t,
             'ws': ws,
             'gs': gs,
             'ws_err': ws_err,
-            'gs_err': gs_err
+            'gs_err': gs_err,
+            'vres': vres,
+            'curves_draw_vres': curves_draw_vres,
+            'flag_fv': flag_fv,
+            'flag_je': flag_je,
         }
 
-        # --- Investigate time evolution of a species distribution function ---
-        if sel_fv == 'none':
+        # --- clumps and holes and zeros: parallel velocities, result frequencies ---
+        if flag_fv:
+            # delta f
+            oo_get_f = {'avrs':  [['tvpar', 'none-']], 'dds': [dd],
+                        'ovars': [['distribution', 'df_vel_1d', species_name]]}
+            vvar_delta_f = choose_vars(oo_get_f)[0]
+            deltaf = vvar_delta_f['data']
+            t_f = vvar_delta_f['t']
+            vpar_f = vvar_delta_f['vpar']
+
+            # d \delta f / dv
+            oo_get_f['ovars'] = [['distribution', 'ddeltaf_vel_1d-dv', species_name]]
+            vvar_d_delta_f = choose_vars(oo_get_f)[0]
+            ddeltaf = vvar_d_delta_f['data']
+
+            # clumps, holes, zeros:
+            ids_pos, _, _ = mix.get_ids(vpar_f, [0.0, np.max(vpar_f[-1])])
+            ids_pos = range(ids_pos[0], ids_pos[-1]+1)
+            vpar_f_pos = vpar_f[ids_pos]
+
+            id_f_max = np.argmax(vvar_delta_f['data'][:, ids_pos], axis=1)
+            id_f_min = np.argmin(vvar_delta_f['data'][:, ids_pos], axis=1)
+            id_f_zero = np.argmin(vvar_d_delta_f['data'][:, ids_pos], axis=1)
+
+            vpar_max, vpar_min, vpar_zero = \
+                np.zeros(np.size(id_f_max)), np.zeros(np.size(id_f_min)), np.zeros(np.size(id_f_zero))
+            for id_t in range(np.size(id_f_max)):
+                vpar_max[id_t]  = vpar_f_pos[id_f_max[id_t]]
+                vpar_min[id_t]  = vpar_f_pos[id_f_min[id_t]]
+                vpar_zero[id_t] = vpar_f_pos[id_f_zero[id_t]]
+            w_from_max  = get_w_from_v_res(dd, s1_q, vpar_max, species_name)
+            w_from_min  = get_w_from_v_res(dd, s1_q, vpar_min, species_name)
+            w_from_zero = get_w_from_v_res(dd, s1_q, vpar_zero, species_name)
+
+            curves_draw_vres_max  = geom.Curve()
+            curves_draw_vres_min  = geom.Curve()
+            curves_draw_vres_zero = geom.Curve()
+            curves_draw_vres_max.add_curve(t_f * coef_norm_t, vpar_max)
+            curves_draw_vres_min.add_curve(t_f * coef_norm_t, vpar_min)
+            curves_draw_vres_zero.add_curve(t_f * coef_norm_t, vpar_zero)
+            curves_draw_vres_max.color, curves_draw_vres_min.color, curves_draw_vres_zero.color = \
+                'black', 'black', 'black'
+            curves_draw_vres_max.style, curves_draw_vres_min.style, curves_draw_vres_zero.style = \
+                ':', ':', ':'
+            curves_draw_vres_max.width, curves_draw_vres_min.width, curves_draw_vres_zero.width = \
+                4, 4, 4
+
+            label_deltaf  = species_name + ':\ \delta f(t, v_{res})'
+            label_ddeltaf = species_name + ':\ \partial \delta f(t, v_{res})/\partial v'
+
             conf_res_one.update({
-                'vres': None,
-                'fres': None,
-            })
-        else:
-            # species name
-            species_name = sel_fv.split('_', 1)[0]
-
-            # find resonant velocity
-            vres = np.zeros(nt)
-            if 't0' in sel_fv:
-                vres1 = get_v_res(dd, s1, ws[0], species_name)
-                vres[:] = vres1
-            else:
-                for i_tint in range(nt):
-                    vres1 = get_v_res(dd, s1, ws[i_tint], species_name)
-                    vres[i_tint] = vres1
-
-            if 'minus' in sel_fv:
-                vres = -vres
-
-            # find distribution function or its derivative on v_parallel
-            oo_get_f = {
-                'avrs': [['tvpar', 'none-']],
-                'dds': [dd],
-            }
-
-            if 'f_res' in sel_fv:
-                oo_get_f['ovars'] = [['distribution', 'f_vel_1d', species_name]]
-                label_f = 'f(t, v_{res})'
-            if 'dfdv_res' in sel_fv:
-                oo_get_f['ovars'] = [['distribution', 'df_vel_1d-dv', species_name]]
-                label_f = 'df(t, v_{res})/dv'
-
-            vvar_f = choose_vars(oo_get_f)[0]
-            f_res_tvpar = vvar_f['data']
-            t_f_res     = vvar_f['t']
-            vpar = vvar_f['vpar']
-
-            # find time evolution of the distribution at vres
-            fres = np.zeros(nt)
-            for i_tint in range(nt):
-                id_t1, _, _    = mix.get_ids(t_f_res, t[i_tint])
-                id_vres, _, _  = mix.get_ids(vpar, vres[i_tint])
-                fres[i_tint]   = f_res_tvpar[id_t1, id_vres]
-
-            conf_res_one.update({
-                'vres': vres,
-                'fres': fres,
+                'vpar_max':  vpar_max,
+                'vpar_min':  vpar_min,
+                'vpar_zero': vpar_zero,
+                'w_from_max':  w_from_max,
+                'w_from_min':  w_from_min,
+                'w_from_zero': w_from_zero,
+                't_f': t_f,
+                'vpar_f': vpar_f,
+                'deltaf': deltaf,
+                'ddeltaf': ddeltaf,
+                'curves_draw_vres_max': curves_draw_vres_max,
+                'curves_draw_vres_min': curves_draw_vres_min,
+                'curves_draw_vres_zero': curves_draw_vres_zero,
+                'label_deltaf': label_deltaf,
+                'label_ddeltaf': label_ddeltaf,
             })
 
         # --- Investigate time evolution of a species J*E signal: <JE(t, vpar)>_{nT_gam} ---
-        if sel_je == 'none':
-            conf_res_one.update({
-                'je_tvpar': None,
-            })
-        else:
-            species_name = sel_je.split('_', 1)[0]
+        if flag_je:
             oo_get_je = {
                 'ovars': [['mpr', 'je', species_name]],
                 'avrs': [['tvpar', 'none-']],
                 'dds': [dd],
             }
             vvar_je = choose_vars(oo_get_je)[0]
+            t_je = vvar_je['t']
             vpar = vvar_je['vpar']
 
             je_data = np.zeros([nt, len(vpar)])
-            vres_for_je = np.zeros(nt)
             for i_int in range(nt):
                 tmin1 = t_ints[i_int][0]
                 tmax1 = t_ints[i_int][-1]
@@ -1639,24 +1810,12 @@ def calc_wg_t(oo_wg_t, oo_plot):
                     vvar_je['data'][ids_min1:ids_max1+1, :], axis=0
                 ))
 
-                vres_for_je[i_int] = get_v_res(dd, s1, ws[i_int], species_name)
-
-            # analytical resonance velocity
-            curves_draw_vres = geom.Curve()
-            for i_vres in range(je_n_vpar_res_to_draw):
-                vres_data_1 = vres_for_je/(i_vres + 1)
-                curves_draw_vres.add_curve(t * coef_norm_t, + vres_data_1)
-                curves_draw_vres.add_curve(t * coef_norm_t, - vres_data_1)
-            curves_draw_vres.color = 'grey'
-            curves_draw_vres.style = ':'
-            curves_draw_vres.width = 4
-
             conf_res_one.update({
                 'je_tvpar': je_data,
+                'je_tje_vpar': vvar_je['data'],
+                't_je': t_je,
                 'vpar_je': vpar,
                 'tit_je': vvar_je['tit'],
-                'vres_for_je': vres_for_je,
-                'curves_draw_vres': curves_draw_vres,
             })
 
         # --- RESULTS ---
@@ -1679,44 +1838,94 @@ def calc_wg_t(oo_wg_t, oo_plot):
             .sty(stys_plot[i_conf])
     cpr.plot_curves(curves)
 
-    # distribution function
-    curves = crv.Curves().xlab('t' + line_norm_t).ylab(label_f)
+    # distribution function (t,vpar):
     for i_conf in range(n_conf):
         one_conf = conf_res[i_conf]
-        if one_conf['fres'] is not None:
-            curves.new() \
-                .XS(one_conf['t'] * coef_norm_t) \
-                .YS(one_conf['fres']) \
-                .leg(one_conf['name']) \
-                .sty(stys_plot[i_conf])
-    cpr.plot_curves(curves)
+        if not one_conf['flag_fv']:
+            continue
 
-    # resonant velocity
-    curves = crv.Curves().xlab('t' + line_norm_t).ylab('v_{res}(t)')
-    for i_conf in range(n_conf):
-        one_conf = conf_res[i_conf]
-        if one_conf['vres'] is not None:
-            curves.new() \
-                .XS(one_conf['t'] * coef_norm_t) \
-                .YS(one_conf['vres']) \
-                .leg(one_conf['name']) \
-                .sty(stys_plot[i_conf])
-    cpr.plot_curves(curves)
+        vpar_plot, ids_vpar_plot = mix.get_array_oo(
+            oo_plot, one_conf['vpar_f'], 'vpar')
+        ids_vpar_plot = range(ids_vpar_plot[0], ids_vpar_plot[-1] + 1)
+
+        curves = crv.Curves() \
+            .xlab('t' + line_norm_t).ylab('v_{\parallel}') \
+            .tit(one_conf['name']).titn(one_conf['label_deltaf'])
+        curves.new() \
+            .XS(one_conf['t_f'] * coef_norm_t) \
+            .YS(vpar_plot) \
+            .ZS(one_conf['deltaf'][:, ids_vpar_plot]) \
+            .lev(60)
+        curves.newg(one_conf['curves_draw_vres'])
+        curves.newg(one_conf['curves_draw_vres_max'])
+        curves.newg(one_conf['curves_draw_vres_min'])
+        cpr.plot_curves_3d(curves)
+
+        curves = crv.Curves() \
+            .xlab('t' + line_norm_t).ylab('v_{\parallel}') \
+            .tit(one_conf['name']).titn(one_conf['label_ddeltaf'])
+        curves.new() \
+            .XS(one_conf['t_f'] * coef_norm_t) \
+            .YS(vpar_plot) \
+            .ZS(one_conf['ddeltaf'][:, ids_vpar_plot]) \
+            .lev(60)
+        curves.newg(one_conf['curves_draw_vres'])
+        curves.newg(one_conf['curves_draw_vres_zero'])
+        cpr.plot_curves_3d(curves)
+
+        curves = crv.Curves() \
+            .xlab('t' + line_norm_t).ylab('\omega' + line_norm_w) \
+            .tit(one_conf['name'])
+        curves.new() \
+            .XS(one_conf['t_f'] * coef_norm_t) \
+            .YS(one_conf['w_from_max'] * coef_norm_w) \
+            .leg('clumps').sty('-')
+        curves.new() \
+            .XS(one_conf['t_f'] * coef_norm_t) \
+            .YS(one_conf['w_from_min'] * coef_norm_w) \
+            .leg('holes').sty('-')
+        curves.new() \
+            .XS(one_conf['t_f'] * coef_norm_t) \
+            .YS(one_conf['w_from_zero'] * coef_norm_w) \
+            .leg('zeros').sty(':')
+        curves.new() \
+            .XS(one_conf['t'] * coef_norm_t) \
+            .YS(one_conf['ws'] * coef_norm_w) \
+            .leg('fitting').sty(':o').col('black')
+        cpr.plot_curves(curves)
 
     # <je(t,vpar)>_nT
     for i_conf in range(n_conf):
         one_conf = conf_res[i_conf]
-        if one_conf['je_tvpar'] is not None:
+        if one_conf['flag_je']:
             vpar_plot, ids_vpar_plot = mix.get_array_oo(
                 oo_plot, one_conf['vpar_je'], 'vpar')
 
             curves = crv.Curves()\
                 .xlab('t' + line_norm_t).ylab('v_{\parallel}')\
-                .tit(one_conf['name'] + ':\ ' + one_conf['tit_je'])
+                .tit(one_conf['name'] + ':\ <' + one_conf['tit_je'] + '>_{nT_{egam}}')
             curves.new() \
                 .XS(one_conf['t'] * coef_norm_t) \
                 .YS(vpar_plot) \
                 .ZS(one_conf['je_tvpar'][:, ids_vpar_plot[0]:ids_vpar_plot[-1]+1]) \
+                .lev(60)
+            curves.newg(one_conf['curves_draw_vres'])
+            cpr.plot_curves_3d(curves)
+
+    # je(t,vpar)
+    for i_conf in range(n_conf):
+        one_conf = conf_res[i_conf]
+        if one_conf['flag_je']:
+            vpar_plot, ids_vpar_plot = mix.get_array_oo(
+                oo_plot, one_conf['vpar_je'], 'vpar')
+
+            curves = crv.Curves() \
+                .xlab('t' + line_norm_t).ylab('v_{\parallel}') \
+                .tit(one_conf['name'] + ':\ ' + one_conf['tit_je'])
+            curves.new() \
+                .XS(one_conf['t_je'] * coef_norm_t) \
+                .YS(vpar_plot) \
+                .ZS(one_conf['je_tje_vpar'][:, ids_vpar_plot[0]:ids_vpar_plot[-1] + 1]) \
                 .lev(60)
             curves.newg(one_conf['curves_draw_vres'])
             cpr.plot_curves_3d(curves)
@@ -2638,7 +2847,7 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
     ovar_array = [['mpr', je_name, sel_species, t_int]]
     oo_vvar.update({'ovars': ovar_array})
     je_dict = choose_vars(oo_vvar)[0]
-    je      =  np.array(je_dict['data'])
+    je      = np.array(je_dict['data'])
     mu      = np.array(je_dict['mu'])
     vpar    = np.array(je_dict['vpar'])
     nmu = np.size(mu)
@@ -3055,7 +3264,7 @@ def MPR_gamma(dd, oo_vars, oo_wg, oo_plot):
 
     # --- EXCLUDE ZFZF from signals ---
     if flag_ZFZF:
-        flag_norm = oo_plot.get('flag_norm', False)
+        flag_norm     = oo_plot.get('flag_norm', False)
         flag_semilogy = oo_plot.get('flag_semilogy', False)
 
         t  = je_dict['x']
@@ -3266,7 +3475,17 @@ def MPR_exclude_ZFZF(w, g, E, P, t, id_peak, eta):
 
     E_peak1 = E[ids_peaks[id_peak]]
     E_peak2 = E[ids_peaks[id_peak+1]]
-    if eta > 0:
+
+    # if eta > 0:
+    #     idd = np.array([E_peak1, E_peak2]).argmax()
+    # else:
+    #     # in this case you should take the peak at the beginning where
+    #     # there are still alternating peaks
+    #     idd = np.array([E_peak1, E_peak2]).argmin()
+    # if idd == 1:
+    #     id_peak += 1
+
+    if eta < 0:
         idd = np.array([E_peak1, E_peak2]).argmax()
     else:
         # in this case you should take the peak at the beginning where
@@ -3371,6 +3590,24 @@ def get_v_res(dd, s1, w_wci, sel_species):
     return vres
 
 
+# NEW: get frequency from a resonant velocity:
+def get_w_from_v_res(dd, s1, vres, sel_species):
+    coef_max = np.max(dd[sel_species].nT_equil['T'])
+    Te_speak = dd['electrons'].T_speak(dd)
+    cs_speak = np.sqrt(Te_speak / dd['pf'].mass)
+    norm_v = coef_max / cs_speak
+
+    # Te_max = np.max(dd['electrons'].nT_equil['T_J'])
+    # cs_max = np.sqrt(Te_max / dd['pf'].mass)
+    # norm_v = 1 / cs_max
+
+    q_s1, _, line_s1 = equil_profiles.q_s1(dd, s1)
+    w0 = vres / (q_s1 * dd['R0'] * norm_v)
+    w_wci = w0 / dd['wc']
+
+    return w_wci
+
+
 # get normalization:
 def choose_wg_normalization(dd, sel_norm):
     coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = \
@@ -3388,5 +3625,7 @@ def choose_wg_normalization(dd, sel_norm):
         coef_norm_w = dd['wc'] / (1e3 * 2 * np.pi)
         coef_norm_g = dd['wc'] / 1e3
     return coef_norm_w, coef_norm_g, line_norm_w, line_norm_g
+
+
 
 

@@ -21,7 +21,7 @@ else:
 if FLAG_LATEX:
     FIG_SIZE_W = 15
     FIG_SIZE_H = 9.5
-    LEG_SCALE = 1
+    LEG_SCALE = 0.8
     FONT_SIZE = 28
     FLAG_LATEX = True
     FONT_SIZE_LABELS = FONT_SIZE * 1.5

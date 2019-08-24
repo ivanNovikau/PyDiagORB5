@@ -61,4 +61,29 @@ n80_circular  = set_dd(dict(dd_init), root_mu12, '/n80-circular-chease/', 'n80-c
 ant_test  = set_dd(dict(dd_init), root_ant,  '/TCV-test/',       'Antenna:\ test')
 ant_n80   = set_dd(dict(dd_init),  root_ant, '/TCV-n80-start1/', 'Antenna:\ n=80')
 ant_itpa_n20 = set_dd(dict(dd_init),  root_ant, '/ITPA-lin-n20-start/', 'Antenna:\ ITPA:\ n=20')
+ant_itpa_n20_test = set_dd(dict(dd_init),  root_ant, '/ant-ITPA-n20/', 'Antenna:\ ITPA:\ n=20: test')
+ant_itpa_n20_from_beginning = set_dd(dict(dd_init),  root_ant,
+                                     '/launch-ant-ITPA-lin20/from-beginning',
+                                     'Antenna:\ ITPA:\ n=20:\ from\ beginning')
+ant_itpa_n20_from_beginning_cobra = set_dd(dict(dd_init),  root_ant,
+                                     '/launch-ant-ITPA-lin20/from-beginning-cobra',
+                                     'Antenna:\ ITPA:\ n=20:\ from\ beginning\ (cobra)')
+
+
+ant_itpa_n20_start_1 = set_dd(dict(dd_init),  root_ant,
+                            '/launch-ant-ITPA-lin20/start_1',
+                                        'Antenna:\ ITPA:\ n=20:\ start-1')
+ant_itpa_n20_start_2 = set_dd(dict(dd_init),  root_ant,
+                            '/launch-ant-ITPA-lin20/start_2',
+                                        'Antenna:\ ITPA:\ n=20:\ start-2')
+ant_itpa_n20_start_2_ant = set_dd(dict(dd_init),  root_ant,
+                            '/launch-ant-ITPA-lin20/start_2_ant',
+                                        'Antenna:\ ITPA:\ n=20:\ start-2-ant')
+ant_itpa_n20_start_2_nonfilt_ant = set_dd(dict(dd_init),  root_ant,
+                            '/launch-ant-ITPA-lin20/start_2_nonfilt_ant',
+                                        'Antenna:\ ITPA:\ n=20:\ start-2-nonfilt-ant')
+ant_n20_n24_1 = set_dd(dict(dd_init),  root_ant,
+                            '/two-modes/n20-n24-start-1',
+                            'Antenna:\ n = 20, 24')
+
 
