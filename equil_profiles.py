@@ -239,15 +239,15 @@ def B_equil(dd):
         Z_new[:, i] = np.append(Z[:, i], Z[0, i])
         R_new[:, i] = np.append(R[:, i], R[0, i])
 
-    # R_new *= dd['R0']
-    # B_new *= dd['B0']
+    R_new *= dd['R0']
+    B_new *= dd['B0']
 
     labx = 'R(m)'
     laby = 'Z(m)'
     tit = '|B|(T)'
 
     curves = crv.Curves().xlab(labx).ylab(laby).tit(tit)
-    curves.new().XS(R_new).YS(Z_new).ZS(B_new.T).lev(60)
+    curves.new().XS(R_new).YS(Z_new).ZS(B_new.T).lev(160)
     cpr.plot_curves_3d(curves)
 
     f.close()

@@ -2,14 +2,9 @@ import Mix as mix
 import ymath
 import curve as crv
 import matplotlib.pyplot as mpl
-from matplotlib import animation
-import matplotlib.ticker as ticker
 import numpy as np
-import plotly.offline as py
-import plotly.graph_objs as go
-from matplotlib.ticker import FormatStrFormatter
 import types
-from matplotlib import animation, rc
+from matplotlib import animation, ticker
 from IPython.display import HTML
 from IPython.core.getipython import get_ipython
 
@@ -19,15 +14,50 @@ else:
     FLAG_LATEX = False
 
 if FLAG_LATEX:
+    # # configuration #1
+    # FIG_SIZE_W = 15
+    # FIG_SIZE_H = 9.5
+    # LEG_SCALE = 0.82
+    # FONT_SIZE = 28
+    # FLAG_LATEX = True
+    # FONT_SIZE_LABELS = FONT_SIZE * 1.5
+    # FONT_SIZE_TICKS  = FONT_SIZE * 1.0
+    # FONT_SIZE_ORDER  = FONT_SIZE * 1.2
+    # FONT_SIZE_TITLE  = FONT_SIZE * 1.3
+
+    # configuration #2 (used for general plots in AAPPS paper)
     FIG_SIZE_W = 15
     FIG_SIZE_H = 9.5
-    LEG_SCALE = 0.8
+    LEG_SCALE = 0.85  # for scan on saturation
+    # LEG_SCALE = 1.0
     FONT_SIZE = 28
     FLAG_LATEX = True
-    FONT_SIZE_LABELS = FONT_SIZE * 1.5
-    FONT_SIZE_TICKS  = FONT_SIZE * 1.0
-    FONT_SIZE_ORDER  = FONT_SIZE * 1.2
-    FONT_SIZE_TITLE  = FONT_SIZE * 1.3
+    FONT_SIZE_LABELS = FONT_SIZE * 1.8
+    FONT_SIZE_TICKS = FONT_SIZE * 1.5
+    FONT_SIZE_ORDER = FONT_SIZE * 1.2
+    FONT_SIZE_TITLE = FONT_SIZE * 1.3
+
+    # # configuration #2.1 (used for q-plot in AAPPS paper)
+    # FIG_SIZE_W = 9.5
+    # FIG_SIZE_H = 9.5
+    # LEG_SCALE = 1.0
+    # FONT_SIZE = 28
+    # FLAG_LATEX = True
+    # FONT_SIZE_LABELS = FONT_SIZE * 1.8
+    # FONT_SIZE_TICKS = FONT_SIZE * 1.2
+    # FONT_SIZE_ORDER = FONT_SIZE * 1.2
+    # FONT_SIZE_TITLE = FONT_SIZE * 1.3
+
+    # # configuration #3 (used for B plot in AAPPS paper)
+    # FIG_SIZE_W = 9.5
+    # FIG_SIZE_H = 9.5
+    # LEG_SCALE = 0.82
+    # FONT_SIZE = 28
+    # FLAG_LATEX = True
+    # FONT_SIZE_LABELS = FONT_SIZE * 2
+    # FONT_SIZE_TICKS = FONT_SIZE * 1.2
+    # FONT_SIZE_ORDER = FONT_SIZE * 2
+    # FONT_SIZE_TITLE = FONT_SIZE * 1.5
 else:
     FIG_SIZE_W = 10
     FIG_SIZE_H = 6
@@ -131,6 +161,8 @@ def plot_curves_3d(curves):
 
     # --- contour plot ---
     cs = ax.contourf(XX, YY, ZZ.T, levels=curve_one.levels, cmap=curve_one.colormap)
+    # cs = ax.contourf(XX, YY, ZZ.T, locator=ticker.LogLocator(),
+    #                  levels=curve_one.levels, cmap=curve_one.colormap)
 
     # color bar
     cb = fig.colorbar(cs, shrink=0.8, extend='both')
@@ -367,7 +399,8 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
     # set legend
     if ncurves > 1 and curves.flag_legend:
         ax.legend(fontsize=FONT_SIZE * LEG_SCALE, loc=curves.legend_position,
-                  facecolor=curves.legend_fcol)
+                  facecolor=curves.legend_fcol,
+                  labelspacing=0.1, handlelength=1, handletextpad=0.4)
 
     # set title
     if curves.title is not None:

@@ -93,7 +93,8 @@ class Curve:
         return self
 
     def col(self, v):
-        self.color = v
+        if v is not None:
+            self.color = v
         return self
 
     def ms(self, v):
@@ -169,7 +170,7 @@ class Curves:
     yticks_labels = np.nan
 
     flag_legend = True
-    legend_position = 'best'
+    legend_position = 'best'  # 'upper right', 'center left'
     legend_fcol = 'lightgray'
 
     def_colors = ['b', 'r', 'g', 'black', 'm', 'c',
@@ -329,11 +330,13 @@ class Curves:
         return self
 
     def xlim(self, v):
-        self.xlimits = v
+        if v is not None:
+            self.xlimits = v
         return self
 
     def ylim(self, v):
-        self.ylimits = v
+        if v is not None:
+            self.ylimits = v
         return self
 
     def zlim(self, v):

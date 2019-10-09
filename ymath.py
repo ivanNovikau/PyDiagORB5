@@ -5,7 +5,7 @@ from scipy import stats
 from scipy.optimize import curve_fit
 from scipy import constants
 from scipy import interpolate
-from scipy.fftpack import fft as sci_fft
+import pywt
 
 # avoid plotting here
 
@@ -266,8 +266,11 @@ def estimate_w_max_fft(w, f, oo={}):
     return out
 
 
-def fft_y(x, y=None, oo={}):
+def fft_y(x, y=None, oo=None):
     # for a 1d or 2d signal y
+
+    if oo is None:
+        oo = {}
 
     # additional parameters:
     flag_f2_arranged = oo.get('flag_f2_arranged', False)
@@ -335,6 +338,26 @@ def fft_y(x, y=None, oo={}):
     res.update({'f': f, 'f2_raw': f2_raw})
 
     return res
+
+
+# Continuous Wavelet transform
+def cwt_y(x, y, oo):
+    # --- only for 1d y ---
+    # --- INPUT ---
+    # x - time like axis
+    # y - signal (dep. on x).
+    # oo['width'] - np.arange(1,n), where n is a some number of x points,
+    #   if in wave period you have nT points, when n should be n >= nT to catch the frequency
+    #   of this wave.
+    # --- RESULTS ---
+    # w - frequency array
+    # cwt_res - a matrix (len(w), len(x))
+
+    width = oo.get('width', None)
+    dx = np.mean(np.diff(x))
+    cwt_res, w = pywt.cwt(y, width, 'mexh', sampling_period=dx)
+
+    return cwt_res, w
 
 
 def filtering(x, y, oo):
@@ -689,7 +712,7 @@ def find_t1s1(vvar, oavr):
 
 
 # NEW: combined find_av_s, find_av_t, find_t1s1
-def avr_x1x2(vvar, oavr):
+def avr_x1x2(vvar, oavr, oo ):
     # oavr = [sel_av, av_domain]
     # sel_av = 'type_av-coord_av'
     # type_av = 'mean', 'rms', 'point'
@@ -703,6 +726,7 @@ def avr_x1x2(vvar, oavr):
         vvar_avr = dict(vvar)
         vvar_avr['lines_avr'] = ['']
         return vvar_avr
+    flag_aver_interp = oo.get('flag_aver_interp', None)
 
     # data and coordinates
     data = vvar['data']
@@ -726,11 +750,23 @@ def avr_x1x2(vvar, oavr):
         format_x_work = vvar['fx1']
         name_x_work = vvar['x1']
 
+    # use reference axis for averaging:
+    if flag_aver_interp:
+        x_av_ref = oo.get(coord_av + '_ref', None)
+        f_interp = interpolate.interp1d(x_av, data, axis=dir_av, fill_value="extrapolate")
+        data = f_interp(x_av_ref)
+        x_av = np.array(x_av_ref)
+
     # domains along coord_av, where the averaging whill be perfomed
     if type_av == 'max' or type_av == 'absmax':
         av_domains = [[x_av[0], x_av[-1]]]
     else:
-        av_domains = oavr[1]
+        if len(oavr) > 1:
+            av_domains = oavr[1]
+        else:
+            av_domains = [[x_av[0], x_av[-1]]]
+            if type_av == 'point':
+                av_domains = [x_av[0]]
 
     # consider domains of averaging
     data_av, lines_av, opt_av = [], [], []
@@ -754,6 +790,9 @@ def avr_x1x2(vvar, oavr):
             line_av = 'rms_' + coord_av + ':\ '
         if type_av == 'point':
             data_av.append(np.squeeze(temp))
+        if type_av == 'sum':
+            data_av.append( np.sum(temp, axis=dir_av) )
+            line_av = 'sum_' + coord_av + ':\ '
 
         line_av += coord_av + ' = ' + line_x
 

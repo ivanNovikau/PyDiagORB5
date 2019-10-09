@@ -64,7 +64,7 @@ def chi(species_name, dd):
         'data_norm': chi_norm,
         'data_norm0': chi_norm0,
         's': s,
-        't': t
+        't': t,
     }
 
 
@@ -105,6 +105,12 @@ def choose_one_var_ts(ovar, dd):
         s = dd[species_name].nT_evol['s']
         t = dd[species_name].nT_evol['t']
         tit_var = species_name + ':\ n'
+    if opt_var == 'p':
+        rd.nT_evol(dd, species_name)
+        data = dd[species_name].nT_evol['p']
+        s = dd[species_name].nT_evol['s']
+        t = dd[species_name].nT_evol['t']
+        tit_var = species_name + ':\ p'
 
     res = {
         'data': data,

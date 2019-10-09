@@ -12,6 +12,7 @@ import numpy as np
 import scipy.io
 from scipy.stats import norm as stat_norm
 import scipy.signal
+import sys
 
 
 def reload():
@@ -135,8 +136,7 @@ def choose_one_var_t(ovar, dd, flag_vpar_boundaries=False):
             res['line_sum'] = '\mu = ' + line_mu + '$\n$ v_{\parallel} = ' + line_vpar
         else:
             res['line_sum'] = line_name_area
-
-    if opt_var == 'efield':
+    elif opt_var == 'efield':
         if species_name is not 'total':
             vvar, t = efield_species(dd, species_name)
         else:
@@ -146,6 +146,9 @@ def choose_one_var_t(ovar, dd, flag_vpar_boundaries=False):
                 vvar_sp, _ = efield_species(dd, sp_name)
                 vvar += vvar_sp
         tit_var = species_name + ':\ \mathcal{E}'
+    else:
+        print('Error: Wrong signal name in MPR.')
+        sys.exit(-1)
 
     # --- save signal ---
     res.update({
@@ -197,6 +200,9 @@ def choose_one_var_tvpar(ovar, dd):
             jdote_es_species(dd, species_name, mu_int, vpar_int)
         tit_var = species_name + ':\ <(' + 'J\cdot E' + ')>_{\mu}'
         tit_var += '$\n$ \mu = ' + line_mu
+    else:
+        print('Error: Wrong signal name in MPR.')
+        sys.exit(-1)
 
     res = {
         'data': data,

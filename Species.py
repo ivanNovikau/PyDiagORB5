@@ -105,8 +105,8 @@ class Species:
         # Remark: at the time of creating this script,
         # n, vperp2f, u2f, uf have the same s-grid
 
-        p = 1./3 * self.mass_rel * (vperp2f + u2f - uf**2/n)
-        T = self.tau * p / n
+        p = self.tau * 1./3 * self.mass_rel * (vperp2f + u2f - uf**2/n)
+        T = p / n
 
         grad_T    = np.gradient(T, s, axis=1)
         grad_logT = np.gradient(np.log(T), s, axis=1)
@@ -117,7 +117,8 @@ class Species:
         self.nT_evol = {
             's': s, 't': t,
             'n': n, 'gradn': grad_n, 'grad_logn': grad_logn,
-            'T': T, 'gradT': grad_T, 'grad_logT': grad_logT
+            'T': T, 'gradT': grad_T, 'grad_logT': grad_logT,
+            'p': p
         }
 
     def distribution_1d(self, dd, f):
