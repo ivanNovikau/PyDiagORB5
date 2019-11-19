@@ -72,14 +72,6 @@ b025k_f009_ne24 = set_dd(dict(dd_init), root_lin, '/n0-egam/025b/KIN-smax90/scan
 b025k_v35_T015 = set_dd(dict(dd_init), root_lin, '/n0-egam/025b/KIN-smax90/f009-v35-T015/',
                                    'EM\ EGAMb:\ n_{EP}/n_e = 0.09,\ T_{EP} = 0.15, v_{\parallel} = 3.5')
 
-# # KIN. ELE. (beta_e = 2.7e-4): Scan on mi/me (beta_e = 2.7e-4) ---
-# b025k_f001_mie500  = set_dd(dict(dd_init), root_lin, '/n0-egam/025b/KIN-smax90/scan-mime/mie500',
-#                                    'EM\ EGAMb:\ f = 0.01,\ m_i/m_e = 500')
-# b025k_f001_mie1000 = set_dd(dict(dd_init), root_lin, '/n0-egam/025b/KIN-smax90/scan-mime/mie1000',
-#                                    'EM\ EGAMb:\ f = 0.01,\ m_i/m_e = 1000')
-# b025k_f001_mie2000 = set_dd(dict(dd_init), root_lin, '/n0-egam/025b/KIN-smax90/scan-mime/mie2000',
-#                                    'EM\ EGAMb:\ f = 0.01,\ m_i/m_e = 2000')
-
 # scan on concentration: v = 8.0, T = 1.0
 b025_f0004 = set_dd(dict(dd_init), root_lin,
                        '/n0-egam/025b/f0004-mpr', 'f = 0.004,\ v = 8.0,\ T = 1.0')
@@ -156,10 +148,12 @@ nb025_f001 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/f001',
                         'NL:\ ES\ EGAMb:\ f = 0.01,\ s_f = 0.50'
                         )
-nb025_f001_wp = set_dd(dict(dd_init), root_nl,
-                        '/n0-egam/025b/f001-fwp',
-                        'NL:\ ES\ EGAMb:\ f = 0.01,\ s_f = 0.50,\ WPN'
-                        )
+nb025_f001_x2 = set_dd(dict(dd_init), root_nl,
+                        '/n0-egam/025b/f001-ns2-N4-dtd2', 'NL\ ES:\ n_{EP}/n_e = 0.01, x2')
+# nb025_f001_wp = set_dd(dict(dd_init), root_nl,
+#                         '/n0-egam/025b/f001-fwp',
+#                         'NL:\ ES\ EGAMb:\ f = 0.01,\ s_f = 0.50,\ WPN'
+#                         )
 nb025_f002 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/f002',
                         'NL:\ ES\ EGAMb:\ f = 0.02,\ s_f = 0.50'
@@ -176,26 +170,34 @@ nb025_f005 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/f005',
                         'NL:\ ES\ EGAMb:\ f = 0.05,\ s_f = 0.50'
                         )
-nb025_f009 = set_dd(dict(dd_init), root_nl,
-                        '/n0-egam/025b/f009',
-                        'NL:\ ES\ EGAMb:\ f = 0.0949,\ s_f = 0.50'
+# nb025_f009 = set_dd(dict(dd_init), root_nl,
+#                         '/n0-egam/025b/f009',
+#                         'NL:\ ES\ EGAMb:\ f = 0.0949,\ s_f = 0.50'
+#                         )
+# nb025_f009_x2 = set_dd(dict(dd_init), root_nl,
+#                         '/n0-egam/025b/f009-x2',
+#                         'NL:\ ES\ EGAMb:\ f = 0.0949,\ s_f = 0.50, x2'
+#                         )
+nb025_f009_orig = set_dd(dict(dd_init), root_nl,
+                        '/n0-egam/025b/f009-orig',
+                        'NL:\ ES\ EGAMb:\ f = 0.0949'
                         )
-nb025_f009_wp = set_dd(dict(dd_init), root_nl,
-                        '/n0-egam/025b/f009-wp',
-                        'NL:\ ES\ EGAMb:\ f = 0.0949,\ s_f = 0.50,\ WPN'
-                        )
-nb025_f001_v7 = set_dd(dict(dd_init), root_nl,
-                        '/n0-egam/025b/v70-f001',
-                        'NL:\ ES\ EGAMb:\ v_{\parallel} = 7.0,\ f = 0.01,\ s_f = 0.50'
-                        )
-nb025_f001_v75 = set_dd(dict(dd_init), root_nl,
-                        '/n0-egam/025b/v75-f001',
-                        'NL:\ ES\ EGAMb:\ v_{\parallel} = 7.5,\ f = 0.01,\ s_f = 0.50'
-                        )
-nb025_f001_v9 = set_dd(dict(dd_init), root_nl,
-                        '/n0-egam/025b/v90-f001',
-                        'NL:\ ES\ EGAMb:\ v_{\parallel} = 9.0,\ f = 0.01,\ s_f = 0.50'
-                        )
+# nb025_f009_wp = set_dd(dict(dd_init), root_nl,
+#                         '/n0-egam/025b/f009-wp',
+#                         'NL:\ ES\ EGAMb:\ f = 0.0949,\ s_f = 0.50,\ WPN'
+#                         )
+# nb025_f001_v7 = set_dd(dict(dd_init), root_nl,
+#                         '/n0-egam/025b/v70-f001',
+#                         'NL:\ ES\ EGAMb:\ v_{\parallel} = 7.0,\ f = 0.01,\ s_f = 0.50'
+#                         )
+# nb025_f001_v75 = set_dd(dict(dd_init), root_nl,
+#                         '/n0-egam/025b/v75-f001',
+#                         'NL:\ ES\ EGAMb:\ v_{\parallel} = 7.5,\ f = 0.01,\ s_f = 0.50'
+#                         )
+# nb025_f001_v9 = set_dd(dict(dd_init), root_nl,
+#                         '/n0-egam/025b/v90-f001',
+#                         'NL:\ ES\ EGAMb:\ v_{\parallel} = 9.0,\ f = 0.01,\ s_f = 0.50'
+#                         )
 
 nb025_v60_T04 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/scan-T-v60/T04',
@@ -212,6 +214,10 @@ nb025_v60_T08 = set_dd(dict(dd_init), root_nl,
 nb025_v60_T10 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/scan-T-v60/T10',
                         'NL:\ ES\ EGAMb:\ v_{\parallel} = 6.0,\ f = 0.01,\ T = 1.0'
+                        )
+nb025_v60_T04_x2 = set_dd(dict(dd_init), root_nl,
+                        '/n0-egam/025b/scan-T-v60/T04-x2',
+                        'NL:\ ES\ EGAMb:\ v_{\parallel} = 6.0,\ f = 0.01,\ T = 0.40,\ x2'
                         )
 
 nb025_v35_T015 = set_dd(dict(dd_init), root_nl,
@@ -230,6 +236,10 @@ nb025_v35_T025 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/scan-T-v35/T025',
                         'NL:\ ES\ EGAMb:\ v_{\parallel} = 3.5,\ f = 0.095,\ T = 0.25'
                         )
+nb025_v35_T015_x2 = set_dd(dict(dd_init), root_nl,
+                        '/n0-egam/025b/scan-T-v35/T015-x2',
+                        'NL:\ ES\ EGAMb:\ v_{\parallel} = 3.5,\ f = 0.095,\ T = 0.15,\ x2'
+                        )
 
 nb025_v35_T025_bwn = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/scan-T-v35/T025-bulk-wpn',
@@ -244,27 +254,6 @@ nb025_v35_T015_fwn = set_dd(dict(dd_init), root_nl,
                         'NL:\ ES\ EGAMb:\ v_{\parallel} = 3.5,\ f = 0.095,\ T = 0.15:\ EGAM-EP\ NL'
                         )
 
-# # NL scan on Gaussian width:
-# nb025_f001_w005 = set_dd(dict(dd_init), root_nl,
-#                        '/n0-egam/025b/scan-sigma-f001/sigma-005',
-#                         'n_{EP}/n_e = 0.01,\ \sigma = 0.05')
-# nb025_f001_w015 = set_dd(dict(dd_init), root_nl,
-#                        '/n0-egam/025b/scan-sigma-f001/sigma-015',
-#                         'n_{EP}/n_e = 0.01,\ \sigma = 0.15')
-# nb025_f001_w020 = set_dd(dict(dd_init), root_nl,
-#                        '/n0-egam/025b/scan-sigma-f001/sigma-020',
-#                         'n_{EP}/n_e = 0.01,\ \sigma = 0.20')
-#
-# nb025_f009_w005 = set_dd(dict(dd_init), root_nl,
-#                        '/n0-egam/025b/scan-sigma-f009/sigma-005',
-#                         'n_{EP}/n_e = 0.09,\ \sigma = 0.05')
-# nb025_f009_w015 = set_dd(dict(dd_init), root_nl,
-#                        '/n0-egam/025b/scan-sigma-f009/sigma-015',
-#                         'n_{EP}/n_e = 0.09,\ \sigma = 0.15')
-# nb025_f009_w020 = set_dd(dict(dd_init), root_nl,
-#                        '/n0-egam/025b/scan-sigma-f009/sigma-020',
-#                         'n_{EP}/n_e = 0.09,\ \sigma = 0.20')
-
 # KINETIC ELECTRONS
 nb025k_f001_dt5 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/KIN/f001', 'NL\ KIN:\ n_{EP}/n_e = 0.01')
@@ -274,6 +263,8 @@ nb025k_f001_dt1 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/KIN/f001-dt1', 'NL\ KIN:\ n_{EP}/n_e = 0.01, dt = 1')
 nb025k_f009_mie500_dt3 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/KIN/f009-mie500-dt3', 'NL\ KIN:\ n_{EP}/n_e = 0.095, mie = 500, dt = 3')
+nb025k_f001_x2 = set_dd(dict(dd_init), root_nl,
+                        '/n0-egam/025b/KIN/f001-ns2-N4', 'NL\ KIN:\ n_{EP}/n_e = 0.01, x2')
 
 
 

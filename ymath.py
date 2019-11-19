@@ -6,6 +6,7 @@ from scipy.optimize import curve_fit
 from scipy import constants
 from scipy import interpolate
 import pywt
+import scipy.special
 
 # avoid plotting here
 

@@ -25,6 +25,7 @@ class Curve:
     markersize = None
     markerfacecolor = "None"
     colormap = 'jet'  # hot, jet, pink, hot_r, jet_r etc.
+    colormap_center = None
     levels = 10  # for contour plot
     pr_alpha = 1
     flag_errorbar = False
@@ -63,7 +64,8 @@ class Curve:
                 self.legend = ''
 
             if isinstance(v, list):
-                self.legend += v[0]
+                if v[0] != '':
+                    self.legend += v[0]
                 for i_line in range(1, np.shape(v)[0]):
                     self.legn(v[i_line])
             else:
@@ -74,7 +76,8 @@ class Curve:
         if v is not None:
             if self.legend == "_":
                 self.legend = ''
-            self.legend += '$\n \\boldmath $' + v
+            if v != '':
+                self.legend += '$\n \\boldmath $' + v
         return self
 
     def sty(self, v):
@@ -109,8 +112,11 @@ class Curve:
         self.name = v
         return self
 
-    def cmp(self, v):
-        self.colormap = v
+    def cmp(self, v, vc=None):
+        if v is not None:
+            self.colormap = v
+        if vc is not None:
+            self.colormap_center = vc
         return self
 
     def lev(self, v):
@@ -154,6 +160,7 @@ class Curves:
 
     flag_semilogy = False
     flag_norm = False
+    flag_colorbar = True
 
     axisFS = None
     lineW = None
@@ -361,8 +368,9 @@ class Curves:
         return self
 
     def xt(self, v, lab=np.nan):
-        self.xticks = v
-        self.xticks_labels = lab
+        if v is not None:
+            self.xticks = v
+            self.xticks_labels = lab
         return self
 
     def yt(self, v, lab=np.nan):
@@ -405,15 +413,26 @@ class PlText:
     y = None
     line = ''
     color = 'black'
+    coef_width = 1
 
     def __init__(self, oo):
         self.init_from_oo(oo)
 
     def init_from_oo(self, oo):
-        self.x = oo.get('x', None)
-        self.y = oo.get('y', None)
-        self.line = oo.get('line', '')
+        self.x = oo.get('x', None)  # in units of x-axis
+        self.y = oo.get('y', None)  # in units of y-axis
         self.color = oo.get('color', 'black')
+        self.coef_width = oo.get('coef_width', 1)
+
+        line_init = oo.get('line', '')
+        line_res = ''
+        if isinstance(line_init, list):
+            for line_current in line_init:
+                if line_current is not None:
+                    line_res += line_current if line_res == '' else '$\n \\boldmath $' + line_current
+        else:
+            line_res += line_init
+        self.line = line_res if line_res != '' else '\ '
 
 
 

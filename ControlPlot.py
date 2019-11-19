@@ -7,6 +7,7 @@ import types
 from matplotlib import animation, ticker
 from IPython.display import HTML
 from IPython.core.getipython import get_ipython
+import matplotlib.colors
 
 if 'Terminal' in get_ipython().__class__.__name__:
     FLAG_LATEX = True
@@ -28,8 +29,8 @@ if FLAG_LATEX:
     # configuration #2 (used for general plots in AAPPS paper)
     FIG_SIZE_W = 15
     FIG_SIZE_H = 9.5
-    LEG_SCALE = 0.85  # for scan on saturation
-    # LEG_SCALE = 1.0
+    # LEG_SCALE = 0.85  # for scan on saturation
+    LEG_SCALE = 1.0
     FONT_SIZE = 28
     FLAG_LATEX = True
     FONT_SIZE_LABELS = FONT_SIZE * 1.8
@@ -160,19 +161,23 @@ def plot_curves_3d(curves):
         YY = curve_one.ys
 
     # --- contour plot ---
-    cs = ax.contourf(XX, YY, ZZ.T, levels=curve_one.levels, cmap=curve_one.colormap)
-    # cs = ax.contourf(XX, YY, ZZ.T, locator=ticker.LogLocator(),
-    #                  levels=curve_one.levels, cmap=curve_one.colormap)
+    divnorm = None
+    if curve_one.colormap_center is not None:
+        divnorm = matplotlib.colors.DivergingNorm(vcenter=curve_one.colormap_center)
+    cs = ax.contourf(XX, YY, ZZ.T,
+                     levels=curve_one.levels, cmap=curve_one.colormap,
+                     norm=divnorm)
 
     # color bar
-    cb = fig.colorbar(cs, shrink=0.8, extend='both')
-    cb.formatter.set_scientific(True)
-    cb.formatter.set_powerlimits((0, 0))
-    cb.ax.tick_params(labelsize=FONT_SIZE_TICKS)
-    cb.ax.yaxis.get_offset_text().set_fontsize(FONT_SIZE_ORDER)
+    if curves.flag_colorbar:
+        cb = fig.colorbar(cs, shrink=0.8, extend='both')
+        cb.formatter.set_scientific(True)
+        cb.formatter.set_powerlimits((0, 0))
+        cb.ax.tick_params(labelsize=FONT_SIZE_TICKS)
+        cb.ax.yaxis.get_offset_text().set_fontsize(FONT_SIZE_ORDER)
 
-    register_offset(cb.ax.yaxis, bottom_offset)
-    cb.update_ticks()
+        register_offset(cb.ax.yaxis, bottom_offset)
+        cb.update_ticks()
 
     # --- other curves ---
     for icrv in range(1, ncurves):
@@ -422,8 +427,8 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
         mpl.text(
             loc_text.x,
             loc_text.y,
-            loc_text.line,
-            fontsize=FONT_SIZE,
+            r'\boldmath $' + loc_text.line + '$',
+            fontsize=FONT_SIZE * loc_text.coef_width,
             color=loc_text.color
         )
 

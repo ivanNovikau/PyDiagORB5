@@ -4,6 +4,7 @@ import ymath
 import curve as crv
 import numpy as np
 from scipy import interpolate
+from scipy import constants
 
 
 def reload():
@@ -1491,7 +1492,7 @@ def plot_several_scans(data_plot, sel_norm, xlim=[0, 1], xlab='n_{EP}/n_e', ylab
     return
 
 
-def plot_several_scans_adv(data_plot, sel_norm, xlim=[0, 1], xlab='n_{EP}/n_e',
+def plot_several_scans_adv(data_plot, sel_norm, oo_texts=[], xlim=[0, 1], xlab='n_{EP}/n_e',
                            ylab_g='EGAM\ growth\ rate', tit_w='frequency'):
     # normalization:
     line_w, line_g = '', ''
@@ -1522,6 +1523,10 @@ def plot_several_scans_adv(data_plot, sel_norm, xlim=[0, 1], xlab='n_{EP}/n_e',
         .ylab(line_g) \
         .tit(ylab_g).xsty('plain')\
         .xlim(xlim)
+    for oo_text in oo_texts:
+        oText = crv.PlText(oo_text)
+        curves_g.newt(oText)
+
     count_w = -1
     for i_scan in range(number_scans):
         f = data_plot['f'][i_scan]
@@ -2151,17 +2156,22 @@ def es_egam_energy_transfer_scan_diff_t(oo):
     # ------------------------------------------------
     res_data = []
 
+    T_speak_eV = dd['T_speak'] / constants.elementary_charge
+    coef_norm_inv = 1. / (dd['cs'] * T_speak_eV / (dd['a0'] * dd['wc']))
+    coef_norm_inv *= 1e2
+
     # scan on fpart
     data_plot = create_init_dict()
+
     add_f(
         [2.210e-05, 5.217e-06],
-        [1.997e-03, 0])  # f = 0.0040, vp = 8.0, T = 1.0, sf = 0.25
+        [1.997e-03  * coef_norm_inv, 0])  # f = 0.0040, vp = 8.0, T = 1.0, sf = 0.25
     add_f(
         [1.520e-04, 4.687e-06],
-        [3.957e-02, 0])  # f = 0.0100, vp = 8.0, T = 1.0, sf = 0.25
+        [3.957e-02 * coef_norm_inv, 0])  # f = 0.0100, vp = 8.0, T = 1.0, sf = 0.25
     add_f(
         [2.455e-04, 6.985e-06],
-        [2.068e-01, 0])  # f = 0.0200, vp = 8.0, T = 1.0, sf = 0.25
+        [2.068e-01 * coef_norm_inv, 0])  # f = 0.0200, vp = 8.0, T = 1.0, sf = 0.25
     data_plot['leg'] = ['scan\ on\ n_{EP}/n_e,\ v_{\parallel, EP} = 8.0,\ T_{EP} = 1.0']
     data_plot['sty'] = 'o'
     data_plot['col'] = 'blue'
@@ -2171,17 +2181,217 @@ def es_egam_energy_transfer_scan_diff_t(oo):
     data_plot = create_init_dict()
     add_f(
         [1.052e-04, 4.224e-06],
-        [1.046e-02, 0])  # vp = 9.0
+        [1.046e-02 * coef_norm_inv, 0])  # vp = 9.0
     add_f(
         [1.316e-04, 2.818e-06],
-        [2.695e-02, 0])  # vp = 7.0
+        [2.695e-02 * coef_norm_inv, 0])  # vp = 7.0
     add_f(
         [1.483e-04, 2.606e-06],
-        [3.535e-02, 0])  # vp = 7.5
+        [3.535e-02 * coef_norm_inv, 0])  # vp = 7.5
     data_plot['leg'] = ['scan\ on\ v_{\parallel, EP},\ n_{EP}/n_e = 0.01,\ T_{EP} = 1.0']
     data_plot['sty'] = 's'
     data_plot['col'] = 'red'
     res_data.append(data_plot)
+
+    # scan on T, v = 3.5
+    data_plot = create_init_dict()
+    add_f(
+        [9.063e-05, 2.111e-06],
+        [8.111e-02 * coef_norm_inv, 0])  # f = 0.0945, vp = 3.5, T = 0.25, sf = 0.25
+    add_f(
+        [1.065e-04, 2.010e-06],
+        [1.154e-01 * coef_norm_inv, 0])  # f = 0.0945, vp = 3.5, T = 0.22, sf = 0.25
+    add_f(
+        [1.173e-04, 2.003e-06],
+        [1.433e-01 * coef_norm_inv, 0])  # f = 0.0945, vp = 3.5, T = 0.20, sf = 0.25
+    add_f(
+        [1.451e-04, 2.436e-06],
+        [2.252e-01 * coef_norm_inv, 0])  # f = 0.0945, vp = 3.5, T = 0.15, sf = 0.25
+    data_plot['leg'] = ['scan\ on\ T_{EP},\ v_{\parallel, EP} = 3.5,\ n_{EP}/n_e = 0.095']
+    data_plot['sty'] = '^'
+    data_plot['col'] = 'green'
+    res_data.append(data_plot)
+
+    # scan on T, v = 6.0
+    data_plot = create_init_dict()
+
+    add_f(
+        [6.304e-05, 2.952e-06],
+        [3.978e-03 * coef_norm_inv, 0])  # T = 1.0, f = 0.01, vp = 6.0, sf = 0.25
+    add_f(
+        [9.558e-05, 3.320e-06],
+        [1.185e-02 * coef_norm_inv, 0])  # T = 0.8, f = 0.01, vp = 6.0, sf = 0.25
+    add_f(
+        [1.351e-04, 2.423e-06],
+        [3.030e-02 * coef_norm_inv, 0])  # T = 0.6, f = 0.01, vp = 6.0, sf = 0.25
+    add_f(
+        [1.843e-04, 2.755e-06],
+        [6.345e-02 * coef_norm_inv, 0])  # T = 0.4, f = 0.01, vp = 6.0, sf = 0.25
+
+    data_plot['leg'] = ['scan\ on\ T_{EP},\ v_{\parallel, EP} = 6.0,\ n_{EP}/n_e = 0.010']
+    data_plot['sty'] = '*'
+    data_plot['col'] = 'black'
+    res_data.append(data_plot)
+
+    # plot results: saturation levels of oscillating signals
+    plot_several_data(res_data,
+                      xlab='\gamma_{egam, lin}',
+                      ylab='\\int \\mathcal{P}_D dt (10^{-2})',
+                      tit='t(ms)= [0.0, 1.0]', ylim=[-3e-1, 1.4e1])
+
+
+def es_egam_satur_scan_overshoot_TALK(oo):
+    # NL ES EGAMb:  scan on EGAM growth rates
+    dd = oo.get('dd', None)
+    sel_norm_x = oo.get('sel_norm_x', 'none')
+    oo_texts = oo.get('text', [])
+
+    # x, y normalization
+    line_x, coef_x  = '', None
+    if sel_norm_x == 'inv-s':
+        line_x = '(10^3/s)'
+        coef_x = dd['wc'] / 1.e3
+
+    def create_init_dict():
+        data_save = {'xs': [], 'ys': [], 'xs_err': [], 'ys_err': [], 'leg': '', 'sty': 'o', 'col': 'blue'}
+        return data_save
+
+    def add_f(x, y):
+        data_plot['xs'].append(x[0])
+        data_plot['xs_err'].append(x[1])
+        data_plot['ys'].append(y[0])
+        data_plot['ys_err'].append(y[1])
+
+    def plot_several_data(res_data_plot, oo_texts, xlab='x', ylab='y', tit='', ylim=None):
+        curves = crv.Curves() \
+            .xlab(xlab + line_x) \
+            .ylab(ylab) \
+            .tit(tit).xsty('plain').ylim(ylim)
+        # additional text:
+        for oo_text in oo_texts:
+            oText = crv.PlText(oo_text)
+            curves.newt(oText)
+        for id_data in range(len(res_data_plot)):
+            data_plot_one = res_data_plot[id_data]
+            curves.new() \
+                .XS(np.array(data_plot_one['xs']) * coef_x) \
+                .YS(np.array(data_plot_one['ys'])) \
+                .set_errorbar(True,
+                              xs=data_plot_one['xs_err'],
+                              ys=data_plot_one['ys_err']
+                              ) \
+                .leg(data_plot_one['leg']) \
+                .sty(data_plot_one['sty']) \
+                .col(data_plot_one['col'])
+        cpr.plot_curves(curves)
+
+        return
+
+    # ------------------------------------------------
+    # --- SATURATION LEVELS OF OSCILLATING SIGNALS ---
+    # ------------------------------------------------
+    res_data = []
+
+    # scan on T, v = 3.5
+    data_plot = create_init_dict()
+
+    add_f(
+        [9.063e-05, 2.111e-06],
+        [7.809e+00, 0])  # f = 0.0945, vp = 3.5, T = 0.25, sf = 0.25
+    add_f(
+        [1.065e-04, 2.010e-06],
+        [9.929e+00, 0])  # f = 0.0945, vp = 3.5, T = 0.22, sf = 0.25
+    add_f(
+        [1.173e-04, 2.003e-06],
+        [1.121e+01, 0])  # f = 0.0945, vp = 3.5, T = 0.20, sf = 0.25
+    add_f(
+        [1.451e-04, 2.436e-06],
+        [1.636e+01, 0])  # f = 0.0945, vp = 3.5, T = 0.15, sf = 0.25
+
+    data_plot['leg'] = None
+    data_plot['sty'] = 'o'
+    data_plot['col'] = 'blue'
+    res_data.append(data_plot)
+
+    # scan on T, v = 6.0
+    data_plot = create_init_dict()
+
+    add_f(
+        [6.304e-05, 2.952e-06],
+        [3.509e+00, 0])  # T = 1.0, f = 0.01, vp = 6.0, sf = 0.25
+    add_f(
+        [9.558e-05, 3.320e-06],
+        [6.822e+00, 0])  # T = 0.8, f = 0.01, vp = 6.0, sf = 0.25
+    add_f(
+        [1.351e-04, 2.423e-06],
+        [1.173e+01, 0])  # T = 0.6, f = 0.01, vp = 6.0, sf = 0.25
+    add_f(
+        [1.843e-04, 2.755e-06],
+        [1.754e+01, 0])  # T = 0.4, f = 0.01, vp = 6.0, sf = 0.25
+
+    data_plot['leg'] = None
+    data_plot['sty'] = '*'
+    data_plot['col'] = 'red'
+    res_data.append(data_plot)
+
+    # plot results: saturation levels of oscillating signals
+    plot_several_data(res_data, oo_texts,
+                      xlab='\gamma_{egam, lin}',
+                      ylab='max.\ of\ \sqrt{<\overline{E}^2>_s}',
+                      tit=None)
+
+
+def es_egam_energy_transfer_scan_diff_t_TALK(oo):
+    # NL ES EGAMb:  scan on EGAM growth rates
+    dd = oo.get('dd', None)
+    sel_norm_x = oo.get('sel_norm_x', 'none')
+    oo_texts = oo.get('text', [])
+
+    # x, y normalization
+    line_x, coef_x  = '', 1
+    if sel_norm_x == 'inv-s':
+        line_x = '(10^3/s)'
+        coef_x = dd['wc'] / 1.e3
+
+    def create_init_dict():
+        data_save = {'xs': [], 'ys': [], 'xs_err': [], 'ys_err': [], 'leg': '', 'sty': 'o', 'col': 'blue'}
+        return data_save
+
+    def add_f(x, y):
+        data_plot['xs'].append(x[0])
+        data_plot['xs_err'].append(x[1])
+        data_plot['ys'].append(y[0])
+        data_plot['ys_err'].append(y[1])
+
+    def plot_several_data(res_data_plot, oo_texts, xlab='x', ylab='y', tit='', ylim=None):
+        curves = crv.Curves() \
+            .xlab(xlab + line_x) \
+            .ylab(ylab) \
+            .tit(tit).xsty('plain').ylim(ylim)
+        # additional text:
+        for oo_text in oo_texts:
+            oText = crv.PlText(oo_text)
+            curves.newt(oText)
+        for id_data in range(len(res_data_plot)):
+            data_plot_one = res_data_plot[id_data]
+            curves.new() \
+                .XS(np.array(data_plot_one['xs']) * coef_x) \
+                .YS(np.array(data_plot_one['ys'])) \
+                .set_errorbar(True,
+                              xs=data_plot_one['xs_err'],
+                              ys=data_plot_one['ys_err']
+                              ) \
+                .leg(data_plot_one['leg']) \
+                .sty(data_plot_one['sty']) \
+                .col(data_plot_one['col'])
+        cpr.plot_curves(curves)
+
+        return
+
+    # ------------------------------------------------
+    # --- TRANSFERRED ENERGY VS SATURATION LEVELS  ---
+    # ------------------------------------------------
+    res_data = []
 
     # scan on T, v = 3.5
     data_plot = create_init_dict()
@@ -2197,9 +2407,9 @@ def es_egam_energy_transfer_scan_diff_t(oo):
     add_f(
         [1.451e-04, 2.436e-06],
         [2.252e-01, 0])  # f = 0.0945, vp = 3.5, T = 0.15, sf = 0.25
-    data_plot['leg'] = ['scan\ on\ T_{EP},\ v_{\parallel, EP} = 3.5,\ n_{EP}/n_e = 0.095']
-    data_plot['sty'] = '^'
-    data_plot['col'] = 'green'
+    data_plot['leg'] = None
+    data_plot['sty'] = 'o'
+    data_plot['col'] = 'blue'
     res_data.append(data_plot)
 
     # scan on T, v = 6.0
@@ -2218,15 +2428,101 @@ def es_egam_energy_transfer_scan_diff_t(oo):
         [1.843e-04, 2.755e-06],
         [6.345e-02, 0])  # T = 0.4, f = 0.01, vp = 6.0, sf = 0.25
 
-    data_plot['leg'] = ['scan\ on\ T_{EP},\ v_{\parallel, EP} = 6.0,\ n_{EP}/n_e = 0.010']
+    data_plot['leg'] = None
     data_plot['sty'] = '*'
-    data_plot['col'] = 'black'
+    data_plot['col'] = 'red'
     res_data.append(data_plot)
 
     # plot results: saturation levels of oscillating signals
-    plot_several_data(res_data,
+    plot_several_data(res_data, oo_texts,
                       xlab='\gamma_{egam, lin}',
                       ylab='\\int \\mathcal{P}_D dt\ \ \ [J/m^3]',
-                      tit='t(ms)= [0.0, 1.0]')
+                      tit=None)
+
+
+def egam_fpart_AE_KE_g_mpr_tot_TALK(oo):
+    # EGAMb: adiabatic vs drift-kinetic electrons: rho_f = 0.25, v|| = 8.0, T = 1.0:
+    # SCAN ON n_{EP}/n_{e}
+
+    dd = oo.get('dd', None)
+    sel_norm = oo.get('sel_norm', 'wc')
+    oo_texts = oo.get('text', [])
+
+    fs, ws, ws_err, gs, gs_err = [], [], [], [], []
+    data_plot = {
+        'f': [],
+        'w': [], 'w_err': [],
+        'g': [], 'g_err': [],
+        'leg': [], 'sty': [], 'col': []
+    }
+
+    # ws[i] and gs[i] should have the same size
+    def add_f(f, w, w_err, g, g_err):
+        fs.append(f)
+        ws.append(w)
+        ws_err.append(w_err)
+        gs.append(g)
+        gs_err.append(g_err)
+
+    # --- ADIAB. ELE.: MPR TOTAL: w, g are normalized to wci ---
+    fs, ws, ws_err, gs, gs_err = [], [], [], [], []
+    add_f(0.0060,
+          [np.nan], [np.nan],
+          [7.735e-05], [6.706e-06])
+    add_f(0.0100,
+          [np.nan], [np.nan],
+          [1.503e-04], [4.945e-06])
+    add_f(0.0200,
+          [np.nan], [np.nan],
+          [2.412e-04], [3.550e-06])
+    add_f(0.0300,
+          [np.nan], [np.nan],
+          [2.845e-04], [2.703e-06])
+    add_f(0.0500,
+          [np.nan], [np.nan],
+          [3.165e-04], [2.586e-06])
+    add_f(0.0700,
+          [np.nan], [np.nan],
+          [3.135e-04], [7.597e-06])
+    add_f(0.0900,
+          [np.nan], [np.nan],
+          [3.116e-04], [2.222e-05])
+
+    # data_plot['leg'].append('AE:\ total')
+    data_plot['leg'].append(None)
+    data_plot['sty'].append('o')
+    data_plot['col'].append('blue')
+    reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot)
+
+    # --- DK. ELE: MPR TOTAL: w, g are normalized to wci ---
+    fs, ws, ws_err, gs, gs_err = [], [], [], [], []
+    add_f(0.0100,
+          [np.nan],    [np.nan],
+          [5.621e-05], [4.360e-06])
+    add_f(0.0200,
+          [np.nan], [np.nan],
+          [1.287e-04], [2.505e-06])
+    add_f(0.0300,
+          [np.nan], [np.nan],
+          [1.549e-04], [4.018e-06])
+    add_f(0.0500,
+          [np.nan], [np.nan],
+          [1.568e-04], [1.437e-05])
+    add_f(0.0700,
+          [np.nan], [np.nan],
+          [1.470e-04], [1.528e-05])
+    add_f(0.0900,
+          [np.nan], [np.nan],
+          [1.582e-04], [1.171e-05])
+
+    # data_plot['leg'].append('KE:\ total')
+    data_plot['leg'].append(None)
+    data_plot['sty'].append('*')
+    data_plot['col'].append('red')
+    reorganise_data(fs, ws, ws_err, gs, gs_err, sel_norm, dd, data_plot)
+
+    # *** combined plot ***
+    plot_several_scans_adv(data_plot, sel_norm, oo_texts, xlim=[0.0, 0.1],
+                           ylab_g=None, tit_w='EGAM\ frequency')
 
 

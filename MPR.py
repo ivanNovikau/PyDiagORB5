@@ -119,8 +119,7 @@ def choose_one_var_t(ovar, dd, flag_vpar_boundaries=False):
     res = {}
 
     # --- choose signal ---
-    vvar, t, tit_var = [], [], []
-    if opt_var == 'jdote_es':
+    if opt_var == 'jdote_es' or opt_var == 'je':
         if species_name is not 'total':
             vvar, t, line_mu, line_vpar = \
                 jdote_es_species(dd, species_name, mu_int, vpar_int)

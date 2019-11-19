@@ -172,15 +172,19 @@ def plot_vars_2d(oo):
 
     # additional data:
     labx = oo.get('labx', None)  # x-label
-    laby = oo.get('labx', None)  # y-label
+    laby = oo.get('laby', None)  # y-label
     tit_plot   = oo.get('tit_plot', None)  # title
+    legs = oo.get('legs', None)
 
     dds = oo.get('dds', None)
 
     flag_norm     = oo.get('flag_norm', False)
     flag_semilogy = oo.get('flag_semilogy', False)
+    flag_colorbar = oo.get('flag_colorbar', True)
     sel_norm_x1 = oo.get('sel_norm_x1', 'orig')
+    oo_text_vars     = oo.get('text_vars', None)
 
+    # normalization
     coef_x1_norm = 1
     line_x1_norm = ''
     if sel_norm_x1 == 'orig':
@@ -193,17 +197,30 @@ def plot_vars_2d(oo):
     for ivar in range(n_vars):
         vvar = vvars[ivar]
         leg = vvar['legs'][0]
-        if tit_plot is None:
+        texts_var = oo_text_vars[ivar] if oo_text_vars is not None else []
+
+        # title:
+        if legs is not None:
+            if len(legs) > ivar:
+                leg = legs[ivar]
+        if tit_plot is '':
             tit_plot_res = leg
         else:
             tit_plot_res = tit_plot
 
-        labx = vvar.get('labx', labx)
-        laby = vvar.get('laby', laby)
+        # X,Y labels:
+        if labx is None:
+            labx = vvar.get('labx', None)
+        if laby is None:
+            laby = vvar.get('laby', None)
+
+        # create curves:
         curves = crv.Curves().xlab(labx + line_x1_norm).ylab(laby).tit(tit_plot_res)
         curves.flag_norm     = flag_norm
         curves.flag_semilogy = flag_semilogy
+        curves.flag_colorbar = flag_colorbar
 
+        # original or cartesian 2d grid:
         if vvar['x1'] is 'r' and vvar['x2'] is 'z':
             _, ids_s   = mix.get_array_oo(oo, vvar['s'],   's')
             _, ids_chi = mix.get_array_oo(oo, vvar['chi'], 'chi')
@@ -215,9 +232,15 @@ def plot_vars_2d(oo):
             x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
             data = mix.get_slice(vvars[ivar]['data'], ids_x1, ids_x2)
 
+        # normalization
         dd_one = dds[ivar]
         if sel_norm_x1 == 't-mili-seconds':
             coef_x1_norm = 1. / dd_one['wc'] * 1e3
+
+        # additional text:
+        for oo_text in texts_var:
+            oText = crv.PlText(oo_text)
+            curves.newt(oText)
 
         curves.new().XS(x1 * coef_x1_norm).YS(x2).ZS(data).lev(60)
         cpr.plot_curves_3d(curves)
@@ -239,13 +262,15 @@ def plot_vars_1d(oo):
     stys       = oo.get('stys', None)
     cols       = oo.get('cols', None)
     ylim       = oo.get('ylim', None)
+    oo_texts   = oo.get('text', [])
+    xticks     = oo.get('xticks', None)
 
     flag_norm     = oo.get('flag_norm', False)
     flag_semilogy = oo.get('flag_semilogy', False)
     opt_legs      = oo.get('legs', [])
 
     sel_norm_x = oo.get('sel_norm', 'orig')
-    sel_norm_ys = oo.get('sel_norm_ys', 'orig')
+    sel_norm_ys = oo.get('sel_norm_ys', None)
     oo_filt = oo.get('oo_filt', {})
     dds = oo.get('dds', None)  # array with projects [dd1, dd2, dd3, ...]
 
@@ -253,15 +278,18 @@ def plot_vars_1d(oo):
 
     # normalization (first stage):
     coef_x_norm, line_x_norm = 1, ''
-    coef_y_norm, line_y_norm = 1, ''
+    line_y_norm = ''
     if sel_norm_x == 't-mili-seconds':
         line_x_norm = '(ms)'
 
-    if len(sel_norm_ys) == 1:
-        if sel_norm_ys[0] == 'energy-transfer':
-            line_y_norm = '\ [kW/m^3]'
-        if sel_norm_ys[0] == 'energy-Jpm':
-            line_y_norm = '\ [J/m^3]'
+    if sel_norm_ys is not None:
+        if len(sel_norm_ys) == 1:
+            if sel_norm_ys[0] == 'energy-transfer':
+                line_y_norm = '\ [kW]'
+            if sel_norm_ys[0] == 'energy-J':
+                line_y_norm = '\ [J]'
+            if sel_norm_ys[0] == 'n':
+                line_y_norm = '\ [m^{-3}]'
 
     # -- PLOTTING --
     if labx is not None:
@@ -272,8 +300,14 @@ def plot_vars_1d(oo):
         .leg_pos(leg_pos).ylim(ylim)
     curves.flag_norm     = flag_norm
     curves.flag_semilogy = flag_semilogy
+    curves.xt(xticks)
     count_line = -1
     count_leg = -1
+
+    # additional text:
+    for oo_text in oo_texts:
+        oText = crv.PlText(oo_text)
+        curves.newt(oText)
 
     # - different variables -
     for ivar in range(n_vars):
@@ -291,16 +325,22 @@ def plot_vars_1d(oo):
         if sel_norm_x == 't-mili-seconds':
             coef_x_norm = 1. / dd_one['wc'] * 1e3
 
-        line_leg_norm = ''
-        if sel_norm_ys[ivar] == 'energy-transfer':
-            line_leg_norm = '\ [kW/m^3]'
-            T_speak_eV = dd_one['T_speak'] / constants.elementary_charge
-            coef_y_norm = dd_one['cs'] * T_speak_eV / (dd_one['a0'])
-            coef_y_norm *= 1.e-3
-        if sel_norm_ys[ivar] == 'energy-Jpm':
-            line_leg_norm = '\ [J/m^3]'
-            T_speak_eV = dd_one['T_speak'] / constants.elementary_charge
-            coef_y_norm = dd_one['cs'] * T_speak_eV / (dd_one['a0'] * dd_one['wc'])
+        line_leg_norm, coef_y_norm = '', 1
+        if sel_norm_ys is not None:
+            if sel_norm_ys[ivar] == 'energy-transfer':
+                line_leg_norm = '\ [W]'
+                # T_speak_eV = dd_one['T_speak'] / constants.elementary_charge
+                # coef_y_norm = dd_one['Lx'] / 2. * dd_one['cs'] * T_speak_eV / (dd_one['a0'])
+                coef_y_norm = dd_one['T_speak'] * dd_one['wc']
+                # coef_y_norm *= 1.e-3
+            if sel_norm_ys[ivar] == 'energy-J':
+                line_leg_norm = '\ [J]'
+                # T_speak_eV = dd_one['T_speak'] / constants.elementary_charge
+                # coef_y_norm = dd_one['cs'] * T_speak_eV / (dd_one['a0'] * dd_one['wc'])
+                coef_y_norm = dd_one['T_speak']
+            if sel_norm_ys[ivar] == 'n':
+                line_leg_norm = '\ [m^3]'
+                coef_y_norm = equil_profiles.ne_avr_m3(dd_one)
 
         # - different averaging of the same variable -
         for is_av in range(ns_av):
@@ -339,10 +379,10 @@ def plot_vars_1d(oo):
                     color_current = cols[count_line]
 
             # legends
-            one_leg = legs[is_av] + line_leg_norm
+            one_leg = legs[is_av] + [line_leg_norm] if isinstance(legs[is_av], list) \
+                else legs[is_av] + line_leg_norm
             if len(opt_legs) > count_leg:
-                if opt_legs[count_leg] is not None:
-                    one_leg = opt_legs[count_leg]
+                one_leg = opt_legs[count_leg]
 
             # - add a new curve -
             curves.new().XS(x).YS(data).leg(one_leg).sty(sty_current).col(color_current)
@@ -365,7 +405,7 @@ def post_processing(data, x, oo_operations):
 
     # - check operations -
     if oo_operations is None:
-        return data, x, '', ''
+        return data, x
 
     # adjust the structure of the oo_operations variable
     if not isinstance(oo_operations[0], list):
@@ -546,7 +586,7 @@ def plot_cwt(oo):
         data_filt, x_filt = filter_signal(x, data, oo_filt)
         data_filt = np.interp(x, x_filt, data_filt)
 
-        # result signal to analys:
+        # result signal to analyse:
         data_res = data - data_filt
 
         # find CWT
@@ -2363,6 +2403,195 @@ def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
 
 
 # NEW: calculation of the w/g in different time intervals:
+def calc_wg_t_simplified(oo_wg_t, oo_plot):
+    # configurations
+    oo_cong_names = oo_wg_t['conf_names']
+    oo_ts   = oo_wg_t['oo_ts']
+    oo_vars = oo_wg_t['oo_vars']
+    oo_wgs  = oo_wg_t['oo_wgs']
+
+    # number of configurations
+    n_conf = len(oo_cong_names)
+
+    # output properties
+    tit_plot = oo_plot.get('tit_plot', None)
+    stys_plot = oo_plot.get('stys_plot', [':'])
+    sel_norm_w = oo_plot.get('sel_norm_w', 'wc')
+    sel_norm_t = oo_plot.get('sel_norm_t', 'wc')  # 'wc', 's'
+    oo_texts  = oo_plot.get('text', None)
+
+    # calculate data for different configurations
+    conf_res = []
+    for i_conf in range(n_conf):
+        conf_name = oo_cong_names[i_conf]
+
+        print('Calculation: ' + conf_name)
+
+        oo_t   = dict(oo_ts[i_conf])
+        oo_var = dict(oo_vars[i_conf])
+        oo_wg  = dict(oo_wgs[i_conf])
+
+        dd = oo_var['dds'][0]
+
+        tmin = oo_t['tmin']
+        tmax = oo_t['tmax']
+        width_t = oo_t['width_t']
+        step_t = oo_t['step_t']
+        flag_inc_boundary = oo_t.get('flag_inc_boundary', False)
+        flag_fv = oo_t.get('flag_fv', False)
+        flag_je = oo_t.get('flag_je', False)
+
+        half_width_t = width_t/2
+
+        flag_stat = oo_wg.get('flag_stat', False)
+        sel_wg = oo_wg.get('sel_wg', 'wg-adv')
+
+        # normalization:
+        coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = choose_wg_normalization(dd, sel_norm_w)
+
+        # time normalization for plotting
+        coef_norm_t, line_norm_t = None, ''
+        if sel_norm_t == 'wc':
+            coef_norm_t, line_norm_t = 1, '[\omega_{ci}]'
+        if sel_norm_t == 's':
+            coef_norm_t, line_norm_t = 1.e3 / dd['wc'], '(ms)'
+
+        # create time intervals:
+        t_right = tmin + width_t
+        t_ints  = [[tmin, t_right]]
+        t_center = tmin + half_width_t
+        while t_right < tmax:
+            t_center += step_t
+
+            t_left  = t_center - half_width_t
+            t_right = t_center + half_width_t
+            if t_right > tmax:
+                if not flag_inc_boundary:
+                    break
+                else:
+                    t_right = tmax
+            t_ints.append([t_left, t_right])
+
+        # result number of time intervals:
+        nt = len(t_ints)
+
+        # precise method of w,g calculation
+        if 'adv' in  sel_wg:
+            line_res_method = '_adv'
+        else:
+            line_res_method = '_est'
+
+        line_res = 'naive'
+        if flag_stat:
+            line_res = 'stat'
+            line_res_method = ''
+
+        # --- CALCULATION of w(t) ---
+        t = np.zeros(nt)
+        ws, ws_err = np.zeros(nt), np.zeros(nt)
+        gs, gs_err = np.zeros(nt), np.zeros(nt)
+        t[:], ws[:], ws_err[:] = [np.nan]*3
+        for i_int in range(nt):
+            t_int = t_ints[i_int]
+            t[i_int] = t_int[0] + (t_int[1] - t_int[0])/2.
+
+            oo_wg.update({
+                't_work': t_int,
+            })
+            res_wg =  calc_wg(oo_var, oo_wg, {'flag_plot_print': False})
+
+            if flag_stat:
+                ws_err[i_int] = res_wg[line_res]['err_w']
+                gs_err[i_int] = res_wg[line_res]['err_g']
+            ws[i_int] = res_wg[line_res]['w' + line_res_method]
+
+        # --- initial variable ---
+        dict_var = choose_vars(oo_var)[0]
+        data_var = dict_var['data'][0]
+
+        t_data   = dict_var['x']
+        ids_t_data, t_data, _ = mix.get_ids(t_data, [t[0], t[-1]])
+        data_var = data_var[ids_t_data[0]:ids_t_data[-1] + 1]
+
+        conf_res_one = {
+            'name': conf_name,
+            't': t,
+            'ws': ws,
+            'ws_err': ws_err,
+            'flag_fv': flag_fv,
+            'flag_je': flag_je,
+            'data_var': data_var,
+            't_data': t_data,
+        }
+
+        # --- RESULTS ---
+        conf_res.append(conf_res_one)
+
+    # Exp. NLED AUG:
+    exp_w_kHZ = [48, 50.5, 52.25, 53.75, 55, 56, 56.8, 57.4]
+    exp_t_s = [0.8410, 0.8415, 0.8420, 0.8425, 0.8430, 0.8435, 0.8440, 0.8445]
+    exp_t_ms = (np.array(exp_t_s) - exp_t_s[0]) * 1e3
+    exp_w_rel = np.array(exp_w_kHZ) / exp_w_kHZ[0]
+
+    exp_t_ms_cont = np.linspace(exp_t_ms[0], exp_t_ms[-1], 101)
+    exp_w_rel_cont = np.interp(exp_t_ms_cont, exp_t_ms, exp_w_rel)
+
+    # --- PLOT RESULTS ---
+    if len(stys_plot) < n_conf:
+        last_sty = stys_plot[-1]
+        stys_plot += [last_sty] * (n_conf - len(stys_plot))
+
+    # plotting
+    curves_orig = crv.Curves().xlab('t' + line_norm_t).ylab('signal')
+    curves_orig.flag_semilogy = True
+
+    # curves = crv.Curves().xlab('t' + line_norm_t).ylab('\omega' + line_norm_w).tit(tit_plot)
+    curves = crv.Curves().xlab('t' + line_norm_t).ylab('\omega/\omega_{0}')
+    # additional text:
+    for oo_text in oo_texts:
+        oText = crv.PlText(oo_text)
+        curves.newt(oText)
+
+    curves_exp = crv.Curves().xlab('(t - t_{0})(ms)')\
+        .ylab('\omega/\omega_{0}').tit('Experimental\ spectrogram')
+    for i_conf in range(n_conf):
+        one_conf = conf_res[i_conf]
+        curves_orig.new() \
+            .XS(one_conf['t_data'] * coef_norm_t) \
+            .YS(one_conf['data_var']) \
+            .leg(one_conf['name'])
+        # curves.new()\
+        #     .XS(one_conf['t']  * coef_norm_t)\
+        #     .YS(one_conf['ws'] * coef_norm_w) \
+        #     .set_errorbar(True, ys=one_conf['ws_err'] * coef_norm_w)\
+        #     .leg(one_conf['name'])\
+        #     .sty(stys_plot[i_conf])
+        curves.new() \
+            .XS(one_conf['t'] * coef_norm_t) \
+            .YS(one_conf['ws']/one_conf['ws'][0]) \
+            .set_errorbar(True, ys=one_conf['ws_err']/one_conf['ws'][0]) \
+            .sty(stys_plot[i_conf])
+
+        curves.new() \
+            .XS(0.15 * exp_t_ms_cont) \
+            .YS(exp_w_rel_cont) \
+            .sty(':')
+        curves_exp.new()\
+            .XS(exp_t_ms)\
+            .YS(exp_w_rel)\
+            .leg('Long\ branch')\
+            .sty('o')
+        curves_exp.new() \
+            .XS(exp_t_ms_cont) \
+            .YS(exp_w_rel_cont) \
+            .leg('interpolation') \
+            .sty(':')
+    cpr.plot_curves(curves_orig)
+    cpr.plot_curves(curves)
+    cpr.plot_curves(curves_exp)
+
+
+# NEW: calculation of the w/g in different time intervals:
 def calc_wg_t(oo_wg_t, oo_plot):
     # configurations
     oo_cong_names = oo_wg_t['conf_names']
@@ -2790,28 +3019,28 @@ def average_one_var(avr, ovar, dd, oo):
     sel_coords  = avr[0]  # chosen coordinate system
     oavr = avr[1:len(avr)]
 
-    vvar_res = {}
-
     # additional parameteres:
     flag_var_first   = oo.get('flag_var_first', False)
 
     # choose coordinate system, where the system will be considered:
     if sel_coords == 'ts':
         vvar_res = choose_one_var_ts(ovar, dd)
-    if sel_coords == 'tchi':
+    elif sel_coords == 'tchi':
         vvar_res = choose_one_var_tchi(ovar, dd)
-    if sel_coords == 'tvpar':
+    elif sel_coords == 'tvpar':
         vvar_res = choose_one_var_tvpar(ovar, dd)
-    if sel_coords == 'vparmu':
+    elif sel_coords == 'vparmu':
         vvar_res = choose_one_var_vparmu(ovar, dd)
-    if sel_coords == 't':
+    elif sel_coords == 't':
         vvar_res = choose_one_var_t(ovar, dd)
         oavr = ['none-']
-        vvar_res['laby'] = ''
-    if sel_coords == 'rz':
+    elif sel_coords == 'rz':
         vvar_res = choose_one_var_rz(ovar, dd)
-    if sel_coords == 'schi':
+    elif sel_coords == 'schi':
         vvar_res = choose_one_var_schi(ovar, dd)
+    else:
+        print('Wrong name of plane in average_one_var')
+        sys.exit(-1)
 
     if flag_var_first and 'x2' in vvar_res:
         x1_ref = vvar_res[vvar_res['x1']]
@@ -2950,6 +3179,11 @@ def choose_one_var_t(ovar, dd):
 
     # save information about coordinate system:
     vvar['fx'], vvar['labx'] = '{:0.3e}', 't'
+    vvar['laby'] = ''
+    vvar['name_x'] = 't',
+    vvar['format_x'] =  vvar['fx'],
+
+    vvar['data'] = [vvar['data']]  # to be consistent with other signals after averaging
 
     return vvar
 
@@ -3616,7 +3850,7 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
     n_vpar_res = oo_plot.get('n_vpar_res', 0)
     oo_texts = oo_plot.get('texts_plot', [])
     oo_geoms = oo_plot.get('geoms_plot', [])
-    tit_vmu = oo_plot.get('tit_vmu', [])
+    tit_vmu = oo_plot.get('tit_vmu', None)
     flag_pass_trap_cone = oo_plot.get('flag_pass_trap_cone', True)
 
     # velocity normalization:
@@ -3655,7 +3889,7 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
         for i_res in range(n_vpar_res):
             # gHLines.ys = [-vres, -vres/2, vres/2, vres]
             gHLines.ys += [-vres/(i_res+1), vres/(i_res+1)]
-        gHLines.color = 'white'
+        gHLines.color = 'black'
         gHLines.style = '--'
         gHLines.width = 4
 
@@ -3757,10 +3991,11 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
         _, vpar_plot, _ = mix.get_ids(vpar, vpar_plot)
 
     tit_vmu_res = tit_vmu
-    if tit_vmu_res is None:
-        tit_vmu_res = je_dict['tit']
-    elif len(tit_vmu_res) is 0:
-        tit_vmu_res = je_dict['tit']
+    if tit_vmu_res is not None:
+        if len(tit_vmu_res) is 0:
+            tit_vmu_res = je_dict['tit']
+
+    colMap, colMap_center = 'seismic', 0
 
     color_area = 'white'
     curves = crv.Curves()\
@@ -3774,7 +4009,7 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
         .XS(mu)\
         .YS(vpar)\
         .ZS(je).lev(60) \
-        .cmp('seismic')
+        .cmp(colMap, colMap_center)
     for i_area in range(n_areas):
         boundaries_area = separate_boundaries_areas[i_area]
         vertical_lines = vertical_lines_areas[i_area]
@@ -3804,7 +4039,7 @@ def MPR_gamma_velocity_domains(dd, oo_vel, oo_vars, oo_wg, oo_plot):
         curves.new() \
             .XS(mu_pt) \
             .YS(cone_pt) \
-            .col('white').sty(':').w(20)
+            .col('black').sty(':').w(20)
     cpr.plot_curves_3d(curves)
 
     # --- Plot areas ---
