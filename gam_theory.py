@@ -4,7 +4,6 @@ import ControlPlot as cpr
 import ymath
 import curve as crv
 import numpy as np
-from scipy import interpolate
 
 
 def reload():

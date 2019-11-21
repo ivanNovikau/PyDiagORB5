@@ -4,15 +4,11 @@ import ControlPlot as cpr
 import ymath
 import curve as crv
 import zf_gam as zf
-import general as gn
 import write_data as wr
 import transport
-from scipy.fftpack import next_fast_len
-from polycoherence import _plot_signal, polycoherence, plot_polycoherence
 import numpy as np
 from scipy import interpolate
 import h5py as h5
-from scipy.signal import correlate
 
 
 def reload():
@@ -23,7 +19,6 @@ def reload():
     mix.reload_module(ymath)
     mix.reload_module(crv)
     mix.reload_module(zf)
-    mix.reload_module(gn)
     mix.reload_module(wr)
     mix.reload_module(transport)
 

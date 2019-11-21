@@ -3,7 +3,6 @@ import read_data as rd
 import ControlPlot as cpr
 import ymath
 import curve as crv
-import general as gn
 import numpy as np
 from scipy import interpolate
 
@@ -15,7 +14,6 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(ymath)
     mix.reload_module(crv)
-    mix.reload_module(gn)
 
 
 # NEW:

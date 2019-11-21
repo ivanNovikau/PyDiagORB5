@@ -4,7 +4,6 @@ import ControlPlot as cpr
 import ymath
 import curve as crv
 import zf_gam as zf
-import general as gn
 import write_data as wr
 import transport
 import Geom
@@ -23,7 +22,6 @@ def reload():
     mix.reload_module(ymath)
     mix.reload_module(crv)
     mix.reload_module(zf)
-    mix.reload_module(gn)
     mix.reload_module(wr)
     mix.reload_module(transport)
     mix.reload_module(Geom)

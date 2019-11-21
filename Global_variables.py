@@ -1,5 +1,10 @@
 from IPython.core.getipython import get_ipython
 
+
+def reload():
+    return
+
+
 # ---------------------------------------------------------------------------
 MIN_N_PEAKS = 3
 COEF_ERR = 1.96          # alpha-quantile of the standard normal distribution

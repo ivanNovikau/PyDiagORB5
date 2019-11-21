@@ -4,7 +4,6 @@ import ControlPlot as cpr
 import ymath
 import curve as crv
 import write_data as wr
-import general as gn
 import zf_gam as zf
 import ITG_gamma as itg
 import transport
@@ -32,7 +31,6 @@ def reload():
     mix.reload_module(ymath)
     mix.reload_module(crv)
     mix.reload_module(wr)
-    mix.reload_module(gn)
     mix.reload_module(zf)
     mix.reload_module(itg)
     mix.reload_module(transport)
