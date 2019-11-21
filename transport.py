@@ -3,7 +3,6 @@ import read_data as rd
 import ControlPlot as cpr
 import ymath
 import curve as crv
-import general as gn
 import numpy as np
 from scipy import interpolate
 
@@ -15,7 +14,6 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(ymath)
     mix.reload_module(crv)
-    mix.reload_module(gn)
 
 
 def chi(species_name, dd):
@@ -155,41 +153,3 @@ def choose_var(dd, oo):
     }
 
     return res
-
-
-def plot_fft(dd, oo):
-    out = choose_var(dd, oo)
-    vvar, r, t, tit_var = out['var'], out['s'], out['t'], out['tit']
-
-    # radial coordinate normalization
-    sel_r = oo.get('sel_r', 's')  # -> 's', 'psi'
-    line_r = ''
-    if sel_r == 's':
-        r = r
-        line_r = 's = \sqrt{\psi/\psi_{edge}}'
-    if sel_r == 'psi':
-        r = r ** 2
-        line_r = '\psi/\psi_{edge}'
-
-    # plotting
-    oo_fft = dict(oo)
-    oo_fft.update({
-        'var': vvar, 't_wci': t, 'r': r,
-        'tit': tit_var,
-        'labr': line_r
-    })
-    gn.plot_fft(dd, oo_fft)
-
-
-def plot_fft_1d(dd, oo):
-    out = choose_var(dd, oo)
-    vvar, s, t, tit_var = out['var'], out['s'], out['t'], out['tit']
-
-    # plotting
-    oo_fft = dict(oo)
-    oo_fft.update({
-        'vars': [vvar], 'ts_wci': [t], 'ss': [s],
-        'tit': tit_var,
-        'vars_names': ['']
-    })
-    gn.plot_fft_1d(dd, oo_fft)

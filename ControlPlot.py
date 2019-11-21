@@ -1,74 +1,13 @@
 import Mix as mix
 import ymath
 import curve as crv
+import Global_variables as GLO
 import matplotlib.pyplot as mpl
 import numpy as np
 import types
 from matplotlib import animation, ticker
 from IPython.display import HTML
-from IPython.core.getipython import get_ipython
 import matplotlib.colors
-
-if 'Terminal' in get_ipython().__class__.__name__:
-    FLAG_LATEX = True
-else:
-    FLAG_LATEX = False
-
-if FLAG_LATEX:
-    # # configuration #1
-    # FIG_SIZE_W = 15
-    # FIG_SIZE_H = 9.5
-    # LEG_SCALE = 0.82
-    # FONT_SIZE = 28
-    # FLAG_LATEX = True
-    # FONT_SIZE_LABELS = FONT_SIZE * 1.5
-    # FONT_SIZE_TICKS  = FONT_SIZE * 1.0
-    # FONT_SIZE_ORDER  = FONT_SIZE * 1.2
-    # FONT_SIZE_TITLE  = FONT_SIZE * 1.3
-
-    # configuration #2 (used for general plots in AAPPS paper)
-    FIG_SIZE_W = 15
-    FIG_SIZE_H = 9.5
-    # LEG_SCALE = 0.85  # for scan on saturation
-    LEG_SCALE = 1.0
-    FONT_SIZE = 28
-    FLAG_LATEX = True
-    FONT_SIZE_LABELS = FONT_SIZE * 1.8
-    FONT_SIZE_TICKS = FONT_SIZE * 1.5
-    FONT_SIZE_ORDER = FONT_SIZE * 1.2
-    FONT_SIZE_TITLE = FONT_SIZE * 1.3
-
-    # # configuration #2.1 (used for q-plot in AAPPS paper)
-    # FIG_SIZE_W = 9.5
-    # FIG_SIZE_H = 9.5
-    # LEG_SCALE = 1.0
-    # FONT_SIZE = 28
-    # FLAG_LATEX = True
-    # FONT_SIZE_LABELS = FONT_SIZE * 1.8
-    # FONT_SIZE_TICKS = FONT_SIZE * 1.2
-    # FONT_SIZE_ORDER = FONT_SIZE * 1.2
-    # FONT_SIZE_TITLE = FONT_SIZE * 1.3
-
-    # # configuration #3 (used for B plot in AAPPS paper)
-    # FIG_SIZE_W = 9.5
-    # FIG_SIZE_H = 9.5
-    # LEG_SCALE = 0.82
-    # FONT_SIZE = 28
-    # FLAG_LATEX = True
-    # FONT_SIZE_LABELS = FONT_SIZE * 2
-    # FONT_SIZE_TICKS = FONT_SIZE * 1.2
-    # FONT_SIZE_ORDER = FONT_SIZE * 2
-    # FONT_SIZE_TITLE = FONT_SIZE * 1.5
-else:
-    FIG_SIZE_W = 10
-    FIG_SIZE_H = 6
-    LEG_SCALE = 0.5
-    FONT_SIZE = 22
-    FLAG_LATEX = False
-    FONT_SIZE_LABELS = FONT_SIZE * 0.6
-    FONT_SIZE_TICKS  = FONT_SIZE * 0.6
-    FONT_SIZE_ORDER  = FONT_SIZE * 0.6
-    FONT_SIZE_TITLE  = FONT_SIZE * 0.6
 
 
 def reload():
@@ -76,6 +15,7 @@ def reload():
     mix.reload_module(mix)
     mix.reload_module(crv)
     mix.reload_module(ymath)
+    mix.reload_module(GLO)
 
 
 def plot_curves(curves):
@@ -86,7 +26,7 @@ def plot_curves(curves):
     ncurves = curves.n()
 
     # Build plots
-    fig, ax = mpl.subplots(figsize=(FIG_SIZE_W, FIG_SIZE_H))
+    fig, ax = mpl.subplots(figsize=(GLO.FIG_SIZE_W, GLO.FIG_SIZE_H))
     axes = mpl.gca()
 
     # set curves
@@ -148,7 +88,7 @@ def plot_curves_3d(curves):
     ncurves = curves.n()
 
     # initialization of the figure
-    fig, ax = mpl.subplots(figsize=(FIG_SIZE_W, FIG_SIZE_H))
+    fig, ax = mpl.subplots(figsize=(GLO.FIG_SIZE_W, GLO.FIG_SIZE_H))
     axes = mpl.gca()
 
     # data from the first curve, that has to be 3d plot
@@ -173,8 +113,8 @@ def plot_curves_3d(curves):
         cb = fig.colorbar(cs, shrink=0.8, extend='both')
         cb.formatter.set_scientific(True)
         cb.formatter.set_powerlimits((0, 0))
-        cb.ax.tick_params(labelsize=FONT_SIZE_TICKS)
-        cb.ax.yaxis.get_offset_text().set_fontsize(FONT_SIZE_ORDER)
+        cb.ax.tick_params(labelsize=GLO.FONT_SIZE_TICKS)
+        cb.ax.yaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE_ORDER)
 
         register_offset(cb.ax.yaxis, bottom_offset)
         cb.update_ticks()
@@ -218,7 +158,7 @@ def animation_1d(curves):
     ngeoms = curves.n_geoms
 
     # Build plots
-    fig, ax = mpl.subplots(figsize=(FIG_SIZE_W, FIG_SIZE_H))
+    fig, ax = mpl.subplots(figsize=(GLO.FIG_SIZE_W, GLO.FIG_SIZE_H))
     axes = mpl.gca()
 
     # set limits:
@@ -229,9 +169,9 @@ def animation_1d(curves):
 
     # set labels:
     if curves.xlabel is not None:
-        mpl.xlabel(r'\boldmath $' + curves.xlabel + '$', fontsize=FONT_SIZE * 1.7)
+        mpl.xlabel(r'\boldmath $' + curves.xlabel + '$', fontsize=GLO.FONT_SIZE * 1.7)
     if curves.ylabel is not None:
-        mpl.ylabel(r'\boldmath $' + curves.ylabel + '$', fontsize=FONT_SIZE * 1.7)
+        mpl.ylabel(r'\boldmath $' + curves.ylabel + '$', fontsize=GLO.FONT_SIZE * 1.7)
 
     # axes ticks:
     if curves.xticks_labels is np.nan:
@@ -245,10 +185,10 @@ def animation_1d(curves):
         mpl.yticks(curves.yticks, curves.yticks_labels) if curves.yticks is not np.nan else 0
 
     # fontsize of axes ticks
-    ax.xaxis.set_tick_params(labelsize=FONT_SIZE)
-    ax.yaxis.set_tick_params(labelsize=FONT_SIZE)
-    ax.xaxis.get_offset_text().set_fontsize(FONT_SIZE)
-    ax.yaxis.get_offset_text().set_fontsize(FONT_SIZE)
+    ax.xaxis.set_tick_params(labelsize=GLO.FONT_SIZE)
+    ax.yaxis.set_tick_params(labelsize=GLO.FONT_SIZE)
+    ax.xaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE)
+    ax.yaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE)
 
     # format of axis labels
     mpl.ticklabel_format(axis='x', style=curves.x_style, scilimits=(-2, 2))
@@ -260,13 +200,13 @@ def animation_1d(curves):
 
     # set legend
     if curves.flag_legend:
-        ax.legend(fontsize=FONT_SIZE * LEG_SCALE, loc=curves.legend_position,
+        ax.legend(fontsize=GLO.FONT_SIZE * GLO.LEG_SCALE, loc=curves.legend_position,
                   facecolor=curves.legend_fcol)
 
     # set title
     if curves.title is not None:
-        mpl.title(r'\boldmath $' + curves.title + '$', fontsize=FONT_SIZE * 1.5, pad='18', usetex=True)
-    if FLAG_LATEX:
+        mpl.title(r'\boldmath $' + curves.title + '$', fontsize=GLO.FONT_SIZE * 1.5, pad='18', usetex=True)
+    if GLO.FLAG_LATEX:
         mpl.rc('text', usetex=True)
         mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
         mpl.rcParams['text.latex.preamble'] = [r'\boldmath']
@@ -365,9 +305,9 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
 
     # set labels:
     if curves.xlabel is not None:
-        mpl.xlabel(r'\boldmath $' + curves.xlabel + '$', fontsize=FONT_SIZE_LABELS)
+        mpl.xlabel(r'\boldmath $' + curves.xlabel + '$', fontsize=GLO.FONT_SIZE_LABELS)
     if curves.ylabel is not None:
-        mpl.ylabel(r'\boldmath $' + curves.ylabel + '$', fontsize=FONT_SIZE_LABELS)
+        mpl.ylabel(r'\boldmath $' + curves.ylabel + '$', fontsize=GLO.FONT_SIZE_LABELS)
 
     # axes ticks:
     if curves.xticks_labels is np.nan:
@@ -381,10 +321,10 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
         mpl.yticks(curves.yticks, curves.yticks_labels) if curves.yticks is not np.nan else 0
 
     # fontsize of axes ticks
-    ax.xaxis.set_tick_params(labelsize=FONT_SIZE_TICKS)
-    ax.yaxis.set_tick_params(labelsize=FONT_SIZE_TICKS)
-    ax.xaxis.get_offset_text().set_fontsize(FONT_SIZE_ORDER)
-    ax.yaxis.get_offset_text().set_fontsize(FONT_SIZE_ORDER)
+    ax.xaxis.set_tick_params(labelsize=GLO.FONT_SIZE_TICKS)
+    ax.yaxis.set_tick_params(labelsize=GLO.FONT_SIZE_TICKS)
+    ax.xaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE_ORDER)
+    ax.yaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE_ORDER)
     register_offset(ax.yaxis, top_offset)
 
     # format of axis labels
@@ -403,14 +343,14 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
 
     # set legend
     if ncurves > 1 and curves.flag_legend:
-        ax.legend(fontsize=FONT_SIZE * LEG_SCALE, loc=curves.legend_position,
+        ax.legend(fontsize=GLO.FONT_SIZE * GLO.LEG_SCALE, loc=curves.legend_position,
                   facecolor=curves.legend_fcol,
                   labelspacing=0.1, handlelength=1, handletextpad=0.4)
 
     # set title
     if curves.title is not None:
-        mpl.title(r'\boldmath $' + curves.title + '$', fontsize=FONT_SIZE_TITLE, pad='18', usetex=True)
-    if FLAG_LATEX:
+        mpl.title(r'\boldmath $' + curves.title + '$', fontsize=GLO.FONT_SIZE_TITLE, pad='18', usetex=True)
+    if GLO.FLAG_LATEX:
         mpl.rc('text', usetex=True)
         mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
         mpl.rcParams['text.latex.preamble'] = [r'\boldmath']
@@ -428,7 +368,7 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
             loc_text.x,
             loc_text.y,
             r'\boldmath $' + loc_text.line + '$',
-            fontsize=FONT_SIZE * loc_text.coef_width,
+            fontsize=GLO.FONT_SIZE * loc_text.coef_width,
             color=loc_text.color
         )
 
@@ -436,9 +376,7 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
     if not flag_2d:
         mpl.grid(True)
 
-    # mpl.show(block=False)
-
-    if FLAG_LATEX:
+    if GLO.FLAG_LATEX:
         fig.tight_layout()
 
 

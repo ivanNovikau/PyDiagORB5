@@ -1,4 +1,5 @@
 import Mix as mix
+import Global_variables as GLO
 import numpy as np
 import scipy.signal
 from scipy import stats
@@ -7,23 +8,19 @@ from scipy import constants
 from scipy import interpolate
 import pywt
 import scipy.special
-
-# avoid plotting here
-
-MIN_N_PEAKS = 3
-COEF_ERR = 1.96   # alpha-quantile of the standard normal distribution
-CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval, that corresponds to the alpha quantile
+import sys
 
 
 def reload():
     # Important: put here all modules that you want to reload
     mix.reload_module(mix)
+    mix.reload_module(GLO)
 
 
 def estimate_w(x, y):
     # find peaks of the signal
     ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
-    if np.size(ids_peaks) < MIN_N_PEAKS:
+    if np.size(ids_peaks) < GLO.MIN_N_PEAKS:
         return None
 
     x_peaks = x[ids_peaks]
@@ -50,14 +47,14 @@ def estimate_g(x, y):
 
     # find peaks of the signal
     ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
-    if len(ids_peaks) >= MIN_N_PEAKS:
+    if len(ids_peaks) >= GLO.MIN_N_PEAKS:
         x_peaks = x[ids_peaks]
         y_peaks = abs(y[ids_peaks])
 
         res = stats.theilslopes(
             np.log(y_peaks),
             x_peaks - x[ids_peaks[0]],
-            CONFIDENCE_PERC
+            GLO.CONFIDENCE_PERC
         )
         g = res[0]
         b0 = res[1]
@@ -76,7 +73,7 @@ def estimate_g(x, y):
         res = stats.theilslopes(
             np.log(y),
             x - x[0],
-            CONFIDENCE_PERC
+            GLO.CONFIDENCE_PERC
         )
         g = res[0]
         b0 = res[1]
@@ -103,7 +100,7 @@ def estimate_wg(x, y):
     # find peaks of the signal
     ids_peaks, _ = scipy.signal.find_peaks(abs(y), height=0)
 
-    if len(ids_peaks) >= MIN_N_PEAKS:
+    if len(ids_peaks) >= GLO.MIN_N_PEAKS:
         x_peaks = x[ids_peaks]
         y_peaks = abs(y[ids_peaks])
 
@@ -113,7 +110,7 @@ def estimate_wg(x, y):
         res = stats.theilslopes(
             np.log(y_peaks),
             x_peaks - x[ids_peaks[0]],
-            CONFIDENCE_PERC
+            GLO.CONFIDENCE_PERC
         )
         g = res[0]
         b0 = res[1]
@@ -144,13 +141,13 @@ def advanced_fitting(x, y, F, p0, id_w, id_g):
         w, w_err = None, None
     else:
         id_w = np.int(id_w)
-        w, w_err = popt[id_w], COEF_ERR*wg_errs[id_w]
+        w, w_err = popt[id_w], GLO.COEF_ERR*wg_errs[id_w]
 
     if id_g is None:
         g, g_err = None, None
     else:
         id_g = np.int(id_g)
-        g, g_err = popt[id_g], COEF_ERR*wg_errs[id_g]
+        g, g_err = popt[id_g], GLO.COEF_ERR*wg_errs[id_g]
 
     res_adv = {
         'g': g,         'w': w,
@@ -171,7 +168,7 @@ def advanced_wg(x, y, flag_print=True):
     }
 
     try:
-        if len(wg_est['ids_peaks']) < MIN_N_PEAKS:
+        if len(wg_est['ids_peaks']) < GLO.MIN_N_PEAKS:
             # fitting with only gamma
             F = lambda x_loc, A0, g: A0 * np.exp(g * x_loc)
             p0 = [y[0], wg_est['g']]
@@ -187,7 +184,7 @@ def advanced_wg(x, y, flag_print=True):
         if flag_print:
             print('Advanced fitting with dynamic rate failed.')
         try:
-            if len(wg_est['ids_peaks']) >= MIN_N_PEAKS:
+            if len(wg_est['ids_peaks']) >= GLO.MIN_N_PEAKS:
                 # fitting with frequency
                 F = lambda x_loc, A0, w, Phase0: A0 * np.cos(w * x_loc + Phase0)
                 p0 = [y[0], wg_est['w'], 0]
@@ -210,7 +207,7 @@ def advanced_w(x, y, flag_print=True):
     }
 
     # fitting with only frequency
-    if len(wg_est['ids_peaks']) >= MIN_N_PEAKS:
+    if len(wg_est['ids_peaks']) >= GLO.MIN_N_PEAKS:
         F = lambda x_loc, A0, w, Phase0: A0 * np.cos(w * x_loc + Phase0)
         p0 = [y[0], wg_est['w'], 0]
         try:
@@ -606,126 +603,20 @@ def find_norm(y, y_norm_to=None):
     return y_norm
 
 
-# NEW: averaging in space:
-def find_av_s(vvar, oavr):
-    # oavr = [opt_av, s_intervals]
-    data, s = vvar['data'], vvar['s']
-    opt_av  = oavr[0]
-    s_ints  = oavr[1]
-
-    data_s_av, lines_s_av = {}, {}
-    ids_ss, s_ints, lines_s = mix.get_interval(s, s_ints, 's', '0.3f')
-    for is_av in range(len(s_ints)):
-        ids_s = ids_ss[is_av]
-        temp = data[:, ids_s[0]:ids_s[-1]+1]
-        line_av = ''
-        if opt_av == 'mean':
-            data_s_av[is_av]  = np.mean(temp, axis=1)
-            line_av = 'mean_s:\ '
-        if opt_av == 'rms':
-            data_s_av[is_av]  = np.sqrt(np.mean(temp**2, axis=1))
-            line_av = 'rms_s:\ '
-        line_av += lines_s[is_av]
-        lines_s_av[is_av] = line_av
-
-    # form result dictionary
-    vvar_avr = {
-        'data': data_s_av,
-        'x':   vvar['t'],
-        'tit': vvar['tit'],
-        'lines_avr': lines_s_av
-    }
-
-    return vvar_avr
-
-
-# NEW: averaging in time:
-def find_av_t(vvar, oavr):
-    # oavr = [opt_av, t_intervals]
-    data, t = vvar['data'], vvar['t']
-    opt_av  = oavr[0]
-    t_ints  = oavr[1]
-
-    datas_av, lines_t_av = {}, {}
-    ids_ts, t_ints, lines_t = mix.get_interval(t, t_ints, 't', '0.3e')
-    for is_av in range(len(t_ints)):
-        ids_t = ids_ts[is_av]
-        temp = data[ids_t[0]:ids_t[-1]+1, :]
-        line_av = ''
-        if opt_av == 'mean':
-            datas_av[is_av]  = np.mean(temp, axis=0)
-            line_av = 'mean_t:\ '
-        if opt_av == 'rms':
-            datas_av[is_av]  = np.sqrt(np.mean(temp**2, axis=0))
-            line_av = 'rms_t:\ '
-        line_av += lines_t[is_av]
-        lines_t_av[is_av] = line_av
-
-    # form result dictionary
-    vvar_avr = {
-        'data': datas_av,
-        'x':   vvar['s'],
-        'tit': vvar['tit'],
-        'lines_avr': lines_t_av
-    }
-
-    return vvar_avr
-
-
-# NEW: signal at s1:
-def find_t1s1(vvar, oavr):
-    # oavr = [opt_av, points]
-    # opt_av: s1, t1
-    data, t, s = vvar['data'], vvar['t'], vvar['s']
-    opt_av = oavr[0]
-    y_points = oavr[1]
-
-    y = []  # reduce the signal along this coordinate axis
-    x = []  # save this coordinate axis
-    line_y, format_y = '', ''
-    if opt_av == 's1':
-        y, line_y, format_y = s, 's', '{:0.3f}'
-        x = t
-    if opt_av == 't1':
-        y, line_y, format_y = t, 't', '{:0.3e}'
-        x = s
-
-    datas_av, lines_av = {}, {}
-    for id_y1 in range(len(y_points)):
-        id_y, y1 = mix.find(y, y_points[id_y1])
-        temp = []
-        if opt_av == 's1':
-            temp = data[:, id_y]
-        if opt_av == 't1':
-            temp = data[id_y, :]
-        lines_av[id_y1] = line_y + ' = ' + format_y.format(y1)
-        datas_av[id_y1] = temp
-
-    # form result dictionary
-    vvar_avr = {
-        'data': datas_av,
-        'x': x,
-        'tit': vvar['tit'],
-        'lines_avr': lines_av
-    }
-
-    return vvar_avr
-
-
-# NEW: combined find_av_s, find_av_t, find_t1s1
+# Averaging in one domain
 def avr_x1x2(vvar, oavr, oo ):
     # oavr = [sel_av, av_domain]
     # sel_av = 'type_av-coord_av'
     # type_av = 'mean', 'rms', 'point'
     # coord_av = 't', 's', 'vpar', 'mu', 'chi', 'n', 'm'
-    # av_domain is x_points or x_intervals
+    # av_domain is x_point or x_interval
 
     # type of averaging and the coordinate along which the averaging will be performed
     sel_av = oavr[0]
     type_av, coord_av = sel_av.split('-')
     if type_av == 'none':
         vvar_avr = dict(vvar)
-        vvar_avr['lines_avr'] = ['']
+        vvar_avr['line_avr'] = ['']
         return vvar_avr
     flag_aver_interp = oo.get('flag_aver_interp', None)
 
@@ -735,7 +626,6 @@ def avr_x1x2(vvar, oavr, oo ):
     x2 = vvar[vvar['x2']]
 
     # define a coordinate axis to average along:
-    dir_av, x_work, x_av, format_x_work, format_x_av = None, None, None, None, None
     if coord_av == vvar['x1']:
         dir_av = 0
         x_av   = x1
@@ -743,13 +633,16 @@ def avr_x1x2(vvar, oavr, oo ):
         x_work = x2
         format_x_work = vvar['fx2']
         name_x_work = vvar['x2']
-    if coord_av == vvar['x2']:
+    elif coord_av == vvar['x2']:
         dir_av = 1
         x_av   = x2
         format_x_av = vvar['fx2']
         x_work = x1
         format_x_work = vvar['fx1']
         name_x_work = vvar['x1']
+    else:
+        print('Error: Wrong name of a coordinate for averaging.')
+        sys.exit(-1)
 
     # use reference axis for averaging:
     if flag_aver_interp:
@@ -758,70 +651,68 @@ def avr_x1x2(vvar, oavr, oo ):
         data = f_interp(x_av_ref)
         x_av = np.array(x_av_ref)
 
-    # domains along coord_av, where the averaging whill be perfomed
+    # a domain along coord_av, where the averaging whill be perfomed
     if type_av == 'max' or type_av == 'absmax':
-        av_domains = [[x_av[0], x_av[-1]]]
+        av_domain = [[x_av[0], x_av[-1]]]
     else:
         if len(oavr) > 1:
-            av_domains = oavr[1]
+            av_domain = oavr[1]
         else:
-            av_domains = [[x_av[0], x_av[-1]]]
+            av_domain = [[x_av[0], x_av[-1]]]
             if type_av == 'point':
-                av_domains = [x_av[0]]
+                av_domain = [x_av[0]]
 
-    # consider domains of averaging
-    data_av, lines_av, opt_av = [], [], []
-    for id_domain in range(len(av_domains)):
-        one_domain = av_domains[id_domain]
+    # --- averaging ---
+    data_av, line_av, opt_av = None, '', None
+    ids_av, _, line_x = mix.get_ids(x_av, av_domain, format_x=format_x_av)
+    if coord_av == vvar['x1']:
+        temp = data[ids_av, :]
+    else:
+        temp = data[:, ids_av]
 
-        ids_av, _, line_x = mix.get_ids(x_av, one_domain, format_x=format_x_av)
-
-        temp = None
-        if coord_av == vvar['x1']:
-            temp = data[ids_av, :]
-        if coord_av == vvar['x2']:
-            temp = data[:, ids_av]
-
-        line_av = ''
-        if type_av == 'mean':
-            data_av.append( np.mean(temp, axis=dir_av) )
-            line_av = 'mean_' + coord_av + ':\ '
-        if type_av == 'rms':
-            data_av.append( np.sqrt(np.mean(temp ** 2, axis=dir_av)) )
-            line_av = 'rms_' + coord_av + ':\ '
-        if type_av == 'point':
-            data_av.append(np.squeeze(temp))
-        if type_av == 'sum':
-            data_av.append( np.sum(temp, axis=dir_av) )
-            line_av = 'sum_' + coord_av + ':\ '
-
+    if type_av == 'mean':
+        data_av = np.mean(temp, axis=dir_av)
+        line_av = 'mean_' + coord_av + ':\ '
         line_av += coord_av + ' = ' + line_x
-
-        if type_av == 'max':
-            temp_max = np.max(temp, axis=dir_av)
-            x_max = x_av[np.argmax(temp, axis=dir_av)]
-            data_av.append(temp_max)
-            opt_av.append(x_max)
-            line_av = 'max_{' + coord_av + '}'
-        if type_av == 'absmax':
-            abs_temp  = np.abs(temp)
-            temp_max = np.max(abs_temp, axis=dir_av)
-            x_max    = x_av[np.argmax(abs_temp, axis=dir_av)]
-            data_av.append(temp_max)
-            opt_av.append(x_max)
-            line_av = 'max_{' + coord_av + '}'
-
-        lines_av.append(line_av)
+    elif type_av == 'rms':
+        data_av = np.sqrt(np.mean(temp ** 2, axis=dir_av))
+        line_av = 'rms_' + coord_av + ':\ '
+        line_av += coord_av + ' = ' + line_x
+    elif type_av == 'point':
+        data_av = np.squeeze(temp)
+        line_av += coord_av + ' = ' + line_x
+    elif type_av == 'sum':
+        data_av = np.sum(temp, axis=dir_av)
+        line_av = 'sum_' + coord_av + ':\ '
+        line_av += coord_av + ' = ' + line_x
+    elif type_av == 'max':
+        data_av = np.max(temp, axis=dir_av)
+        opt_av = x_av[np.argmax(temp, axis=dir_av)]
+        line_av = 'max_{' + coord_av + '}'
+    elif type_av == 'absmax':
+        abs_temp  = np.abs(temp)
+        data_av = np.max(abs_temp, axis=dir_av)
+        opt_av  = x_av[np.argmax(abs_temp, axis=dir_av)]
+        line_av = 'max_{' + coord_av + '}'
+    else:
+        print('Error: Wrong name of an averaging operation.')
+        sys.exit(-1)
 
     # form result dictionary
     vvar_avr = {
-        'data':         data_av,
-        'x':            x_work,
-        'name_x':       name_x_work,
-        'format_x':     format_x_work,
-        'lines_avr':    lines_av,
-        'opt_av':       opt_av
+        'data':        data_av,
+        'x':           x_work,
+        'name_x':      name_x_work,
+        'format_x':    format_x_work,
+        'line_avr':    line_av,
+        'opt_av':      opt_av
     }
+
+    # additional fields:
+    name_fields = ['tit', 'labx', 'laby']
+    for name_field in name_fields:
+        if name_field in vvar:
+            vvar_avr[name_field] = vvar[name_field]
 
     return vvar_avr
 

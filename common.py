@@ -15,6 +15,7 @@ import gam_theory
 import gam_exp
 import Geom as geom
 import fields3d
+import Global_variables as GLO
 import numpy as np
 import scipy.signal
 from scipy.stats import norm as stat_norm
@@ -42,9 +43,7 @@ def reload():
     mix.reload_module(gam_exp)
     mix.reload_module(geom)
     mix.reload_module(fields3d)
-
-
-GLOBAL_NONE_FILTER = {'sel_filt': None}
+    mix.reload_module(GLO)
 
 
 # OLD: find correlation between two signals:
@@ -147,7 +146,6 @@ def correlation_two_vars(dd, oo):
     return
 
 
-# NEW: 2d plot: (x,y)
 def plot_vars_2d(oo):
     # oo.ovars = [[type, opt_var, opts], [], ...]
     # oo.dds = [dd1, dd2, dd3, ...]
@@ -246,7 +244,6 @@ def plot_vars_2d(oo):
         cpr.plot_curves_3d(curves)
 
 
-# NEW: 1d plot: plot vars along t or s:
 def plot_vars_1d(oo):
     # - choose a variable to work with -
     # oo.ovars = [[type, opt_var, opts], [], ...]
@@ -301,8 +298,6 @@ def plot_vars_1d(oo):
     curves.flag_norm     = flag_norm
     curves.flag_semilogy = flag_semilogy
     curves.xt(xticks)
-    count_line = -1
-    count_leg = -1
 
     # additional text:
     for oo_text in oo_texts:
@@ -312,10 +307,9 @@ def plot_vars_1d(oo):
     # - different variables -
     for ivar in range(n_vars):
         vvar = vvars[ivar]
-        datas = vvar['data']
-        x_init = vvar['x']
-        legs  = vvar['legs']
-        ns_av = len(datas)
+        data = vvar['data']
+        x = np.array(vvar['x'])
+        leg  = vvar['leg']
         dd_one = dds[ivar]
 
         oo_var_operations = oo_postprocessing[ivar] \
@@ -329,63 +323,47 @@ def plot_vars_1d(oo):
         if sel_norm_ys is not None:
             if sel_norm_ys[ivar] == 'energy-transfer':
                 line_leg_norm = '\ [W]'
-                # T_speak_eV = dd_one['T_speak'] / constants.elementary_charge
-                # coef_y_norm = dd_one['Lx'] / 2. * dd_one['cs'] * T_speak_eV / (dd_one['a0'])
                 coef_y_norm = dd_one['T_speak'] * dd_one['wc']
-                # coef_y_norm *= 1.e-3
             if sel_norm_ys[ivar] == 'energy-J':
                 line_leg_norm = '\ [J]'
-                # T_speak_eV = dd_one['T_speak'] / constants.elementary_charge
-                # coef_y_norm = dd_one['cs'] * T_speak_eV / (dd_one['a0'] * dd_one['wc'])
                 coef_y_norm = dd_one['T_speak']
             if sel_norm_ys[ivar] == 'n':
                 line_leg_norm = '\ [m^3]'
                 coef_y_norm = equil_profiles.ne_avr_m3(dd_one)
 
-        # - different averaging of the same variable -
-        for is_av in range(ns_av):
-            count_line += 1
-            count_leg += 1
+        # filtering:
+        data, x_filt = global_filter_signal(x, data, oo_filt)
+        data = np.interp(x, x_filt, data)
 
-            # get data
-            x = np.array(x_init)
-            data = np.array(datas[is_av])
+        # - post-processing -
+        data, x = post_processing(data, x, oo_var_operations)
 
-            # filtering:
-            data, x_filt = global_filter_signal(x, data, oo_filt)
-            data = np.interp(x, x_filt, data)
+        # domain of plotting
+        x, ids_x = mix.get_array_oo(oo, x, 'x')
+        data = mix.get_slice(data, ids_x)
 
-            # - post-processing -
-            data, x = post_processing(data, x, oo_var_operations)
+        # x normalization
+        x    = x * coef_x_norm
+        data = data * coef_y_norm
 
-            # domain of plotting
-            x, ids_x = mix.get_array_oo(oo, x, 'x')
-            data = mix.get_slice(data, ids_x)
+        # styles
+        sty_current = '-'
+        if stys is not None:
+            sty_current = stys[ivar] if ivar < len(stys) else '-'
 
-            # x normalization
-            x = x * coef_x_norm
-            data = data * coef_y_norm
+        # color
+        color_current = None
+        if cols is not None:
+            color_current = cols[ivar] if ivar < len(cols) else None
 
-            # styles
-            sty_current = '-'
-            if stys is not None:
-                if count_line < len(stys):
-                    sty_current = stys[count_line]
+        # legends
+        one_leg = \
+            leg + [line_leg_norm] if isinstance(leg, list) \
+            else leg + line_leg_norm
+        one_leg = opt_legs[ivar] if len(opt_legs) > ivar else one_leg
 
-            # color
-            color_current = None
-            if cols is not None:
-                if count_line < len(cols):
-                    color_current = cols[count_line]
-
-            # legends
-            one_leg = legs[is_av] + [line_leg_norm] if isinstance(legs[is_av], list) \
-                else legs[is_av] + line_leg_norm
-            if len(opt_legs) > count_leg:
-                one_leg = opt_legs[count_leg]
-
-            # - add a new curve -
-            curves.new().XS(x).YS(data).leg(one_leg).sty(sty_current).col(color_current)
+        # - add a new curve -
+        curves.new().XS(x).YS(data).leg(one_leg).sty(sty_current).col(color_current)
 
     # - plot the curves -
     if len(curves.list_curves) is not 0:
@@ -2939,8 +2917,6 @@ def calc_wg_t(oo_wg_t, oo_plot):
 def choose_vars(oo):
     # oo.ovars = [[type1 var1 species1 ...], ...]
     # oo.dds = [dd1, dd2, ...]
-    # oo.var_legs1, oo.var_legs2, ...
-    # oo.sel_legs1, oo.sel_legs2, ...   # 'full', 'woPr', 'woVN', 'woPrVN', 'woAVR', 'Pr'
     # ------------------
     # return vvars
     # vvars[i].[data x lines_avr legs opt_av tit labx laby]
@@ -2955,57 +2931,15 @@ def choose_vars(oo):
     vvars, xs, tit_vars, lines_avr = [], [], [], []
     for i_var in range(n_vars):
         dd = dds[i_var]
-        line_id_var = '{:d}'.format(i_var + 1)
-
         if i_var == 0:
             oo_avr.update({'flag_var_first': True})
         else:
             oo_avr.update({'flag_var_first': False})
         vvar = average_one_var(avrs[i_var], ovars[i_var], dds[i_var], oo_avr)
-        var_legs = oo.get('var_legs' + line_id_var, None)
-        sel_legs = oo.get('sel_legs' + line_id_var, 'full')
         pr_name = dd['project_name']
         if pr_name is not '':
             pr_name += ':\ '
-
-        nlegs = len(vvar['lines_avr'])
-        legs = []
-        if var_legs is not None:
-            legs = var_legs
-        elif sel_legs == 'full':
-            for id_leg in range(nlegs):
-                legs.append(
-                    pr_name +
-                    vvar['lines_avr'][id_leg] + ':\ ' +
-                    vvar['tit']
-                )
-        elif sel_legs == 'woPr':
-            for id_leg in range(nlegs):
-                legs.append(
-                    vvar['lines_avr'][id_leg] + ':\ ' +\
-                    vvar['tit']
-                )
-        elif sel_legs == 'woVN':
-            for id_leg in range(nlegs):
-                legs.append(
-                    pr_name + vvar['lines_avr'][id_leg]
-                )
-        elif sel_legs == 'woPrVN':
-            for id_leg in range(nlegs):
-                legs.append(
-                    vvar['lines_avr'][id_leg]
-                )
-        elif sel_legs == 'woAVR':
-            for id_leg in range(nlegs):
-                legs.append(
-                    pr_name + vvar['tit']
-                )
-        elif sel_legs == 'Pr':
-            for id_leg in range(nlegs):
-                legs.append(
-                    pr_name
-                )
-        vvar['legs'] = legs
+        vvar['leg'] = pr_name + vvar['line_avr'] + ':\ ' + vvar['tit']
 
         # save the signal
         vvars.append(vvar)
@@ -3020,7 +2954,7 @@ def average_one_var(avr, ovar, dd, oo):
     oavr = avr[1:len(avr)]
 
     # additional parameteres:
-    flag_var_first   = oo.get('flag_var_first', False)
+    flag_var_first = oo.get('flag_var_first', False)
 
     # choose coordinate system, where the system will be considered:
     if sel_coords == 'ts':
@@ -3050,10 +2984,6 @@ def average_one_var(avr, ovar, dd, oo):
 
     # averaging of the chosen system
     vvar_avr = ymath.avr_x1x2(vvar_res, oavr, oo)
-
-    vvar_avr['tit']  = vvar_res['tit']
-    vvar_avr['labx'] = vvar_res['labx']
-    vvar_avr['laby'] = vvar_res['laby']
 
     return vvar_avr
 
@@ -4708,7 +4638,7 @@ def test_cwt():
 def global_several_filters(x, y, oo_filt_loc):
     oo_filts_res = []
     if oo_filt_loc is None or len(oo_filt_loc) is 0:
-        oo_filts_res.append(GLOBAL_NONE_FILTER)
+        oo_filts_res.append(GLO.NONE_FILTER)
     elif isinstance(oo_filt_loc, dict):
         oo_filts_res.append(oo_filt_loc)
     else:
@@ -4728,7 +4658,6 @@ def global_several_filters(x, y, oo_filt_loc):
 # -FUNCTION: Filter a signal -
 def global_filter_signal(t, y, oo_filt):
     # initial fft
-    dict_fft_ini = ymath.filtering(t, y, GLOBAL_NONE_FILTER)
     init_dict = {'x': t, 'data': y}
 
     # filtering
