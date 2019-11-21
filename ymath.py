@@ -604,19 +604,19 @@ def find_norm(y, y_norm_to=None):
 
 
 # Averaging in one domain
-def avr_x1x2(vvar, oavr, oo ):
-    # oavr = [sel_av, av_domain]
+def avr_x1x2(vvar, one_signal, oo ):
+    # one_signal = {'avr_operation': sel_av, 'avr_domain': av_domain}
     # sel_av = 'type_av-coord_av'
     # type_av = 'mean', 'rms', 'point'
     # coord_av = 't', 's', 'vpar', 'mu', 'chi', 'n', 'm'
     # av_domain is x_point or x_interval
 
     # type of averaging and the coordinate along which the averaging will be performed
-    sel_av = oavr[0]
+    sel_av = one_signal['avr_operation']
     type_av, coord_av = sel_av.split('-')
     if type_av == 'none':
         vvar_avr = dict(vvar)
-        vvar_avr['line_avr'] = ['']
+        vvar_avr['line_avr'] = ''
         return vvar_avr
     flag_aver_interp = oo.get('flag_aver_interp', None)
 
@@ -651,16 +651,8 @@ def avr_x1x2(vvar, oavr, oo ):
         data = f_interp(x_av_ref)
         x_av = np.array(x_av_ref)
 
-    # a domain along coord_av, where the averaging whill be perfomed
-    if type_av == 'max' or type_av == 'absmax':
-        av_domain = [[x_av[0], x_av[-1]]]
-    else:
-        if len(oavr) > 1:
-            av_domain = oavr[1]
-        else:
-            av_domain = [[x_av[0], x_av[-1]]]
-            if type_av == 'point':
-                av_domain = [x_av[0]]
+    # averaging domain
+    av_domain = one_signal.get('avr_domain', [x_av[0], x_av[-1]])
 
     # --- averaging ---
     data_av, line_av, opt_av = None, '', None

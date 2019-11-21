@@ -44,6 +44,92 @@ def reload():
     mix.reload_module(GLO)
 
 
+def choose_vars(oo):
+    def x1x2_format(vv, xx1, xx2):
+        vv['x1'], vv['fx1'], vv['labx'] = xx1[0], xx1[1], xx1[2]
+        vv['x2'], vv['fx2'], vv['laby'] = xx2[0], xx2[1], xx2[2]
+
+    oo_signals = oo.get('signals', [])
+    count_signal, vvars = -1, []
+    for one_signal in oo_signals:
+        count_signal += 1
+
+        # choose type of the signal
+        opt_type = one_signal['type']
+        if opt_type == 'zonal':
+            ref_module = zf
+        elif opt_type == 'transport':
+            ref_module = transport
+        elif opt_type == 'nonzonal':
+            ref_module = itg
+        elif opt_type == 'equ-profile':
+            ref_module = equil_profiles
+        elif opt_type == 'fields3d':
+            ref_module = fields3d
+        elif opt_type.lower() == 'distribution':
+            ref_module = distribution
+        elif opt_type.lower() == 'mpr':
+            ref_module = MPR
+        else:
+            print('Error: Wrong name of signal type.')
+            sys.exit(-1)
+
+        # choose coordinate system, where the signal will be considered:
+        opt_plane = one_signal['plane']
+        if opt_plane == 'ts':
+            vvar_plane = ref_module.choose_one_var_ts(one_signal)
+            x1x2_format(vvar_plane,
+                        ['t', '{:0.3e}', 't'],
+                        ['s', '{:0.3f}', 's'])
+        elif opt_plane == 'tchi':
+            vvar_plane = ref_module.choose_one_var_tchi(one_signal)
+            x1x2_format(vvar_plane,
+                        ['t', '{:0.3e}', 't'],
+                        ['chi', '{:0.3f}', '\chi'])
+        elif opt_plane == 'tvpar':
+            vvar_plane = ref_module.choose_one_var_tvpar(one_signal)
+            x1x2_format(vvar_plane,
+                        ['t', '{:0.3e}', 't'],
+                        ['vpar', '{:0.3f}', 'v_{\parallel}'])
+        elif opt_plane == 'vparmu':
+            vvar_plane = ref_module.choose_one_var_vparmu(one_signal)
+            x1x2_format(vvar_plane,
+                        ['mu', '{:0.3f}', '\mu'],
+                        ['vpar', '{:0.3f}', 'v_{\parallel}'])
+        elif opt_plane == 'rz':
+            vvar_plane = ref_module.choose_one_var_rz(one_signal)
+            x1x2_format(vvar_plane,
+                        ['r', '{:0.3f}', 'R'],
+                        ['z', '{:0.3f}', 'Z'])
+        elif opt_plane == 'schi':
+            vvar_plane = ref_module.choose_one_var_rz(one_signal)
+            x1x2_format(vvar_plane,
+                        ['s', '{:0.3f}', 's'],
+                        ['chi', '{:0.3f}', '\chi'])
+        else:
+            print('Error: Wrong name of plane in average_one_var')
+            sys.exit(-1)
+
+        # set reference signal:
+        one_signal.update({'flag_var_first': True}) if count_signal == 0 else \
+            one_signal.update({'flag_var_first': False})
+        if one_signal['flag_var_first'] and 'x2' in vvar_plane:
+            oo.update({vvar_plane['x1'] + '_ref': vvar_plane[vvar_plane['x1']],
+                       vvar_plane['x2'] + '_ref': vvar_plane[vvar_plane['x2']]})
+
+        # averaging of the chosen signal
+        vvar = ymath.avr_x1x2(vvar_plane, one_signal, oo)
+
+        # signal legend
+        pr_name = one_signal['dd']['project_name']
+        pr_name += ':\ ' if pr_name is not '' else ''
+        vvar['leg'] = pr_name + vvar['line_avr'] + ':\ ' + vvar['tit']
+
+        # save signal
+        vvars.append(vvar)
+    return vvars
+
+
 def plot_vars_2d(oo):
     # oo.ovars = [[type, opt_var, opts], [], ...]
     # oo.dds = [dd1, dd2, dd3, ...]
@@ -63,7 +149,6 @@ def plot_vars_2d(oo):
     oo_use.update({
         'avrs': avrs_use,
     })
-
     vvars = choose_vars(oo_use)
 
     # additional data:
@@ -77,8 +162,8 @@ def plot_vars_2d(oo):
     flag_norm     = oo.get('flag_norm', False)
     flag_semilogy = oo.get('flag_semilogy', False)
     flag_colorbar = oo.get('flag_colorbar', True)
-    sel_norm_x1 = oo.get('sel_norm_x1', 'orig')
-    oo_text_vars     = oo.get('text_vars', None)
+    sel_norm_x1   = oo.get('sel_norm_x1', 'orig')
+    oo_text_vars  = oo.get('text_vars', None)
 
     # normalization
     coef_x1_norm = 1
@@ -2809,211 +2894,6 @@ def calc_wg_t(oo_wg_t, oo_plot):
                 .lev(60)
             curves.newg(one_conf['curves_draw_vres'])
             cpr.plot_curves_3d(curves)
-
-
-# NEW: choose variables:
-def choose_vars(oo):
-    # oo.ovars = [[type1 var1 species1 ...], ...]
-    # oo.dds = [dd1, dd2, ...]
-    # ------------------
-    # return vvars
-    # vvars[i].[data x lines_avr legs opt_av tit labx laby]
-
-    ovars = oo.get('ovars', [])
-    dds   = oo.get('dds', [])
-    avrs  = oo.get('avrs', [])
-
-    n_vars = len(ovars)
-
-    oo_avr = dict(oo)
-    vvars, xs, tit_vars, lines_avr = [], [], [], []
-    for i_var in range(n_vars):
-        dd = dds[i_var]
-        if i_var == 0:
-            oo_avr.update({'flag_var_first': True})
-        else:
-            oo_avr.update({'flag_var_first': False})
-        vvar = average_one_var(avrs[i_var], ovars[i_var], dds[i_var], oo_avr)
-        pr_name = dd['project_name']
-        if pr_name is not '':
-            pr_name += ':\ '
-        vvar['leg'] = pr_name + vvar['line_avr'] + ':\ ' + vvar['tit']
-
-        # save the signal
-        vvars.append(vvar)
-    return vvars
-
-
-# NEW: averaging of a variable:
-def average_one_var(avr, ovar, dd, oo):
-    # oo.avrs = [[sel_coords type opt1 opt2 ...], [], ...]
-
-    sel_coords  = avr[0]  # chosen coordinate system
-    oavr = avr[1:len(avr)]
-
-    # additional parameteres:
-    flag_var_first = oo.get('flag_var_first', False)
-
-    # choose coordinate system, where the system will be considered:
-    if sel_coords == 'ts':
-        vvar_res = choose_one_var_ts(ovar, dd)
-    elif sel_coords == 'tchi':
-        vvar_res = choose_one_var_tchi(ovar, dd)
-    elif sel_coords == 'tvpar':
-        vvar_res = choose_one_var_tvpar(ovar, dd)
-    elif sel_coords == 'vparmu':
-        vvar_res = choose_one_var_vparmu(ovar, dd)
-    elif sel_coords == 't':
-        vvar_res = choose_one_var_t(ovar, dd)
-        oavr = ['none-']
-    elif sel_coords == 'rz':
-        vvar_res = choose_one_var_rz(ovar, dd)
-    elif sel_coords == 'schi':
-        vvar_res = choose_one_var_schi(ovar, dd)
-    else:
-        print('Wrong name of plane in average_one_var')
-        sys.exit(-1)
-
-    if flag_var_first and 'x2' in vvar_res:
-        x1_ref = vvar_res[vvar_res['x1']]
-        x2_ref = vvar_res[vvar_res['x2']]
-        oo.update({vvar_res['x1'] + '_ref': x1_ref,
-                   vvar_res['x2'] + '_ref': x2_ref})
-
-    # averaging of the chosen system
-    vvar_avr = ymath.avr_x1x2(vvar_res, oavr, oo)
-
-    return vvar_avr
-
-
-# NEW: take variable(t,s)
-def choose_one_var_ts(ovar, dd):
-    opt_type = ovar[0]
-    oovar = ovar[1:len(ovar)]
-
-    vvar = {}
-    if opt_type == 'zonal':
-        vvar = zf.choose_one_var_ts(oovar, dd)
-    if opt_type == 'transport':
-        vvar = transport.choose_one_var_ts(oovar, dd)
-    if opt_type == 'nonzonal':
-        vvar = itg.choose_one_var_ts(oovar, dd)
-    if opt_type == 'equ-profile':
-        vvar = equil_profiles.choose_one_var_ts(oovar, dd)
-    if opt_type == 'fields3d':
-        vvar = fields3d.choose_one_var_ts(oovar, dd)
-
-    # save information about coordinate system:
-    vvar['x1'], vvar['fx1'], vvar['labx'] = 't', '{:0.3e}', 't'
-    vvar['x2'], vvar['fx2'], vvar['laby'] = 's', '{:0.3f}', 's'
-
-    return vvar
-
-
-# NEW: take variable(r,z)
-def choose_one_var_rz(ovar, dd):
-    opt_type = ovar[0]
-    oovar = ovar[1:len(ovar)]
-
-    vvar = {}
-    if opt_type == 'nonzonal':
-        vvar = itg.choose_one_var_rz(oovar, dd)
-    if opt_type == 'fields3d':
-        vvar = fields3d.choose_one_var_rz(oovar, dd)
-
-    # save information about coordinate system:
-    vvar['x1'], vvar['fx1'], vvar['labx'] = 'r', '{:0.3f}', 'R'
-    vvar['x2'], vvar['fx2'], vvar['laby'] = 'z', '{:0.3f}', 'Z'
-
-    return vvar
-
-
-# NEW: take variable(r,z)
-def choose_one_var_schi(ovar, dd):
-    opt_type = ovar[0]
-    oovar = ovar[1:len(ovar)]
-
-    vvar = {}
-    if opt_type == 'nonzonal':
-        vvar = itg.choose_one_var_rz(oovar, dd)
-    if opt_type == 'fields3d':
-        vvar = fields3d.choose_one_var_rz(oovar, dd)
-
-    # save information about coordinate system:
-    vvar['x1'], vvar['fx1'], vvar['labx'] = 's', '{:0.3f}', 's'
-    vvar['x2'], vvar['fx2'], vvar['laby'] = 'chi', '{:0.3f}', '\chi'
-
-    return vvar
-
-
-# NEW: take variable(t,chi)
-def choose_one_var_tchi(ovar, dd):
-    opt_type = ovar[0]
-    oovar = ovar[1:len(ovar)]
-
-    vvar = {}
-    if opt_type == 'nonzonal':
-        vvar = itg.choose_one_var_tchi(oovar, dd)
-
-    # save information about coordinate system:
-    vvar['x1'], vvar['fx1'], vvar['labx'] = 't', '{:0.3e}', 't'
-    vvar['x2'], vvar['fx2'], vvar['laby'] = 'chi', '{:0.3f}', '\chi'
-
-    return vvar
-
-
-# NEW: take variable(t,vpar)
-def choose_one_var_tvpar(ovar, dd):
-    opt_type = ovar[0]
-    oovar = ovar[1:len(ovar)]
-
-    vvar = {}
-    if opt_type.lower() == 'distribution':
-        vvar = distribution.choose_one_var_tvpar(oovar, dd)
-    if opt_type.lower() == 'mpr':
-        vvar = MPR.choose_one_var_tvpar(oovar, dd)
-
-    # save information about coordinate system:
-    vvar['x1'], vvar['fx1'], vvar['labx'] = 't',    '{:0.3e}', 't'
-    vvar['x2'], vvar['fx2'], vvar['laby'] = 'vpar', '{:0.3f}', 'v_{\parallel}'
-
-    return vvar
-
-
-# NEW: take variable(vpar,mu)
-def choose_one_var_vparmu(ovar, dd):
-    opt_type = ovar[0]
-    oovar = ovar[1:len(ovar)]
-
-    vvar = {}
-    if opt_type == 'mpr':
-        vvar = MPR.choose_one_var_vparmu(oovar, dd)
-
-    # save information about coordinate system:
-    vvar['x1'], vvar['fx1'], vvar['labx'] = 'mu',   '{:0.3f}', '\mu'
-    vvar['x2'], vvar['fx2'], vvar['laby'] = 'vpar', '{:0.3f}', 'v_{\parallel}'
-
-    return vvar
-
-
-# NEW: take variable(t)
-def choose_one_var_t(ovar, dd):
-    opt_type = ovar[0]
-    oovar = ovar[1:len(ovar)]
-
-    vvar = {}
-    if opt_type == 'mpr':
-        vvar = MPR.choose_one_var_t(oovar, dd)
-
-    # save information about coordinate system:
-    vvar['fx'], vvar['labx'] = '{:0.3e}', 't'
-    vvar['laby'] = ''
-    vvar['name_x'] = 't',
-    vvar['format_x'] =  vvar['fx'],
-
-    vvar['data'] = [vvar['data']]  # to be consistent with other signals after averaging
-
-    return vvar
 
 
 # NEW: get FFT 1d

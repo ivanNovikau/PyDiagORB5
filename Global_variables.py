@@ -61,3 +61,37 @@ else:
     FONT_SIZE_TICKS  = FONT_SIZE * 0.6
     FONT_SIZE_ORDER  = FONT_SIZE * 0.6
     FONT_SIZE_TITLE  = FONT_SIZE * 0.6
+
+# ---------------------------------------------------------------------------
+# --- DEFAULT VARIABLE DEFINITIONS ---
+# ---------------------------------------------------------------------------
+def_erbar_ts = {
+    'type':             'zonal',
+    'variable':         'er',
+    'plane':            'ts',
+    'avr_operation':    'point-s',
+    'avr_domain':       0.5,
+}
+def_safety_factor = {
+    'type': 'equ-profile',
+    'variable': 'q',
+    'plane': 'ts',
+    'avr_operation': 'point-t',
+    'avr_domain': 0,
+}
+def_Teq_deuterium = {
+    'type': 'equ-profile',
+    'variable': 'T-equ',
+    'species_name': 'deuterium',
+    'plane': 'ts',
+    'avr_operation': 'point-t',
+    'avr_domain': 0,
+}
+
+
+def create_signal(default_signal, dd):
+    res_signal = dict(default_signal)
+    res_signal.update({
+        'dd': dd
+    })
+    return [res_signal]

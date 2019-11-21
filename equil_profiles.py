@@ -5,6 +5,7 @@ import ymath
 import curve as crv
 import numpy as np
 import h5py as h5
+import sys
 
 
 def reload():
@@ -14,6 +15,57 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(ymath)
     mix.reload_module(crv)
+
+
+def choose_one_var_ts(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
+    if opt_var == 'q':
+        rd.q(dd)
+        var_name = 'q'
+        tit_var = 'q'
+        vvar = dd[var_name]['data']
+        s = dd[var_name]['s']
+        t = np.array([0])
+    elif opt_var == 'T-equ':
+        sp_name = one_signal['species_name']
+        tit_var = sp_name + ':\ T'
+        vvar = dd[sp_name].nT_equil['T']
+        s = dd[sp_name].nT_equil['s']
+        t = np.array([0])
+    elif opt_var == 'T-equ-keV':
+        sp_name = one_signal['species_name']
+        tit_var = sp_name + ':\ T(keV)'
+        vvar = dd[sp_name].nT_equil['T_keV']
+        s = dd[sp_name].nT_equil['s']
+        t = np.array([0])
+    elif opt_var == 'n-equ':
+        sp_name = one_signal['species_name']
+        tit_var = sp_name + ':\ n'
+        vvar = dd[sp_name].nT_equil['n']
+        s = dd[sp_name].nT_equil['s']
+        t = np.array([0])
+    elif opt_var == 'n-equ-m3':
+        sp_name = one_signal['species_name']
+        tit_var = sp_name + ':\ n'
+        vvar = dd[sp_name].nT_equil['n'] * ne_avr_m3(dd)
+        s = dd[sp_name].nT_equil['s']
+        t = np.array([0])
+    else:
+        print('Error: Wrong name of an equilibrium variable.')
+        sys.exit(-1)
+
+    # one_signal.update({
+    #     'avr_operation': 'none-'
+    # })
+
+    res = {
+        'data': np.array([vvar]),
+        's': s,
+        't': t,
+        'tit': tit_var
+    }
+    return res
 
 
 def q_prof(dd):
@@ -252,7 +304,7 @@ def B_equil(dd):
     f.close()
 
 
-# NEW: electron density averaged in space:
+# Get electron density averaged in space:
 def ne_avr_m3(dd):
     B0_gauss     = dd['B0'] * 1e4
     Te_speak_erg = dd['electrons'].T_speak(dd) * 1e7
@@ -261,7 +313,7 @@ def ne_avr_m3(dd):
     return res
 
 
-# NEW: species density (in 1/m3) at a particular point:
+# Get species density (in 1/m3) at a particular point:
 def n_m3_s1(dd, name_sp, s1):
     s = dd[name_sp].nT_equil['s']
     n = dd[name_sp].nT_equil['n']
@@ -271,57 +323,7 @@ def n_m3_s1(dd, name_sp, s1):
     return n_res, s1_res
 
 
-# NEW: choose a variable (s):
-def choose_one_var_ts(ovar, dd):
-    opt_var = ovar[0]
-    tit_var = ''
-    vvar, s, t = [], None, None
-    if opt_var == 'q':
-        rd.q(dd)
-        var_name = 'q'
-        tit_var = 'q'
-        vvar.append(dd[var_name]['data'])
-        s = dd[var_name]['s']
-        t = np.array([0])
-
-    if opt_var == 'T-equ':
-        sp_name = ovar[1]
-        tit_var = sp_name + ':\ T'
-        vvar.append(dd[sp_name].nT_equil['T'])
-        s = dd[sp_name].nT_equil['s']
-        t = np.array([0])
-
-    if opt_var == 'T-equ-keV':
-        sp_name = ovar[1]
-        tit_var = sp_name + ':\ T(keV)'
-        vvar.append(dd[sp_name].nT_equil['T_keV'])
-        s = dd[sp_name].nT_equil['s']
-        t = np.array([0])
-
-    if opt_var == 'n-equ':
-        sp_name = ovar[1]
-        tit_var = sp_name + ':\ n'
-        vvar.append(dd[sp_name].nT_equil['n'])
-        s = dd[sp_name].nT_equil['s']
-        t = np.array([0])
-
-    if opt_var == 'n-equ-m3':
-        sp_name = ovar[1]
-        tit_var = sp_name + ':\ n'
-        vvar.append(dd[sp_name].nT_equil['n'] * ne_avr_m3(dd))
-        s = dd[sp_name].nT_equil['s']
-        t = np.array([0])
-
-    res = {
-        'data': np.array(vvar),
-        's': s,
-        't': t,
-        'tit': tit_var
-    }
-    return res
-
-
-# NEW: get a safety factor value at a radial position s1:
+# Get a safety factor value at a radial position s1:
 def q_s1(dd, s1):
     rd.q(dd)
 
