@@ -55,10 +55,6 @@ def choose_one_var_ts(one_signal):
         print('Error: Wrong name of an equilibrium variable.')
         sys.exit(-1)
 
-    # one_signal.update({
-    #     'avr_operation': 'none-'
-    # })
-
     res = {
         'data': np.array([vvar]),
         's': s,

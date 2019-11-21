@@ -233,6 +233,7 @@ def plot_vars_1d(oo):
     # oo.avrs = [[coords, type-coord_av, domains], [], ...]
     vvars = choose_vars(oo)
     n_vars = len(vvars)
+    signals = oo.get('signals', [])
 
     # - input data -
     labx       = oo.get('labx', None)      # x-label
@@ -252,7 +253,6 @@ def plot_vars_1d(oo):
     sel_norm_x = oo.get('sel_norm', 'orig')
     sel_norm_ys = oo.get('sel_norm_ys', None)
     oo_filt = oo.get('oo_filt', {})
-    dds = oo.get('dds', None)  # array with projects [dd1, dd2, dd3, ...]
 
     oo_postprocessing = oo.get('oo_postprocessing', None)  # postprocessing (one operation for every var)
 
@@ -293,7 +293,7 @@ def plot_vars_1d(oo):
         data = vvar['data']
         x = np.array(vvar['x'])
         leg  = vvar['leg']
-        dd_one = dds[ivar]
+        dd_one = signals[ivar]['dd']
 
         oo_var_operations = oo_postprocessing[ivar] \
             if oo_postprocessing is not None else None

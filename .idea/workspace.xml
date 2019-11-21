@@ -2,14 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/signal_definition.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Global_variables.py" beforeDir="false" afterPath="$PROJECT_DIR$/Global_variables.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TEMPLATES/simple_plotting.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/TEMPLATES/simple_plotting.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/common.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/equil_profiles.py" beforeDir="false" afterPath="$PROJECT_DIR$/equil_profiles.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/start_template.py" beforeDir="false" afterPath="$PROJECT_DIR$/start_template.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ymath.py" beforeDir="false" afterPath="$PROJECT_DIR$/ymath.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/signal_definition.py" beforeDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -28,8 +24,8 @@
           <file leaf-file-name="common.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/common.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="459">
-                  <caret line="125" column="47" selection-start-line="125" selection-start-column="47" selection-end-line="125" selection-end-column="47" />
+                <state relative-caret-position="-1505">
+                  <caret line="115" column="12" selection-start-line="115" selection-start-column="12" selection-end-line="115" selection-end-column="12" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                     <element signature="e#506#1064#0" />
@@ -43,16 +39,7 @@
                     <element signature="e#3177#3480#0" />
                     <element signature="e#3507#3716#0" />
                     <element signature="e#3938#3996#0" />
-                    <element signature="e#7797#11908#0" />
                     <element signature="e#7797#7833#0" />
-                    <element signature="e#9080#9360#0" />
-                    <element signature="e#9118#9360#0" />
-                    <element signature="e#9750#9804#0" />
-                    <element signature="e#9875#11808#0" />
-                    <element signature="e#10344#10771#0" />
-                    <element signature="e#10403#10489#0" />
-                    <element signature="e#10554#10625#0" />
-                    <element signature="e#10683#10771#0" />
                     <element signature="e#11960#15214#0" />
                     <element signature="e#12055#12194#0" />
                     <element signature="e#12222#12253#0" />
@@ -495,8 +482,8 @@
           <file leaf-file-name="equil_profiles.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/equil_profiles.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="480">
-                  <caret line="57" selection-start-line="57" selection-end-line="59" selection-end-column="8" />
+                <state relative-caret-position="440">
+                  <caret line="55" column="20" selection-start-line="55" selection-start-column="20" selection-end-line="55" selection-end-column="20" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                     <element signature="e#157#350#0" />
@@ -868,9 +855,9 @@
         <option value="$PROJECT_DIR$/write_data.py" />
         <option value="$PROJECT_DIR$/signal_definition.py" />
         <option value="$PROJECT_DIR$/start_template.py" />
-        <option value="$PROJECT_DIR$/common.py" />
         <option value="$PROJECT_DIR$/Global_variables.py" />
         <option value="$PROJECT_DIR$/ymath.py" />
+        <option value="$PROJECT_DIR$/common.py" />
         <option value="$PROJECT_DIR$/equil_profiles.py" />
       </list>
     </option>
@@ -1059,7 +1046,7 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.5751634" visible="true" weight="0.11643836" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.5751634" visible="true" weight="0.11643836" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32897604" />
       <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.50316125" side_tool="true" weight="0.18736383" />
       <window_info anchor="bottom" id="Find" order="1" weight="0.32897604" />
@@ -1069,7 +1056,7 @@
       <window_info id="Structure" order="1" sideWeight="0.4248366" side_tool="true" weight="0.13751318" />
       <window_info anchor="bottom" id="Terminal" order="7" weight="0.32897604" />
       <window_info id="Favorites" order="2" sideWeight="0.42374727" side_tool="true" weight="0.13751318" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.49683878" visible="true" weight="0.18736383" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49683878" visible="true" weight="0.18736383" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -1142,7 +1129,7 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="2331" />
+      <option name="time" value="2333" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="4492">
@@ -2154,16 +2141,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/signal_definition.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="160">
-          <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
-          <folding>
-            <marker date="1574350775561" expanded="true" signature="78:80" ph="..." />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/curve.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="400">
@@ -2394,10 +2371,49 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/signal_definition.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="160">
+          <caret line="8" lean-forward="true" selection-start-line="8" selection-end-line="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/equil_profiles.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="440">
+          <caret line="55" column="20" selection-start-line="55" selection-start-column="20" selection-end-line="55" selection-end-column="20" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+            <element signature="e#157#350#0" />
+            <element signature="e#373#902#0" />
+            <element signature="e#927#4890#0" />
+            <element signature="e#1147#1283#0" />
+            <element signature="e#1665#1808#0" />
+            <element signature="e#2048#2187#0" />
+            <element signature="e#2459#2598#0" />
+            <element signature="e#2894#3037#0" />
+            <element signature="e#3373#3518#0" />
+            <element signature="e#3807#3950#0" />
+            <element signature="e#4262#4409#0" />
+            <element signature="e#4713#4860#0" />
+            <element signature="e#4914#6584#0" />
+            <element signature="e#5195#5334#0" />
+            <element signature="e#5606#5745#0" />
+            <element signature="e#5967#6122#0" />
+            <element signature="e#6411#6554#0" />
+            <element signature="e#6609#7018#0" />
+            <element signature="e#6849#6987#0" />
+            <element signature="e#7042#8430#0" />
+            <element signature="e#7268#7365#0" />
+            <element signature="e#8026#8167#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/common.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="459">
-          <caret line="125" column="47" selection-start-line="125" selection-start-column="47" selection-end-line="125" selection-end-column="47" />
+        <state relative-caret-position="-1505">
+          <caret line="115" column="12" selection-start-line="115" selection-start-column="12" selection-end-line="115" selection-end-column="12" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
             <element signature="e#506#1064#0" />
@@ -2411,16 +2427,7 @@
             <element signature="e#3177#3480#0" />
             <element signature="e#3507#3716#0" />
             <element signature="e#3938#3996#0" />
-            <element signature="e#7797#11908#0" />
             <element signature="e#7797#7833#0" />
-            <element signature="e#9080#9360#0" />
-            <element signature="e#9118#9360#0" />
-            <element signature="e#9750#9804#0" />
-            <element signature="e#9875#11808#0" />
-            <element signature="e#10344#10771#0" />
-            <element signature="e#10403#10489#0" />
-            <element signature="e#10554#10625#0" />
-            <element signature="e#10683#10771#0" />
             <element signature="e#11960#15214#0" />
             <element signature="e#12055#12194#0" />
             <element signature="e#12222#12253#0" />
@@ -2720,38 +2727,6 @@
             <element signature="e#160780#161345#0" />
             <element signature="e#161210#161325#0" />
             <element signature="e#161424#161732#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/equil_profiles.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="480">
-          <caret line="57" selection-start-line="57" selection-end-line="59" selection-end-column="8" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-            <element signature="e#157#350#0" />
-            <element signature="e#373#902#0" />
-            <element signature="e#927#4890#0" />
-            <element signature="e#1147#1283#0" />
-            <element signature="e#1665#1808#0" />
-            <element signature="e#2048#2187#0" />
-            <element signature="e#2459#2598#0" />
-            <element signature="e#2894#3037#0" />
-            <element signature="e#3373#3518#0" />
-            <element signature="e#3807#3950#0" />
-            <element signature="e#4262#4409#0" />
-            <element signature="e#4713#4860#0" />
-            <element signature="e#4914#6584#0" />
-            <element signature="e#5195#5334#0" />
-            <element signature="e#5606#5745#0" />
-            <element signature="e#5967#6122#0" />
-            <element signature="e#6411#6554#0" />
-            <element signature="e#6609#7018#0" />
-            <element signature="e#6849#6987#0" />
-            <element signature="e#7042#8430#0" />
-            <element signature="e#7268#7365#0" />
-            <element signature="e#8026#8167#0" />
           </folding>
         </state>
       </provider>
