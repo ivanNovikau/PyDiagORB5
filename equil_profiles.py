@@ -45,12 +45,6 @@ def choose_one_var_ts(one_signal):
         vvar = dd[sp_name].nT_equil['n']
         s = dd[sp_name].nT_equil['s']
         t = np.array([0])
-    elif opt_var == 'n-equ-m3':
-        sp_name = one_signal['species_name']
-        tit_var = sp_name + ':\ n'
-        vvar = dd[sp_name].nT_equil['n'] * ne_avr_m3(dd)
-        s = dd[sp_name].nT_equil['s']
-        t = np.array([0])
     else:
         print('Error: Wrong name of an equilibrium variable.')
         sys.exit(-1)

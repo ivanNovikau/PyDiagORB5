@@ -130,14 +130,36 @@ def choose_vars(oo):
     return vvars
 
 
-def plot_vars_2d(oo):
-    # oo.ovars = [[type, opt_var, opts], [], ...]
-    # oo.dds = [dd1, dd2, dd3, ...]
-    # oo.tit_plot
-    # oo.labx, oo.laby
-    oo_use = dict(oo)
+def normalization(sel_norm, dd=None):
+    line_norm, coef_norm = '', 1
+    if sel_norm == 't-ms':
+        line_norm = '\ (ms)'
+        if dd is not None:
+            coef_norm = 1. / dd['wc'] * 1e3
+    if sel_norm == 'energy-transfer-W':
+        line_norm = '\ [W]'
+        if dd is not None:
+            coef_norm = dd['T_speak'] * dd['wc']
+    if sel_norm == 'energy-J':
+        line_norm = '\ [J]'
+        if dd is not None:
+            coef_norm = dd['T_speak']
+    if sel_norm == 'n-m3':
+        line_norm = '\ [m^{-3}]'
+        if dd is not None:
+            coef_norm = equil_profiles.ne_avr_m3(dd)
 
+    res_data = {
+        'line_norm': line_norm,
+        'coef_norm': coef_norm,
+    }
+    return res_data
+
+
+def plot_vars_2d(oo):
+    oo_use = dict(oo)
     n_vars = len(oo['ovars'])
+    signals = oo.get('signals', [])
 
     # correct averaging parameter
     avrs_use = list(oo['avrs'])
@@ -157,26 +179,19 @@ def plot_vars_2d(oo):
     tit_plot   = oo.get('tit_plot', None)  # title
     legs = oo.get('legs', None)
 
-    dds = oo.get('dds', None)
-
     flag_norm     = oo.get('flag_norm', False)
     flag_semilogy = oo.get('flag_semilogy', False)
     flag_colorbar = oo.get('flag_colorbar', True)
     sel_norm_x1   = oo.get('sel_norm_x1', 'orig')
     oo_text_vars  = oo.get('text_vars', None)
 
-    # normalization
-    coef_x1_norm = 1
-    line_x1_norm = ''
-    if sel_norm_x1 == 'orig':
-        coef_x1_norm = 1
-        line_x1_norm = ''
-    if sel_norm_x1 == 't-mili-seconds':
-        line_x1_norm = '(ms)'
+    # normalization (1st stage)
+    line_x1_norm = normalization(sel_norm_x1)['line_norm']
 
     # plotting:
     for ivar in range(n_vars):
         vvar = vvars[ivar]
+        dd_one = signals[ivar]['dd']
         leg = vvar['legs'][0]
         texts_var = oo_text_vars[ivar] if oo_text_vars is not None else []
 
@@ -213,10 +228,8 @@ def plot_vars_2d(oo):
             x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
             data = mix.get_slice(vvars[ivar]['data'], ids_x1, ids_x2)
 
-        # normalization
-        dd_one = dds[ivar]
-        if sel_norm_x1 == 't-mili-seconds':
-            coef_x1_norm = 1. / dd_one['wc'] * 1e3
+        # normalization (2nd stage)
+        coef_x1_norm = normalization(sel_norm_x1, dd_one)['coef_norm']
 
         # additional text:
         for oo_text in texts_var:
@@ -228,9 +241,7 @@ def plot_vars_2d(oo):
 
 
 def plot_vars_1d(oo):
-    # - choose a variable to work with -
-    # oo.ovars = [[type, opt_var, opts], [], ...]
-    # oo.avrs = [[coords, type-coord_av, domains], [], ...]
+    # signals to plot
     vvars = choose_vars(oo)
     n_vars = len(vvars)
     signals = oo.get('signals', [])
@@ -251,25 +262,15 @@ def plot_vars_1d(oo):
     opt_legs      = oo.get('legs', [])
 
     sel_norm_x = oo.get('sel_norm', 'orig')
-    sel_norm_ys = oo.get('sel_norm_ys', None)
+    sel_norm_ys = oo.get('sel_norm_ys', ['orig'])
     oo_filt = oo.get('oo_filt', {})
 
     oo_postprocessing = oo.get('oo_postprocessing', None)  # postprocessing (one operation for every var)
 
     # normalization (first stage):
-    coef_x_norm, line_x_norm = 1, ''
-    line_y_norm = ''
-    if sel_norm_x == 't-mili-seconds':
-        line_x_norm = '(ms)'
-
-    if sel_norm_ys is not None:
-        if len(sel_norm_ys) == 1:
-            if sel_norm_ys[0] == 'energy-transfer':
-                line_y_norm = '\ [kW]'
-            if sel_norm_ys[0] == 'energy-J':
-                line_y_norm = '\ [J]'
-            if sel_norm_ys[0] == 'n':
-                line_y_norm = '\ [m^{-3}]'
+    line_x_norm = normalization(sel_norm_x)['line_norm']
+    line_y_norm = normalization(sel_norm_ys[0])['line_norm'] \
+        if len(sel_norm_ys) == 1 else ''
 
     # -- PLOTTING --
     if labx is not None:
@@ -299,20 +300,12 @@ def plot_vars_1d(oo):
             if oo_postprocessing is not None else None
 
         # normalization (second stage):
-        if sel_norm_x == 't-mili-seconds':
-            coef_x_norm = 1. / dd_one['wc'] * 1e3
+        coef_x_norm = normalization(sel_norm_x, dd_one)['coef_norm']
 
-        line_leg_norm, coef_y_norm = '', 1
-        if sel_norm_ys is not None:
-            if sel_norm_ys[ivar] == 'energy-transfer':
-                line_leg_norm = '\ [W]'
-                coef_y_norm = dd_one['T_speak'] * dd_one['wc']
-            if sel_norm_ys[ivar] == 'energy-J':
-                line_leg_norm = '\ [J]'
-                coef_y_norm = dd_one['T_speak']
-            if sel_norm_ys[ivar] == 'n':
-                line_leg_norm = '\ [m^3]'
-                coef_y_norm = equil_profiles.ne_avr_m3(dd_one)
+        sel_norm_y = sel_norm_ys[ivar] if ivar < len(sel_norm_ys) else 'orig'
+        temp_dict = normalization(sel_norm_y, dd_one)
+        line_leg_norm = temp_dict['line_norm']
+        coef_y_norm   = temp_dict['coef_norm']
 
         # filtering:
         data, x_filt = global_filter_signal(x, data, oo_filt)
