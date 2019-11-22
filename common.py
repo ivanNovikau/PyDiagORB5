@@ -156,65 +156,64 @@ def normalization(sel_norm, dd=None):
     return res_data
 
 
+def choose_wg_normalization(dd, sel_norm):
+    coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = \
+        None, None, '', ''
+    if sel_norm.lower() == 'wc':
+        line_norm_w = line_norm_g = '[\omega_{ci}]'
+        coef_norm_w = coef_norm_g = 1
+    if sel_norm.lower() == 'vt':
+        line_norm_w = line_norm_g = '[sqrt(2)*v_{th,i}/R_0]'
+        coef_norm_w = coef_norm_g = \
+            dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
+    if sel_norm.lower() == 'khz':
+        line_norm_w = '(kHz)'
+        line_norm_g = '(10^3 s)'
+        coef_norm_w = dd['wc'] / (1e3 * 2 * np.pi)
+        coef_norm_g = dd['wc'] / 1e3
+    return coef_norm_w, coef_norm_g, line_norm_w, line_norm_g
+
+
 def plot_vars_2d(oo):
     oo_use = dict(oo)
-    n_vars = len(oo['ovars'])
     signals = oo.get('signals', [])
 
     # correct averaging parameter
-    avrs_use = list(oo['avrs'])
-    for ivar in range(n_vars):
-        if len(avrs_use[ivar]) >= 2:
-            avrs_use[ivar][1] = 'none-'
-        else:
-            avrs_use[ivar].append('none-')
-    oo_use.update({
-        'avrs': avrs_use,
-    })
+    signals_use = list(signals)
+    for one_signal in signals_use:
+        one_signal['avr_operation'] = 'none-'
+    oo_use.update({'signals': signals_use})
     vvars = choose_vars(oo_use)
 
     # additional data:
-    labx = oo.get('labx', None)  # x-label
-    laby = oo.get('laby', None)  # y-label
-    tit_plot   = oo.get('tit_plot', None)  # title
-    legs = oo.get('legs', None)
-
-    flag_norm     = oo.get('flag_norm', False)
-    flag_semilogy = oo.get('flag_semilogy', False)
-    flag_colorbar = oo.get('flag_colorbar', True)
+    ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # dictionary with format
     sel_norm_x1   = oo.get('sel_norm_x1', 'orig')
     oo_text_vars  = oo.get('text_vars', None)
 
     # normalization (1st stage)
     line_x1_norm = normalization(sel_norm_x1)['line_norm']
 
+    # titles
+    titles = ff.get('titles', [])
+
     # plotting:
-    for ivar in range(n_vars):
+    for ivar in range(len(signals)):
         vvar = vvars[ivar]
         dd_one = signals[ivar]['dd']
-        leg = vvar['legs'][0]
         texts_var = oo_text_vars[ivar] if oo_text_vars is not None else []
 
-        # title:
-        if legs is not None:
-            if len(legs) > ivar:
-                leg = legs[ivar]
-        if tit_plot is '':
-            tit_plot_res = leg
-        else:
-            tit_plot_res = tit_plot
+        # current format:
+        ff_one = dict(ff)
 
-        # X,Y labels:
-        if labx is None:
-            labx = vvar.get('labx', None)
-        if laby is None:
-            laby = vvar.get('laby', None)
+        # title
+        ff_one['title'] = titles[ivar] if len(titles) > ivar else vvar['legs'][0]
+
+        # xlabel
+        if ff_one['xlabel'] is not None:
+            ff_one['xlabel'] += line_x1_norm
 
         # create curves:
-        curves = crv.Curves().xlab(labx + line_x1_norm).ylab(laby).tit(tit_plot_res)
-        curves.flag_norm     = flag_norm
-        curves.flag_semilogy = flag_semilogy
-        curves.flag_colorbar = flag_colorbar
+        curves = crv.Curves().set_ff(ff_one)
 
         # original or cartesian 2d grid:
         if vvar['x1'] is 'r' and vvar['x2'] is 'z':
@@ -246,25 +245,12 @@ def plot_vars_1d(oo):
     n_vars = len(vvars)
     signals = oo.get('signals', [])
 
-    # - input data -
-    labx       = oo.get('labx', None)      # x-label
-    laby       = oo.get('laby', None)      # y-label
-    leg_pos    = oo.get('leg_pos', None)   # position of a legend
-    tit_plot   = oo.get('tit_plot', None)  # title
-    stys       = oo.get('stys', None)
-    cols       = oo.get('cols', None)
-    ylim       = oo.get('ylim', None)
-    oo_texts   = oo.get('text', [])
-    xticks     = oo.get('xticks', None)
-
-    flag_norm     = oo.get('flag_norm', False)
-    flag_semilogy = oo.get('flag_semilogy', False)
-    opt_legs      = oo.get('legs', [])
-
+    # - additional data -
+    ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # format
+    oo_texts = oo.get('text', [])
     sel_norm_x = oo.get('sel_norm', 'orig')
     sel_norm_ys = oo.get('sel_norm_ys', ['orig'])
     oo_filt = oo.get('oo_filt', {})
-
     oo_postprocessing = oo.get('oo_postprocessing', None)  # postprocessing (one operation for every var)
 
     # normalization (first stage):
@@ -272,21 +258,24 @@ def plot_vars_1d(oo):
     line_y_norm = normalization(sel_norm_ys[0])['line_norm'] \
         if len(sel_norm_ys) == 1 else ''
 
-    # -- PLOTTING --
-    if labx is not None:
-        labx += line_x_norm
-    if laby is not None:
-        laby += line_y_norm
-    curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)\
-        .leg_pos(leg_pos).ylim(ylim)
-    curves.flag_norm     = flag_norm
-    curves.flag_semilogy = flag_semilogy
-    curves.xt(xticks)
+    # XY labels
+    if ff['xlabel'] is not None:
+        ff['xlabel'] += line_x_norm
+    if ff['ylabel'] is not None:
+        ff['ylabel'] += line_y_norm
+
+    # Create a plot
+    curves = crv.Curves().set_ff(ff)
 
     # additional text:
     for oo_text in oo_texts:
         oText = crv.PlText(oo_text)
         curves.newt(oText)
+
+    # styles, colors, legends
+    stys    = ff.get('styles', [])
+    colors  = ff.get('colors', [])
+    legends = ff.get('legends', [])
 
     # - different variables -
     for ivar in range(n_vars):
@@ -295,7 +284,6 @@ def plot_vars_1d(oo):
         x = np.array(vvar['x'])
         leg  = vvar['leg']
         dd_one = signals[ivar]['dd']
-
         oo_var_operations = oo_postprocessing[ivar] \
             if oo_postprocessing is not None else None
 
@@ -315,6 +303,8 @@ def plot_vars_1d(oo):
         data, x = post_processing(data, x, oo_var_operations)
 
         # domain of plotting
+        # add x_end, x_start in your option
+        # to change limits of plots with rescaling of the plot
         x, ids_x = mix.get_array_oo(oo, x, 'x')
         data = mix.get_slice(data, ids_x)
 
@@ -322,24 +312,21 @@ def plot_vars_1d(oo):
         x    = x * coef_x_norm
         data = data * coef_y_norm
 
-        # styles
-        sty_current = '-'
-        if stys is not None:
-            sty_current = stys[ivar] if ivar < len(stys) else '-'
+        # curve format
+        ff_curve = dict(GLO.DEF_CURVE_FORMAT)
 
-        # color
-        color_current = None
-        if cols is not None:
-            color_current = cols[ivar] if ivar < len(cols) else None
+        # style, color
+        ff_curve['style'] = stys[ivar] if ivar < len(stys) else GLO.DEF_ONE_STYLE
+        ff_curve['color'] = colors[ivar] if ivar < len(colors) else None
 
-        # legends
+        # legend
         one_leg = \
-            leg + [line_leg_norm] if isinstance(leg, list) \
-            else leg + line_leg_norm
-        one_leg = opt_legs[ivar] if len(opt_legs) > ivar else one_leg
+            leg + [line_leg_norm] if isinstance(leg, list) else \
+                leg + line_leg_norm
+        ff_curve['legend'] = legends[ivar] if len(legends) > ivar else one_leg
 
         # - add a new curve -
-        curves.new().XS(x).YS(data).leg(one_leg).sty(sty_current).col(color_current)
+        curves.new().XS(x).YS(data).set_ff(ff_curve)
 
     # - plot the curves -
     if len(curves.list_curves) is not 0:
@@ -4333,25 +4320,6 @@ def get_w_from_v_res(dd, s1, vres, sel_species):
     w_wci = w0 / dd['wc']
 
     return w_wci
-
-
-# get normalization:
-def choose_wg_normalization(dd, sel_norm):
-    coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = \
-        None, None, '', ''
-    if sel_norm.lower() == 'wc':
-        line_norm_w = line_norm_g = '[\omega_{ci}]'
-        coef_norm_w = coef_norm_g = 1
-    if sel_norm.lower() == 'vt':
-        line_norm_w = line_norm_g = '[sqrt(2)*v_{th,i}/R_0]'
-        coef_norm_w = coef_norm_g = \
-            dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
-    if sel_norm.lower() == 'khz':
-        line_norm_w = '(kHz)'
-        line_norm_g = '(10^3 s)'
-        coef_norm_w = dd['wc'] / (1e3 * 2 * np.pi)
-        coef_norm_g = dd['wc'] / 1e3
-    return coef_norm_w, coef_norm_g, line_norm_w, line_norm_g
 
 
 # Test continuous wavelet transform

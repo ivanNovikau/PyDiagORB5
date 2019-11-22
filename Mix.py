@@ -397,6 +397,23 @@ def get_t_intervals_zeros(nsamples, t_work, min_n_gam_periods, gam_t_period, t_j
     return res
 
 
+# Create a line from a list of lines:
+def create_line_from_list(list_lines):
+    if list_lines is None:
+        return None
+
+    res_line = ''
+    if isinstance(list_lines, list):
+        for one_line in list_lines:
+            if one_line is not None:
+                res_line += one_line if res_line == '' else \
+                    '$\n \\boldmath $' + one_line
+    else:
+        res_line = list_lines
+    res_line = r'\boldmath $' + res_line + '$'
+    return res_line
+
+
 
 
 
