@@ -76,14 +76,14 @@ def plot_curves_3d(curves):
         cb.update_ticks()
 
     # set 1d curves
-    set_curves(curves, ax)
+    set_curves(curves, ax, 1)
 
     # format the plot
     format_plot(fig, ax, axes, curves, flag_2d=True)
 
 
-def set_curves(curves, ax):
-    for icrv in range(curves.n()):
+def set_curves(curves, ax, id_curve_start=0):
+    for icrv in range(id_curve_start, curves.n()):
         curve = curves.list_curves[icrv]
 
         y_res = curve.ys
@@ -97,6 +97,13 @@ def set_curves(curves, ax):
         res_color = curve.ff['color'] \
             if curve.ff['color'] is not None \
             else GLO.new_color(icrv)
+
+        # check style:
+        res_style = curve.ff['style']
+        if res_style is None:
+            res_style = GLO.new_style(icrv) \
+                if curves.ff['flag_diff_styles'] \
+                else GLO.DEF_ONE_STYLE
 
         # create a curve on a plot
         if curve.ff['flag_hist']:
@@ -114,21 +121,21 @@ def set_curves(curves, ax):
 
             if not curve.ff['flag_errorbar']:
                 if curves.ff['flag_semilogy']:
-                    ref_lines, = ax.semilogy(curve.xs, abs(y_res), curve.ff['style'])
+                    ref_lines, = ax.semilogy(curve.xs, abs(y_res), res_style)
                 else:
-                    ref_lines, = ax.plot(curve.xs, y_res, curve.ff['style'])
+                    ref_lines, = ax.plot(curve.xs, y_res, res_style)
                 ref_line_format = ref_lines
             else:
                 ref_lines = ax.errorbar(curve.xs, curve.ys,
                                         yerr=curve.ys_err,
                                         xerr=curve.xs_err,
-                                        fmt=curve.ff['style'],
+                                        fmt=res_style,
                                         elinewidth=curve.ff['width'] * GLO.ERR_WIDTH_COEF,
                                         ecolor=res_color)
                 ref_line_format = ref_lines[0]
 
             # set line and marker sizes
-            if curve.ff['style'] == ':':
+            if res_style == ':':
                 ref_line_format.set_dashes(GLO.DASHES_FORMAT)
             mpl.setp(ref_line_format,
                      linewidth=curve.ff['width'],

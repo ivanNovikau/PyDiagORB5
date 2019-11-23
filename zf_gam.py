@@ -6,6 +6,8 @@ import curve as crv
 import gam_theory
 import numpy as np
 from scipy import interpolate
+import sys
+import h5py as h5
 
 
 def reload():
@@ -18,17 +20,34 @@ def reload():
     mix.reload_module(gam_theory)
 
 
+def phibar(dd):
+    if 'phibar' in dd:
+        return
+    path_to_file = dd['path'] + '/orb5_res.h5'
+    f = h5.File(path_to_file, 'r')
+
+    t = np.array(f['/data/var1d/generic/phibar/time'])
+    s = np.array(f['/data/var1d/generic/phibar/coord1'])
+    data = np.array(f['/data/var1d/generic/phibar/data'])
+    dd['phibar'] = {
+        't': t,
+        's': s,
+        'data': data
+    }
+
+
 def erbar(dd):
     if 'erbar' in dd:
         return
-    rd.phibar(dd)
+    phibar(dd)
     t = dd['phibar']['t']
     s = dd['phibar']['s']
     data = - np.gradient(dd['phibar']['data'], s, axis=1)
     dd['erbar'] = {
         't': t,
         's': s,
-        'data': data}
+        'data': data
+    }
 
 
 def vorbar(dd):
@@ -51,53 +70,31 @@ def vorbar(dd):
     dd['vorbar'] = {
         't': t,
         's': s,
-        'data': data}
-
-
-def choose_var(dd, oo):
-    vorbar(dd)
-    t = dd['phibar']['t']
-    s = dd['phibar']['s']
-
-    opt_var = oo.get('opt_var', 'erbar')
-    vvar = dd[opt_var]['data']
-
-    tit_var = ''
-    if opt_var == 'phibar':
-        tit_var = '\overline{\Phi}'
-    if opt_var == 'erbar':
-        tit_var = '\overline{E}_r'
-    if opt_var == 'vorbar':
-        tit_var = '\overline{\Omega}_r'
-
-    res = {
-        'var': vvar,
-        's': s,
-        't': t,
-        'tit': tit_var
+        'data': data
     }
 
-    return res
 
+def choose_one_var_ts(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
 
-# NEW: take signal (t,s)
-def choose_one_var_ts(ovar, dd):
     vorbar(dd)
     t = dd['phibar']['t']
     s = dd['phibar']['s']
-
-    opt_var = ovar[0]
-
-    vvar = dd[opt_var]['data']
-
-    tit_var = ''
-    if opt_var == 'phibar':
+    if opt_var == 'phi':
+        var_name = 'phibar'
         tit_var = '\overline{\Phi}'
-    if opt_var == 'erbar':
+    elif opt_var == 'er':
+        var_name = 'erbar'
         tit_var = '\overline{E}_r'
-    if opt_var == 'vorbar':
+    elif opt_var == 'vorticity':
+        var_name = 'vorbar'
         tit_var = '\overline{\Omega}_r'
+    else:
+        print('Error: Wrong name of an equilibrium variable.')
+        sys.exit(-1)
 
+    vvar = dd[var_name]['data']
     res = {
         'data': vvar,
         's': s,

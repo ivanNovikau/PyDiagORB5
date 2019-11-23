@@ -27,19 +27,19 @@ def choose_one_var_ts(one_signal):
         vvar = dd[var_name]['data']
         s = dd[var_name]['s']
         t = np.array([0])
-    elif opt_var == 'T-equ':
+    elif opt_var == 'T':
         sp_name = one_signal['species_name']
         tit_var = sp_name + ':\ T'
         vvar = dd[sp_name].nT_equil['T']
         s = dd[sp_name].nT_equil['s']
         t = np.array([0])
-    elif opt_var == 'T-equ-keV':
+    elif opt_var == 'T-keV':
         sp_name = one_signal['species_name']
         tit_var = sp_name + ':\ T(keV)'
         vvar = dd[sp_name].nT_equil['T_keV']
         s = dd[sp_name].nT_equil['s']
         t = np.array([0])
-    elif opt_var == 'n-equ':
+    elif opt_var == 'n':
         sp_name = one_signal['species_name']
         tit_var = sp_name + ':\ n'
         vvar = dd[sp_name].nT_equil['n']

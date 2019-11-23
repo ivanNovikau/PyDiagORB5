@@ -266,19 +266,7 @@ def potsc_s(dd, oo):
     return names
 
 
-def phibar(dd):
-    if 'phibar' in dd:
-        return
-    path_to_file = dd['path'] + '/orb5_res.h5'
-    f = h5.File(path_to_file, 'r')
 
-    t = np.array(f['/data/var1d/generic/phibar/time'])
-    s = np.array(f['/data/var1d/generic/phibar/coord1'])
-    phibar_data = np.array(f['/data/var1d/generic/phibar/data'])
-    dd['phibar'] = {
-        't': t,
-        's': s,
-        'data': phibar_data}
 
 
 def radial_heat_flux(dd):

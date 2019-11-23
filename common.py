@@ -206,7 +206,7 @@ def plot_vars_2d(oo):
         ff_one = dict(ff)
 
         # title
-        ff_one['title'] = titles[ivar] if len(titles) > ivar else vvar['legs'][0]
+        ff_one['title'] = titles[ivar] if len(titles) > ivar else vvar['leg']
 
         # xlabel
         if ff_one['xlabel'] is not None:
@@ -221,11 +221,11 @@ def plot_vars_2d(oo):
             _, ids_chi = mix.get_array_oo(oo, vvar['chi'], 'chi')
             x1 = mix.get_slice(vvar['r'], ids_chi, ids_s)
             x2 = mix.get_slice(vvar['z'], ids_chi, ids_s)
-            data = mix.get_slice(vvars[ivar]['data'], ids_s, ids_chi)
+            data = mix.get_slice(vvar['data'], ids_s, ids_chi)
         else:
             x1, ids_x1 = mix.get_array_oo(oo, vvar[vvar['x1']], vvar['x1'])
             x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
-            data = mix.get_slice(vvars[ivar]['data'], ids_x1, ids_x2)
+            data = mix.get_slice(vvar['data'], ids_x1, ids_x2)
 
         # normalization (2nd stage)
         coef_x1_norm = normalization(sel_norm_x1, dd_one)['coef_norm']
@@ -235,7 +235,7 @@ def plot_vars_2d(oo):
             oText = crv.PlText(oo_text)
             curves.newt(oText)
 
-        curves.new().XS(x1 * coef_x1_norm).YS(x2).ZS(data).lev(60)
+        curves.new().XS(x1 * coef_x1_norm).YS(x2).ZS(data)
         cpr.plot_curves_3d(curves)
 
 
@@ -248,7 +248,7 @@ def plot_vars_1d(oo):
     # - additional data -
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # format
     oo_texts = oo.get('text', [])
-    sel_norm_x = oo.get('sel_norm', 'orig')
+    sel_norm_x = oo.get('sel_norm_x', 'orig')
     sel_norm_ys = oo.get('sel_norm_ys', ['orig'])
     oo_filt = oo.get('oo_filt', {})
     oo_postprocessing = oo.get('oo_postprocessing', None)  # postprocessing (one operation for every var)
@@ -316,7 +316,7 @@ def plot_vars_1d(oo):
         ff_curve = dict(GLO.DEF_CURVE_FORMAT)
 
         # style, color
-        ff_curve['style'] = stys[ivar] if ivar < len(stys) else GLO.DEF_ONE_STYLE
+        ff_curve['style'] = stys[ivar]   if ivar < len(stys)   else None
         ff_curve['color'] = colors[ivar] if ivar < len(colors) else None
 
         # legend

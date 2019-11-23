@@ -22,7 +22,7 @@ DASHES_FORMAT = [0.5, 0.4]
 MARKER_EDGE_WIDTH_COEF = 0.5
 ERR_WIDTH_COEF = 0.33
 DEF_MAXLOCATOR = 6
-COLORMAP_LEVELS = 10
+COLORMAP_LEVELS = 60
 DEF_ONE_COLOR = 'blue'
 DEF_ONE_STYLE = '-'
 DEF_COLORMAP = 'jet'
@@ -86,7 +86,7 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
 
 DEF_CURVE_FORMAT = {  # describe format of a curve
     'legend': None,
-    'style': '-',
+    'style': None,
     'width': LINE_WIDTH,
     'color': DEF_ONE_COLOR,
     'markersize': MARKER_SIZE,
@@ -120,6 +120,7 @@ def new_style(count_style):
 # ---------------------------------------------------------------------------
 # --- DEFAULT VARIABLE DEFINITIONS ---
 # ---------------------------------------------------------------------------
+DEF_SPECIES = 'deuterium'
 def_erbar_ts = {
     'type':             'zonal',
     'variable':         'er',
@@ -150,3 +151,38 @@ def create_signal(default_signal, dd):
         'dd': dd
     })
     return [res_signal]
+
+
+def create_signals_dds(default_signal, dds,
+                      types=None, variables=None, species=None,
+                      planes=None, operations=None, domains=None):
+    n_signals = len(dds)
+    res_signals = []
+    for id_signal in range(n_signals):
+        one_type        = get_field(id_signal, types,       default_signal['type'])
+        one_variable    = get_field(id_signal, variables,   default_signal['variable'])
+        one_species     = get_field(id_signal, species,     DEF_SPECIES)
+        one_plane       = get_field(id_signal, planes,      default_signal['plane'])
+        one_operation   = get_field(id_signal, operations,  default_signal['avr_operation'])
+        one_domain      = get_field(id_signal, domains,     default_signal['avr_domain'])
+
+        one_signal = dict(default_signal)
+        one_signal.update({
+            'dd': dds[id_signal],
+            'type': one_type,
+            'variable': one_variable,
+            'species_name': one_species,
+            'plane': one_plane,
+            'avr_operation': one_operation,
+            'avr_domain': one_domain,
+        })
+        res_signals.append(one_signal)
+    return res_signals
+
+
+def get_field(id_field, fields, default_field):
+    if fields is None:
+        return default_field
+    return fields[id_field] \
+        if id_field < len(fields) \
+        else default_field

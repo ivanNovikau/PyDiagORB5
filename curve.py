@@ -23,7 +23,7 @@ class Curve:
     data_norm_to = None
 
     def __init__(self):
-        self.ff = GLO.DEF_CURVE_FORMAT
+        self.ff = dict(GLO.DEF_CURVE_FORMAT)
 
     def name(self, v):
         self.CurveName = v
@@ -86,13 +86,6 @@ class Curves:
         if name_curve is None:
             name_curve = 'curve_' + str(self.n_curves-1)
         self.map_curves[name_curve] = new_curve.name(name_curve)
-
-        # set format of the new curve
-        ff_one_curve = dict(GLO.DEF_CURVE_FORMAT)
-        ff_one_curve['color'] = GLO.new_color(self.n_curves-1)
-        if self.ff['flag_diff_styles']:
-            ff_one_curve['style'] = GLO.new_style(self.n_curves-1)
-        new_curve.set_ff(ff_one_curve)
 
         return new_curve
 
