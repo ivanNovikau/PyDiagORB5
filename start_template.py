@@ -8,6 +8,7 @@ import work_profiles
 import ITG_gamma as itg
 import common
 import Global_variables as GLO
+import Geom as GEO
 from scipy import constants
 
 
@@ -23,6 +24,7 @@ def reload():
     mix.reload_module(itg)
     mix.reload_module(common)
     mix.reload_module(GLO)
+    mix.reload_module(GEO)
 
 
 def set_dd(dd_loc, root, path_loc, name_loc):

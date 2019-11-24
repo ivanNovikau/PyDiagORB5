@@ -2,12 +2,10 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/ControlPlot.py" beforeDir="false" afterPath="$PROJECT_DIR$/ControlPlot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Global_variables.py" beforeDir="false" afterPath="$PROJECT_DIR$/Global_variables.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mix.py" beforeDir="false" afterPath="$PROJECT_DIR$/Mix.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/TEMPLATES/simple_plotting.ipynb" beforeDir="false" afterPath="$PROJECT_DIR$/TEMPLATES/simple_plotting.ipynb" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/common.py" beforeDir="false" afterPath="$PROJECT_DIR$/common.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/curve.py" beforeDir="false" afterPath="$PROJECT_DIR$/curve.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/start_template.py" beforeDir="false" afterPath="$PROJECT_DIR$/start_template.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -26,8 +24,8 @@
           <file leaf-file-name="common.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/common.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-2360">
-                  <caret line="181" lean-forward="true" selection-start-line="181" selection-end-line="181" />
+                <state relative-caret-position="60">
+                  <caret line="243" column="7" selection-start-line="243" selection-start-column="7" selection-end-line="243" selection-end-column="7" />
                   <folding>
                     <element signature="e#506#1064#0" />
                     <element signature="e#1092#4472#0" />
@@ -287,16 +285,12 @@
                     <element signature="e#119946#119999#0" />
                     <element signature="e#120534#120664#0" />
                     <element signature="e#121092#121205#0" />
-                    <element signature="e#123152#132727#0" />
-                    <element signature="e#123152#123216#0" />
                     <element signature="e#128628#129054#0" />
                     <element signature="e#130436#131103#0" />
                     <element signature="e#130599#130717#0" />
                     <element signature="e#130769#131103#0" />
                     <element signature="e#130867#131059#0" />
                     <element signature="e#131141#131195#0" />
-                    <element signature="e#131695#132307#0" />
-                    <element signature="e#132451#132715#0" />
                     <element signature="e#132816#146520#0" />
                     <element signature="e#132816#132837#0" />
                     <element signature="e#135788#136406#0" />
@@ -346,8 +340,8 @@
           <file leaf-file-name="start_template.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/start_template.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="920">
-                  <caret line="56" column="41" selection-start-line="56" selection-start-column="41" selection-end-line="56" selection-end-column="41" />
+                <state relative-caret-position="220">
+                  <caret line="26" column="25" selection-start-line="26" selection-start-column="25" selection-end-line="26" selection-end-column="25" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                   </folding>
@@ -382,7 +376,7 @@
             <entry file="file://$PROJECT_DIR$/Mix.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="220">
-                  <caret line="405" lean-forward="true" selection-start-line="405" selection-end-line="405" />
+                  <caret line="405" selection-start-line="405" selection-end-line="405" />
                   <folding>
                     <element signature="e#0#18#0" expanded="true" />
                     <element signature="e#194#240#0" />
@@ -560,11 +554,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="ControlPlot.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="ControlPlot.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ControlPlot.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="412">
-                  <caret line="223" column="64" lean-forward="true" selection-start-line="223" selection-start-column="64" selection-end-line="223" selection-end-column="64" />
+                <state relative-caret-position="272">
+                  <caret line="216" column="53" selection-start-line="216" selection-start-column="53" selection-end-line="216" selection-end-column="53" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                     <element signature="e#265#432#0" />
@@ -573,11 +567,59 @@
               </provider>
             </entry>
           </file>
+          <file leaf-file-name="Geom.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/Geom.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="500">
+                  <caret line="119" column="30" selection-start-line="119" selection-start-column="30" selection-end-line="119" selection-end-column="30" />
+                  <folding>
+                    <element signature="e#115#226#0" />
+                    <element signature="e#245#378#0" />
+                    <element signature="e#372#378#0" />
+                    <element signature="e#404#709#0" />
+                    <element signature="e#734#1359#0" />
+                    <element signature="e#816#1359#0" />
+                    <element signature="e#920#1056#0" />
+                    <element signature="e#1103#1359#0" />
+                    <element signature="e#1385#2072#0" />
+                    <element signature="e#1477#1686#0" />
+                    <element signature="e#1477#1510#0" />
+                    <element signature="e#1593#1630#0" />
+                    <element signature="e#1735#2072#0" />
+                    <element signature="e#1806#2072#0" />
+                    <element signature="e#2982#3928#0" />
+                    <element signature="e#3109#3130#0" />
+                    <element signature="e#3172#3509#0" />
+                    <element signature="e#3558#3928#0" />
+                    <element signature="e#4015#4330#0" />
+                    <element signature="e#4444#5043#0" />
+                    <element signature="e#4444#4473#0" />
+                    <element signature="e#5187#6414#0" />
+                    <element signature="e#5299#5343#0" />
+                    <element signature="e#6109#6202#0" />
+                    <element signature="e#6242#6366#0" />
+                    <element signature="e#6458#7498#0" />
+                    <element signature="e#6458#6492#0" />
+                    <element signature="e#6640#7479#0" />
+                    <element signature="e#7585#7787#0" />
+                    <element signature="e#7684#7765#0" />
+                    <element signature="e#7901#9223#0" />
+                    <element signature="e#7901#7974#0" />
+                    <element signature="e#8175#8954#0" />
+                    <element signature="e#8365#8914#0" />
+                    <element signature="e#8571#8641#0" />
+                    <element signature="e#8676#8914#0" />
+                    <element signature="e#9078#9189#0" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
           <file leaf-file-name="curve.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/curve.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="158">
-                  <caret line="109" column="11" selection-start-line="109" selection-start-column="11" selection-end-line="109" selection-end-column="11" />
+                <state relative-caret-position="399">
+                  <caret line="107" column="21" selection-start-line="107" selection-start-column="21" selection-end-line="107" selection-end-column="21" />
                   <folding>
                     <element signature="e#113#251#0" />
                     <element signature="e#271#1133#0" />
@@ -595,7 +637,7 @@
                     <element signature="e#1868#2100#0" />
                     <element signature="e#1979#2100#0" />
                     <element signature="e#2135#2172#0" />
-                    <element signature="e#2212#2270#0" />
+                    <element signature="e#2309#2412#0" />
                     <element signature="e#2368#2388#0" />
                     <element signature="e#2430#2719#0" />
                     <element signature="e#2757#3207#0" />
@@ -730,15 +772,15 @@
         <option value="$PROJECT_DIR$/MPR.py" />
         <option value="$PROJECT_DIR$/write_data.py" />
         <option value="$PROJECT_DIR$/signal_definition.py" />
-        <option value="$PROJECT_DIR$/start_template.py" />
         <option value="$PROJECT_DIR$/ymath.py" />
         <option value="$PROJECT_DIR$/read_data.py" />
         <option value="$PROJECT_DIR$/zf_gam.py" />
         <option value="$PROJECT_DIR$/equil_profiles.py" />
-        <option value="$PROJECT_DIR$/curve.py" />
         <option value="$PROJECT_DIR$/Global_variables.py" />
         <option value="$PROJECT_DIR$/ControlPlot.py" />
         <option value="$PROJECT_DIR$/Mix.py" />
+        <option value="$PROJECT_DIR$/curve.py" />
+        <option value="$PROJECT_DIR$/start_template.py" />
         <option value="$PROJECT_DIR$/common.py" />
       </list>
     </option>
@@ -754,7 +796,25 @@
       <sortByType ProjectPane="true" />
       <foldersAlwaysOnTop value="true" />
     </navigator>
-    <panes />
+    <panes>
+      <pane id="Scope" />
+      <pane id="ProjectPane">
+        <subPane>
+          <expand>
+            <path>
+              <item name="PyDiagORB5" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PyDiagORB5" type="462c0819:PsiDirectoryNode" />
+            </path>
+            <path>
+              <item name="PyDiagORB5" type="b2602c69:ProjectViewProjectNode" />
+              <item name="PyDiagORB5" type="462c0819:PsiDirectoryNode" />
+              <item name="TEMPLATES" type="462c0819:PsiDirectoryNode" />
+            </path>
+          </expand>
+          <select />
+        </subPane>
+      </pane>
+    </panes>
   </component>
   <component name="PropertiesComponent">
     <property name="last_opened_file_path" value="$PROJECT_DIR$/../../ORB5-code/orb5-antenna/tools/python/orb5_3d_utils.py" />
@@ -909,7 +969,7 @@
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
     <editor active="true" />
     <layout>
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.5751634" weight="0.11643836" />
+      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.5751634" visible="true" weight="0.11643836" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32897604" />
       <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.50316125" side_tool="true" weight="0.18736383" />
       <window_info anchor="bottom" id="Version Control" order="7" weight="0.3714597" />
@@ -918,7 +978,7 @@
       <window_info id="Structure" order="1" sideWeight="0.4248366" side_tool="true" weight="0.13751318" />
       <window_info anchor="bottom" id="Terminal" order="7" weight="0.32897604" />
       <window_info id="Favorites" order="2" sideWeight="0.42374727" side_tool="true" weight="0.13751318" />
-      <window_info active="true" anchor="bottom" id="Debug" order="3" sideWeight="0.49683878" visible="true" weight="0.18736383" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.49683878" visible="true" weight="0.18736383" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
@@ -983,11 +1043,21 @@
           <line>139</line>
           <option name="timeStamp" value="2105" />
         </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Geom.py</url>
+          <line>99</line>
+          <option name="timeStamp" value="2359" />
+        </line-breakpoint>
+        <line-breakpoint enabled="true" suspend="THREAD" type="python-line">
+          <url>file://$PROJECT_DIR$/Geom.py</url>
+          <line>119</line>
+          <option name="timeStamp" value="2360" />
+        </line-breakpoint>
       </breakpoints>
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="2357" />
+      <option name="time" value="2361" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="4492">
@@ -1228,7 +1298,7 @@
             <element signature="e#1868#2100#0" />
             <element signature="e#1979#2100#0" />
             <element signature="e#2135#2172#0" />
-            <element signature="e#2212#2270#0" />
+            <element signature="e#2309#2412#0" />
             <element signature="e#2368#2388#0" />
             <element signature="e#2430#2719#0" />
             <element signature="e#2757#3207#0" />
@@ -1669,13 +1739,6 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Geom.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="359">
-          <caret line="18" selection-start-line="18" selection-end-line="18" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/MPR.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="454">
@@ -1774,51 +1837,10 @@
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/start_template.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="920">
-          <caret line="56" column="41" selection-start-line="56" selection-start-column="41" selection-end-line="56" selection-end-column="41" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/zf_gam.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="238">
           <caret line="76" column="34" selection-start-line="76" selection-start-column="34" selection-end-line="76" selection-end-column="34" />
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/curve.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="158">
-          <caret line="109" column="11" selection-start-line="109" selection-start-column="11" selection-end-line="109" selection-end-column="11" />
-          <folding>
-            <element signature="e#113#251#0" />
-            <element signature="e#271#1133#0" />
-            <element signature="e#472#508#0" />
-            <element signature="e#541#579#0" />
-            <element signature="e#610#641#0" />
-            <element signature="e#672#703#0" />
-            <element signature="e#734#765#0" />
-            <element signature="e#796#827#0" />
-            <element signature="e#862#899#0" />
-            <element signature="e#935#976#0" />
-            <element signature="e#1035#1133#0" />
-            <element signature="e#1328#1508#0" />
-            <element signature="e#1554#1822#0" />
-            <element signature="e#1868#2100#0" />
-            <element signature="e#1979#2100#0" />
-            <element signature="e#2135#2172#0" />
-            <element signature="e#2212#2270#0" />
-            <element signature="e#2368#2388#0" />
-            <element signature="e#2430#2719#0" />
-            <element signature="e#2757#3207#0" />
-            <element signature="e#2891#3112#0" />
-            <element signature="e#3241#3334#0" />
-          </folding>
         </state>
       </provider>
     </entry>
@@ -1914,7 +1936,7 @@
     <entry file="file://$PROJECT_DIR$/Mix.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="220">
-          <caret line="405" lean-forward="true" selection-start-line="405" selection-end-line="405" />
+          <caret line="405" selection-start-line="405" selection-end-line="405" />
           <folding>
             <element signature="e#0#18#0" expanded="true" />
             <element signature="e#194#240#0" />
@@ -1935,8 +1957,8 @@
     </entry>
     <entry file="file://$PROJECT_DIR$/ControlPlot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="412">
-          <caret line="223" column="64" lean-forward="true" selection-start-line="223" selection-start-column="64" selection-end-line="223" selection-end-column="64" />
+        <state relative-caret-position="272">
+          <caret line="216" column="53" selection-start-line="216" selection-start-column="53" selection-end-line="216" selection-end-column="53" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
             <element signature="e#265#432#0" />
@@ -1944,10 +1966,51 @@
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/curve.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="399">
+          <caret line="107" column="21" selection-start-line="107" selection-start-column="21" selection-end-line="107" selection-end-column="21" />
+          <folding>
+            <element signature="e#113#251#0" />
+            <element signature="e#271#1133#0" />
+            <element signature="e#472#508#0" />
+            <element signature="e#541#579#0" />
+            <element signature="e#610#641#0" />
+            <element signature="e#672#703#0" />
+            <element signature="e#734#765#0" />
+            <element signature="e#796#827#0" />
+            <element signature="e#862#899#0" />
+            <element signature="e#935#976#0" />
+            <element signature="e#1035#1133#0" />
+            <element signature="e#1328#1508#0" />
+            <element signature="e#1554#1822#0" />
+            <element signature="e#1868#2100#0" />
+            <element signature="e#1979#2100#0" />
+            <element signature="e#2135#2172#0" />
+            <element signature="e#2309#2412#0" />
+            <element signature="e#2368#2388#0" />
+            <element signature="e#2430#2719#0" />
+            <element signature="e#2757#3207#0" />
+            <element signature="e#2891#3112#0" />
+            <element signature="e#3241#3334#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/start_template.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="220">
+          <caret line="26" column="25" selection-start-line="26" selection-start-column="25" selection-end-line="26" selection-end-column="25" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/common.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2360">
-          <caret line="181" lean-forward="true" selection-start-line="181" selection-end-line="181" />
+        <state relative-caret-position="60">
+          <caret line="243" column="7" selection-start-line="243" selection-start-column="7" selection-end-line="243" selection-end-column="7" />
           <folding>
             <element signature="e#506#1064#0" />
             <element signature="e#1092#4472#0" />
@@ -2207,16 +2270,12 @@
             <element signature="e#119946#119999#0" />
             <element signature="e#120534#120664#0" />
             <element signature="e#121092#121205#0" />
-            <element signature="e#123152#132727#0" />
-            <element signature="e#123152#123216#0" />
             <element signature="e#128628#129054#0" />
             <element signature="e#130436#131103#0" />
             <element signature="e#130599#130717#0" />
             <element signature="e#130769#131103#0" />
             <element signature="e#130867#131059#0" />
             <element signature="e#131141#131195#0" />
-            <element signature="e#131695#132307#0" />
-            <element signature="e#132451#132715#0" />
             <element signature="e#132816#146520#0" />
             <element signature="e#132816#132837#0" />
             <element signature="e#135788#136406#0" />
@@ -2258,6 +2317,52 @@
             <element signature="e#153264#153829#0" />
             <element signature="e#153694#153809#0" />
             <element signature="e#153908#154216#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Geom.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="500">
+          <caret line="119" column="30" selection-start-line="119" selection-start-column="30" selection-end-line="119" selection-end-column="30" />
+          <folding>
+            <element signature="e#115#226#0" />
+            <element signature="e#245#378#0" />
+            <element signature="e#372#378#0" />
+            <element signature="e#404#709#0" />
+            <element signature="e#734#1359#0" />
+            <element signature="e#816#1359#0" />
+            <element signature="e#920#1056#0" />
+            <element signature="e#1103#1359#0" />
+            <element signature="e#1385#2072#0" />
+            <element signature="e#1477#1686#0" />
+            <element signature="e#1477#1510#0" />
+            <element signature="e#1593#1630#0" />
+            <element signature="e#1735#2072#0" />
+            <element signature="e#1806#2072#0" />
+            <element signature="e#2982#3928#0" />
+            <element signature="e#3109#3130#0" />
+            <element signature="e#3172#3509#0" />
+            <element signature="e#3558#3928#0" />
+            <element signature="e#4015#4330#0" />
+            <element signature="e#4444#5043#0" />
+            <element signature="e#4444#4473#0" />
+            <element signature="e#5187#6414#0" />
+            <element signature="e#5299#5343#0" />
+            <element signature="e#6109#6202#0" />
+            <element signature="e#6242#6366#0" />
+            <element signature="e#6458#7498#0" />
+            <element signature="e#6458#6492#0" />
+            <element signature="e#6640#7479#0" />
+            <element signature="e#7585#7787#0" />
+            <element signature="e#7684#7765#0" />
+            <element signature="e#7901#9223#0" />
+            <element signature="e#7901#7974#0" />
+            <element signature="e#8175#8954#0" />
+            <element signature="e#8365#8914#0" />
+            <element signature="e#8571#8641#0" />
+            <element signature="e#8676#8914#0" />
+            <element signature="e#9078#9189#0" />
           </folding>
         </state>
       </provider>

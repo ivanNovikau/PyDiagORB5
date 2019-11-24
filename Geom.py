@@ -92,8 +92,8 @@ class Curve(Geom):
 class Fill(Geom):
     geom_type = 'FILL'
 
-    xs = None
-    ys = None
+    xs = None  # x-coords of nodes of a polygon (counterclockwise or clockwise)
+    ys = None  # y-coords of nodes of a polygon (counterclockwise or clockwise)
     alpha = 0.2
 
     def draw(self, mpl, ax, axes, oo):

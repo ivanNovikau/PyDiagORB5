@@ -101,9 +101,14 @@ class Curves:
         self.ff = dict(v)
         return self
 
-    def newg(self, one_geom):
-        self.list_geoms.append(one_geom)
-        self.n_geoms += 1
+    def newg(self, geoms):
+        if isinstance(geoms, list):
+            for one_geom in geoms:
+                self.list_geoms.append(one_geom)
+                self.n_geoms += 1
+        else:
+            self.list_geoms.append(geoms)
+            self.n_geoms += 1
 
     def newt(self, oo_text):
         if isinstance(oo_text, list):

@@ -192,7 +192,8 @@ def plot_vars_2d(oo):
     # additional data:
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # dictionary with format
     sel_norm_x1   = oo.get('sel_norm_x1', 'orig')
-    oo_text  = oo.get('text', [])
+    oo_text   = oo.get('text', [])
+    geoms     = oo.get('geoms', [])
     dd = signal['dd']
 
     # normalization (1st stage)
@@ -223,11 +224,9 @@ def plot_vars_2d(oo):
     # normalization (2nd stage)
     coef_x1_norm = normalization(sel_norm_x1, dd)['coef_norm']
 
-    # additional text:
+    # additional text and geometrical figures:
     curves.newt(oo_text)
-
-    # additional figures:
-    # curves.newg()
+    curves.newg(geoms)
 
     # plot
     curves.new().XS(x1 * coef_x1_norm).YS(x2).ZS(data)
@@ -243,6 +242,7 @@ def plot_vars_1d(oo):
     # - additional data -
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # format
     oo_text = oo.get('text', [])
+    geoms = oo.get('geoms', [])
     sel_norm_x = oo.get('sel_norm_x', 'orig')
     sel_norm_ys = oo.get('sel_norm_ys', ['orig'])
     oo_filt = oo.get('oo_filt', {})
@@ -262,8 +262,9 @@ def plot_vars_1d(oo):
     # Create a plot
     curves = crv.Curves().set_ff(ff)
 
-    # additional text:
+    # additional text and geometrical figures:
     curves.newt(oo_text)
+    curves.newg(geoms)
 
     # styles, colors, legends
     stys    = ff.get('styles', [])
