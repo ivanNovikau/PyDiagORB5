@@ -150,7 +150,7 @@ def create_signal(default_signal, dd):
     res_signal.update({
         'dd': dd
     })
-    return [res_signal]
+    return res_signal
 
 
 def create_signals_dds(default_signal, dds,

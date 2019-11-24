@@ -49,6 +49,9 @@ def choose_vars(oo):
         vv['x1'], vv['fx1'], vv['labx'] = xx1[0], xx1[1], xx1[2]
         vv['x2'], vv['fx2'], vv['laby'] = xx2[0], xx2[1], xx2[2]
 
+    if 'signals' not in oo:
+        print('Error: there is not a field \'signals\' to plot.')
+        sys.exit(-1)
     oo_signals = oo.get('signals', [])
     count_signal, vvars = -1, []
     for one_signal in oo_signals:
@@ -176,67 +179,59 @@ def choose_wg_normalization(dd, sel_norm):
 
 def plot_vars_2d(oo):
     oo_use = dict(oo)
-    signals = oo.get('signals', [])
 
     # correct averaging parameter
-    signals_use = list(signals)
-    for one_signal in signals_use:
-        one_signal['avr_operation'] = 'none-'
-    oo_use.update({'signals': signals_use})
-    vvars = choose_vars(oo_use)
+    if 'signal' not in oo:
+        print('Error: there is not a field \'signal\' to plot.')
+        sys.exit(-1)
+    signal = dict(oo.get('signal', None))
+    signal['avr_operation'] = 'none-'
+    oo_use.update({'signals': [signal]})
+    vvar = choose_vars(oo_use)[0]
 
     # additional data:
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # dictionary with format
     sel_norm_x1   = oo.get('sel_norm_x1', 'orig')
-    oo_text_vars  = oo.get('text_vars', None)
+    oo_text  = oo.get('text', [])
+    dd = signal['dd']
 
     # normalization (1st stage)
     line_x1_norm = normalization(sel_norm_x1)['line_norm']
 
-    # titles
-    titles = ff.get('titles', [])
+    # title
+    ff['title'] = ff['title'] if ff['title'] is not None else vvar['leg']
 
-    # plotting:
-    for ivar in range(len(signals)):
-        vvar = vvars[ivar]
-        dd_one = signals[ivar]['dd']
-        texts_var = oo_text_vars[ivar] if oo_text_vars is not None else []
+    # xlabel
+    if ff['xlabel'] is not None:
+        ff['xlabel'] += line_x1_norm
 
-        # current format:
-        ff_one = dict(ff)
+    # create curves:
+    curves = crv.Curves().set_ff(ff)
 
-        # title
-        ff_one['title'] = titles[ivar] if len(titles) > ivar else vvar['leg']
+    # original or cartesian 2d grid:
+    if vvar['x1'] is 'r' and vvar['x2'] is 'z':
+        _, ids_s   = mix.get_array_oo(oo, vvar['s'],   's')
+        _, ids_chi = mix.get_array_oo(oo, vvar['chi'], 'chi')
+        x1 = mix.get_slice(vvar['r'], ids_chi, ids_s)
+        x2 = mix.get_slice(vvar['z'], ids_chi, ids_s)
+        data = mix.get_slice(vvar['data'], ids_s, ids_chi)
+    else:
+        x1, ids_x1 = mix.get_array_oo(oo, vvar[vvar['x1']], vvar['x1'])
+        x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
+        data = mix.get_slice(vvar['data'], ids_x1, ids_x2)
 
-        # xlabel
-        if ff_one['xlabel'] is not None:
-            ff_one['xlabel'] += line_x1_norm
+    # normalization (2nd stage)
+    coef_x1_norm = normalization(sel_norm_x1, dd)['coef_norm']
 
-        # create curves:
-        curves = crv.Curves().set_ff(ff_one)
+    # additional text:
+    curves.newt(oo_text)
 
-        # original or cartesian 2d grid:
-        if vvar['x1'] is 'r' and vvar['x2'] is 'z':
-            _, ids_s   = mix.get_array_oo(oo, vvar['s'],   's')
-            _, ids_chi = mix.get_array_oo(oo, vvar['chi'], 'chi')
-            x1 = mix.get_slice(vvar['r'], ids_chi, ids_s)
-            x2 = mix.get_slice(vvar['z'], ids_chi, ids_s)
-            data = mix.get_slice(vvar['data'], ids_s, ids_chi)
-        else:
-            x1, ids_x1 = mix.get_array_oo(oo, vvar[vvar['x1']], vvar['x1'])
-            x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
-            data = mix.get_slice(vvar['data'], ids_x1, ids_x2)
+    # additional figures:
+    # curves.newg()
 
-        # normalization (2nd stage)
-        coef_x1_norm = normalization(sel_norm_x1, dd_one)['coef_norm']
-
-        # additional text:
-        for oo_text in texts_var:
-            oText = crv.PlText(oo_text)
-            curves.newt(oText)
-
-        curves.new().XS(x1 * coef_x1_norm).YS(x2).ZS(data)
-        cpr.plot_curves_3d(curves)
+    # plot
+    curves.new().XS(x1 * coef_x1_norm).YS(x2).ZS(data)
+    cpr.plot_curves_3d(curves)
 
 
 def plot_vars_1d(oo):
@@ -247,7 +242,7 @@ def plot_vars_1d(oo):
 
     # - additional data -
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # format
-    oo_texts = oo.get('text', [])
+    oo_text = oo.get('text', [])
     sel_norm_x = oo.get('sel_norm_x', 'orig')
     sel_norm_ys = oo.get('sel_norm_ys', ['orig'])
     oo_filt = oo.get('oo_filt', {})
@@ -268,9 +263,7 @@ def plot_vars_1d(oo):
     curves = crv.Curves().set_ff(ff)
 
     # additional text:
-    for oo_text in oo_texts:
-        oText = crv.PlText(oo_text)
-        curves.newt(oText)
+    curves.newt(oo_text)
 
     # styles, colors, legends
     stys    = ff.get('styles', [])

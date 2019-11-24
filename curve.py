@@ -105,8 +105,12 @@ class Curves:
         self.list_geoms.append(one_geom)
         self.n_geoms += 1
 
-    def newt(self, one_text):
-        self.list_text.append(one_text)
+    def newt(self, oo_text):
+        if isinstance(oo_text, list):
+            for one_oo_text in oo_text:
+                self.list_text.append(PlText(one_oo_text))
+        else:
+            self.list_text.append(PlText(oo_text))
 
     def n(self):
         return self.n_curves

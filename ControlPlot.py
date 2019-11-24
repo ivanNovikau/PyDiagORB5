@@ -241,7 +241,7 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
         mpl.text(
             loc_text.x,
             loc_text.y,
-            r'\boldmath $' + loc_text.line + '$',
+            loc_text.line,
             fontsize=GLO.FONT_SIZE * loc_text.coef_width,
             color=loc_text.color
         )

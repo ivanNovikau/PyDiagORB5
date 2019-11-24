@@ -1,10 +1,12 @@
 import numpy as np
 import importlib as imp
 from scipy import signal
+import Global_variables as GLO
 
 
 def reload():
     # Important: put here all modules that you want to reload
+    reload_module(GLO)
     return
 
 
@@ -402,15 +404,19 @@ def create_line_from_list(list_lines):
     if list_lines is None:
         return None
 
+    format_begin = r'\boldmath $'
+    format_middle = '$\n \\boldmath $'
+    format_end = '$'
+
     res_line = ''
     if isinstance(list_lines, list):
         for one_line in list_lines:
             if one_line is not None:
                 res_line += one_line if res_line == '' else \
-                    '$\n \\boldmath $' + one_line
+                    format_middle + one_line
     else:
         res_line = list_lines
-    res_line = r'\boldmath $' + res_line + '$'
+    res_line = format_begin + res_line + format_end
     return res_line
 
 
