@@ -27,14 +27,87 @@ def reload():
     mix.reload_module(Geom)
 
 
-# NEW: take signal (vpar,mu)
-def choose_one_var_vparmu(ovar, dd):
-    opt_var      = ovar[0]
-    species_name = ovar[1]
+def get_vel_grid(dd, species_name):
+    jdote_es_dict = dd[species_name].jdote_es(dd)
+    vpar = np.array(jdote_es_dict['vpar'])
+    mu = np.array(jdote_es_dict['mu'])
 
-    vvar, vpar, mu, tit_var = None, None, None, ''
+    return {'vpar': vpar, 'mu': mu}
+
+
+def efield_species(dd, species_name):
+    efield_dict = dd[species_name].efield(dd)
+    t        = np.array(efield_dict['t'])
+    data = np.array(efield_dict['data'])
+
+    res = {
+        'data': data,
+        't': t
+    }
+
+    return res
+
+
+def jdote_es_species(one_signal, flag_vpar_sum=False, flag_mu_sum=False):
+    # signal parameters
+    dd = one_signal['dd']
+    species_name = one_signal['species']
+    flag_vpar_boundaries = one_signal['flag-VparMuIntegration-ComplexDomain']
+    mu_int = one_signal.get('mu-domain', None)
+    vpar_int = one_signal.get('vpar-domain', None)
+    ids_vpar_area = one_signal.get('ids-vpar-area', None)
+
+    # read raw signal
+    jdote_es_dict = dd[species_name].jdote_es(dd)
+    t       = np.array(jdote_es_dict['t'])
+    vpar    = np.array(jdote_es_dict['vpar'])
+    mu      = np.array(jdote_es_dict['mu'])
+
+    # preliminary velocity domain
+    mu_int_work   = np.array(mu) if mu_int is None else np.array(mu_int)
+    vpar_int_work = np.array(vpar) if vpar_int is None else np.array(vpar_int)
+
+    # take signal in a chosen domain:
+    line_mu, line_vpar = '', ''
+    if not flag_vpar_boundaries:
+        ids_mu,   mu_work,   line_mu   = mix.get_ids(mu, mu_int_work, '{:0.1e}')
+        ids_vpar, vpar_work, line_vpar = mix.get_ids(vpar, vpar_int_work, '{:0.1f}')
+
+        data = jdote_es_dict['data'][:, ids_mu[0]:ids_mu[-1]+1, ids_vpar[0]:ids_vpar[-1]+1]
+        if flag_vpar_sum:
+            data = np.nansum(data, axis=2)
+        if flag_mu_sum:
+            data = np.squeeze(np.nansum(data, axis=1))
+    else:
+        vpar_work, mu_work = None, None
+        vvar_loc_area = np.full([len(t), len(mu)], np.nan)
+        for imu in range(len(mu)):
+            ids_mu1_area = np.array(ids_vpar_area[imu]).astype(int)
+            vvar_loc_area[:, imu] = np.squeeze(np.nansum(
+                    jdote_es_dict['data'][:, imu, ids_mu1_area], axis=1
+            ))
+        data = np.nansum(vvar_loc_area[:, :], axis=1)
+
+    res = {
+        'data': data,
+        't': t,
+        'vpar': vpar_work,
+        'mu':   mu_work,
+        'line_mu': line_mu,
+        'line_vpar': line_vpar,
+    }
+
+    return res
+
+
+def choose_one_var_vparmu(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
+    species_name = one_signal['species']
+
+    t, vvar, vpar, mu, tit_var = None, None, None, None, ''
     if opt_var == 'jdote_es-mean-t':
-        t_int = ovar[2]
+        t_int = one_signal['t-domain']
 
         jdote_es_dict = dd[species_name].jdote_es(dd)
         t, vpar, mu = jdote_es_dict['t'], jdote_es_dict['vpar'], jdote_es_dict['mu']
@@ -44,6 +117,8 @@ def choose_one_var_vparmu(ovar, dd):
 
         tit_var  = species_name + ':\ <(' + 'J\cdot E' + ')>_{t}'
         tit_var = 't = ' + line_t + ':\ ' + tit_var
+    else:
+        mix.error_mes('MPR: Wrong signal name.')
 
     res = {
         'data': vvar,  # (t, mu, vpar)
@@ -56,156 +131,76 @@ def choose_one_var_vparmu(ovar, dd):
     return res
 
 
-# NEW: variable (t)
-def choose_one_var_t(ovar, dd, flag_vpar_boundaries=False):
-    # --- read energy transfer signal ---
-    def jdote_es_species(dd, species_name, mu_int, vpar_int):
-        jdote_es_dict = dd[species_name].jdote_es(dd)
-        t       = np.array(jdote_es_dict['t'])
-        vpar    = np.array(jdote_es_dict['vpar'])
-        mu      = np.array(jdote_es_dict['mu'])
+def choose_one_var_t(one_signal):
+    # --- signal parameters ---
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
+    species_name = one_signal['species']
 
-        mu_int_work, vpar_int_work = mu_int, vpar_int
-        if len(mu_int_work) == 0:
-            mu_int_work = mu
-        if len(vpar_int_work) == 0:
-            vpar_int_work = vpar
-
-        line_mu, line_vpar = '', ''
-        if not flag_vpar_boundaries:
-            ids_mu, mu_int_work,     line_mu   = mix.get_ids(mu, mu_int_work, '{:0.2f}')
-            ids_vpar, vpar_int_work, line_vpar = mix.get_ids(vpar, vpar_int_work, '{:0.1f}')
-
-            vvar_loc = \
-                jdote_es_dict['data'][:, ids_mu[0]:ids_mu[-1]+1, ids_vpar[0]:ids_vpar[-1]+1]
-            vvar_loc = np.sum(vvar_loc, axis=2)
-            vvar_loc = np.sum(vvar_loc[:, :], axis=1)
-        else:
-            vvar_loc_area = np.full([len(t), len(mu)], np.nan)
-            for imu in range(len(mu)):
-                ids_mu1_area = np.array(ids_vpar_area[imu]).astype(int)
-                vvar_loc_area[:, imu] = np.squeeze(np.nansum(
-                        jdote_es_dict['data'][:, imu, ids_mu1_area], axis=1
-                ))
-            vvar_loc = np.nansum(vvar_loc_area[:, :], axis=1)
-
-        return vvar_loc, t, line_mu, line_vpar
-
-    # --- read field energy ---
-    def efield_species(dd, species_name):
-        efield_dict = dd[species_name].efield(dd)
-        t        = np.array(efield_dict['t'])
-        vvar_loc = np.array(efield_dict['data'])
-
-        return vvar_loc, t
-
-    # --- name of a signal ---
-    opt_var = ovar[0]
-    species_name = ovar[1]
-
-    # --- velocity domains ---
-    mu_int, vpar_int = [], []
-    if not flag_vpar_boundaries:
-        if len(ovar) > 2:
-            mu_int   = ovar[2]
-            vpar_int = ovar[3]
-    else:
-        ids_vpar_area = ovar[2]
-        line_name_area = ovar[3]
-
-    # --- Create empty result dictionary ---
-    res = {}
-
-    # --- choose signal ---
+    # heat rate (energy exchange signal, energy transfer signal)
     if opt_var == 'jdote_es' or opt_var == 'je':
+        flag_vpar_boundaries = one_signal['flag-VparMuIntegration-ComplexDomain']
+        line_name_area = one_signal.get('line-name-area', '')
+
         if species_name is not 'total':
-            vvar, t, line_mu, line_vpar = \
-                jdote_es_species(dd, species_name, mu_int, vpar_int)
+            res = jdote_es_species(one_signal, True, True)
         else:
             sp_names = dd['kin_species_names']
-            vvar, t, line_mu, line_vpar = \
-                jdote_es_species(dd, sp_names[0], mu_int, vpar_int)
+            one_signal_use = dict(one_signal).update({'species': sp_names[0]})
+            res = jdote_es_species(one_signal_use, True, True)
             for sp_name in sp_names[1:]:
-                vvar_sp, _, _, _ = jdote_es_species(dd, sp_name, mu_int, vpar_int)
-                vvar += vvar_sp
-        tit_var = species_name + ':\ <(' + 'J\cdot E' + ')>_{\mu, v_{\parallel}}'
+                one_signal_use = dict(one_signal).update({'species': sp_name})
+                res['data'] += jdote_es_species(one_signal_use, True, True)['data']
+        tit = species_name + ':\ <(' + 'J\cdot E' + ')>_{\mu, v_{\parallel}}'
         if not flag_vpar_boundaries:
-            res['line_sum'] = '\mu = ' + line_mu + '$\n$ v_{\parallel} = ' + line_vpar
+            res['line_sum'] = '\mu = ' + res['line_mu'] + '$\n$ v_{\parallel} = ' + res['line_vpar']
         else:
             res['line_sum'] = line_name_area
+
+    # field energy
     elif opt_var == 'efield':
         if species_name is not 'total':
-            vvar, t = efield_species(dd, species_name)
+            res = efield_species(dd, species_name)
         else:
             sp_names = dd['kin_species_names']
-            vvar, t = efield_species(dd, sp_names[0])
+            res = efield_species(dd, sp_names[0])
             for sp_name in sp_names[1:]:
-                vvar_sp, _ = efield_species(dd, sp_name)
-                vvar += vvar_sp
-        tit_var = species_name + ':\ \mathcal{E}'
+                res['data'] += efield_species(dd, sp_name)['data']
+        tit = species_name + ':\ \mathcal{E}'
+
+    # wrong signal name
     else:
-        print('Error: Wrong signal name in MPR.')
-        sys.exit(-1)
+        mix.error_mes('Wrong signal name in MPR.')
 
     # --- save signal ---
-    res.update({
-        'data': vvar,
-        'x': t,
-        'tit': tit_var
-    })
+    final_result = {
+        'data': res['data'],
+        'x': res['t'],
+        't': res['t'],
+        'tit': tit
+    }
 
-    return res
+    return final_result
 
 
-# NEW: variable (t, vpar)
-def choose_one_var_tvpar(ovar, dd):
-    # --- read energy transfer signal ---
-    def jdote_es_species(dd, species_name, mu_int, vpar_int):
-        jdote_es_dict = dd[species_name].jdote_es(dd)
-        t = np.array(jdote_es_dict['t'])
-        vpar = np.array(jdote_es_dict['vpar'])
-        mu = np.array(jdote_es_dict['mu'])
-
-        mu_int_work, vpar_int_work = mu_int, vpar_int
-        if len(mu_int_work) == 0:
-            mu_int_work = mu
-        if len(vpar_int_work) == 0:
-            vpar_int_work = vpar
-
-        ids_mu, mu_int_work, line_mu   = mix.get_ids(mu, mu_int_work, '{:0.1e}')
-        ids_vpar, vpar_work, line_vpar = mix.get_ids(vpar, vpar_int_work, '{:0.1f}')
-
-        vvar_loc = jdote_es_dict['data'][:, ids_mu[0]:ids_mu[-1] + 1, ids_vpar[0]:ids_vpar[-1] + 1]
-        vvar_loc = np.squeeze(np.nansum(vvar_loc, axis=1))
-
-        return vvar_loc, t, vpar_work, line_mu
-
-    # --- name of a signal ---
-    opt_var = ovar[0]
-    species_name = ovar[1]
-
-    # --- velocity domains ---
-    mu_int, vpar_int = [], []
-    if len(ovar) > 2:
-        mu_int   = ovar[2]
-        vpar_int = ovar[3]
+def choose_one_var_tvpar(one_signal):
+    # --- signal parameters ---
+    opt_var = one_signal['variable']
+    species_name = one_signal['species']
 
     # integration in mu:
-    data, t, tit_var, vpar = [], [], [], []
     if opt_var.lower() == 'je':
-        data, t, vpar, line_mu = \
-            jdote_es_species(dd, species_name, mu_int, vpar_int)
-        tit_var = species_name + ':\ <(' + 'J\cdot E' + ')>_{\mu}'
-        tit_var += '$\n$ \mu = ' + line_mu
+        res = jdote_es_species(one_signal, flag_mu_sum=True)
+        tit = species_name + ':\ <(' + 'J\cdot E' + ')>_{\mu}'
+        tit += '$\n$ \mu = ' + res['line_mu']
     else:
-        print('Error: Wrong signal name in MPR.')
-        sys.exit(-1)
+        mix.error_mes('MPR: Wrong signal name.')
 
     res = {
-        'data': data,
-        't':   t,
-        'vpar': vpar,
-        'tit': tit_var
+        'data': res['data'],
+        't':   res['t'],
+        'vpar': res['vpar'],
+        'tit': tit
     }
 
     return res

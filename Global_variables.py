@@ -13,6 +13,16 @@ CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval,
                          # that corresponds to the alpha quantile
 
 # ---------------------------------------------------------------------------
+# --- DEFAULT POST-PROCESSING OPERATIONS ---
+DEF_FILTER_SMOOTH = {
+    'operation': 'filtering',
+    'domain': None,
+    'oo_filters': [
+        {'sel_filt': 'smooth', 'norm_w': 1, 'wind': 3}
+    ]
+}
+
+# ---------------------------------------------------------------------------
 if 'Terminal' in get_ipython().__class__.__name__:
     FLAG_LATEX = True
 else:
@@ -26,6 +36,7 @@ COLORMAP_LEVELS = 60
 DEF_ONE_COLOR = 'blue'
 DEF_ONE_STYLE = '-'
 DEF_COLORMAP = 'jet'
+DEF_COEF_WIDTH_GEOM = 0.5
 if FLAG_LATEX:
     FLAG_LATEX = True
     FIG_SIZE_W = 15
@@ -138,10 +149,39 @@ def_safety_factor = {
 def_Teq_deuterium = {
     'type': 'equ-profile',
     'variable': 'T-equ',
-    'species_name': 'deuterium',
+    'species': 'deuterium',
     'plane': 'ts',
     'avr_operation': 'point-t',
     'avr_domain': 0,
+}
+def_je = {
+    'type':             'mpr',
+    'variable':         'je',
+    'species':          DEF_SPECIES,
+    'mu-domain':        None,
+    'vpar-domain':      None,
+    'flag-VparMuIntegration-ComplexDomain': False,
+    'ids-vpar-area': None,
+    'line-name-area': '',
+}
+def_je_t = {
+    'type':             'mpr',
+    'variable':         'je',
+    'plane':            'tnone',
+    'avr_operation':    'none-',
+    'species':          DEF_SPECIES,
+    'mu-domain':        None,
+    'vpar-domain':      None,
+    'flag-VparMuIntegration-ComplexDomain': False,
+    'ids-vpar-area':    None,
+    'line-name-area': '',
+}
+def_efield = {
+    'type':             'mpr',
+    'variable':         'efield',
+    'plane':            'tnone',
+    'avr_operation':    'none-',
+    'species':          'total',
 }
 
 
@@ -159,19 +199,19 @@ def create_signals_dds(default_signal, dds,
     n_signals = len(dds)
     res_signals = []
     for id_signal in range(n_signals):
-        one_type        = get_field(id_signal, types,       default_signal['type'])
-        one_variable    = get_field(id_signal, variables,   default_signal['variable'])
+        one_type        = get_field(id_signal, types,       default_signal.get('type', None))
+        one_variable    = get_field(id_signal, variables,   default_signal.get('variable', None))
         one_species     = get_field(id_signal, species,     DEF_SPECIES)
-        one_plane       = get_field(id_signal, planes,      default_signal['plane'])
-        one_operation   = get_field(id_signal, operations,  default_signal['avr_operation'])
-        one_domain      = get_field(id_signal, domains,     default_signal['avr_domain'])
+        one_plane       = get_field(id_signal, planes,      default_signal.get('plane', None))
+        one_operation   = get_field(id_signal, operations,  default_signal.get('avr_operation', None))
+        one_domain      = get_field(id_signal, domains,     default_signal.get('avr_domain', None))
 
         one_signal = dict(default_signal)
         one_signal.update({
             'dd': dds[id_signal],
             'type': one_type,
             'variable': one_variable,
-            'species_name': one_species,
+            'species': one_species,
             'plane': one_plane,
             'avr_operation': one_operation,
             'avr_domain': one_domain,

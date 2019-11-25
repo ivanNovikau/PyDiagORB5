@@ -1,5 +1,6 @@
 import Mix as mix
 import Constants as cst
+import Global_variables as GLO
 import numpy as np
 import matplotlib.lines as mlines
 
@@ -8,6 +9,7 @@ def reload():
     # Important: put here all modules that you want to reload
     mix.reload_module(mix)
     mix.reload_module(cst)
+    mix.reload_module(GLO)
 
 
 class Geom:
@@ -15,7 +17,7 @@ class Geom:
     geom_type = 'NONE'
     color = 'b'
     style = '-'
-    width = 2
+    width = GLO.LINE_WIDTH * GLO.DEF_COEF_WIDTH_GEOM
 
     def draw(self, mpl, ax, axes, oo):
         return
@@ -167,7 +169,17 @@ def pass_trap_boundary(dd, mu):
     mu_cone = np.concatenate(
         (np.flipud(mu), mu)
     )
-    return cone_pt, mu_cone, lower_branch, upper_branch,
+
+    obj_geom = Curve()
+    obj_geom.add_curve(mu_cone, cone_pt)
+    obj_geom.color = 'white'
+
+    res = {
+        'geom': obj_geom,
+        'lower_branch': lower_branch,
+        'upper_branch': upper_branch
+    }
+    return res
 
 
 # Parabola x = a * y^2 + x0, where x - xaxis of a plot, y - yaxis of a plot

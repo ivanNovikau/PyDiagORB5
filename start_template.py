@@ -9,6 +9,7 @@ import ITG_gamma as itg
 import common
 import Global_variables as GLO
 import Geom as GEO
+import MPR as mpr
 from scipy import constants
 
 
@@ -25,6 +26,7 @@ def reload():
     mix.reload_module(common)
     mix.reload_module(GLO)
     mix.reload_module(GEO)
+    mix.reload_module(mpr)
 
 
 def set_dd(dd_loc, root, path_loc, name_loc):
@@ -37,6 +39,8 @@ def set_dd(dd_loc, root, path_loc, name_loc):
     return dd_loc
 
 
+# REMARK: change the paths below (root path and relative path)
+# to the corresponding paths to your projects
 reload()
 root_ref = 'd:/Work-Projects/MyProgs/ORB_data/MPR/'
 root_lin = 'd:/Work-Projects/MyProgs/ORB_data/NLED/LIN/'
@@ -66,3 +70,7 @@ nb025_f009_orig = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/f009-orig', 'NL:\ ES\ EGAMb:\ f = 0.0949')
 nb025k_f001_dt5 = set_dd(dict(dd_init), root_nl,
                         '/n0-egam/025b/KIN/f001', 'NL\ KIN:\ n_{EP}/n_e = 0.01')
+nb025_v35_T025 = set_dd(dict(dd_init), root_nl,
+                        '/n0-egam/025b/scan-T-v35/T025',
+                        'NL:\ ES\ EGAMb:\ v_{\parallel} = 3.5,\ f = 0.095,\ T = 0.25'
+                        )

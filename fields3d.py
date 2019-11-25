@@ -397,8 +397,7 @@ def init_antenna(dd, name_antenna_file='', structure_name='antenna', flag_orb_sh
                 read_coef_bspl_orb_shape(0)
                 read_coef_bspl_orb_shape(1)
         else:
-            print('ERROR: <' + ffa['nsel_type'] + '> is a wrong antenna type')
-            sys.exit(-1)
+            mix.error_mes('<' + ffa['nsel_type'] + '> is a wrong antenna type')
     except:
         f.close()
         sys.exit(-1)

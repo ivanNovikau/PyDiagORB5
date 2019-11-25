@@ -14,11 +14,11 @@ import gam_theory
 import gam_exp
 import Geom as geom
 import fields3d
+import arbitrary_data as ARD
 import Global_variables as GLO
 import numpy as np
 import scipy.signal
 from scipy.stats import norm as stat_norm
-import sys
 import pywt
 from scipy import constants
 
@@ -41,6 +41,7 @@ def reload():
     mix.reload_module(gam_exp)
     mix.reload_module(geom)
     mix.reload_module(fields3d)
+    mix.reload_module(ARD)
     mix.reload_module(GLO)
 
 
@@ -50,8 +51,8 @@ def choose_vars(oo):
         vv['x2'], vv['fx2'], vv['laby'] = xx2[0], xx2[1], xx2[2]
 
     if 'signals' not in oo:
-        print('Error: there is not a field \'signals\' to plot.')
-        sys.exit(-1)
+        mix.error_mes('there is not a field \'signals\' to plot.')
+
     oo_signals = oo.get('signals', [])
     count_signal, vvars = -1, []
     for one_signal in oo_signals:
@@ -73,9 +74,10 @@ def choose_vars(oo):
             ref_module = distribution
         elif opt_type.lower() == 'mpr':
             ref_module = MPR
+        elif opt_type.lower() == 'arbitrary':
+            ref_module = ARD
         else:
-            print('Error: Wrong name of signal type.')
-            sys.exit(-1)
+            mix.error_mes('Wrong signal type.')
 
         # choose coordinate system, where the signal will be considered:
         opt_plane = one_signal['plane']
@@ -94,6 +96,11 @@ def choose_vars(oo):
             x1x2_format(vvar_plane,
                         ['t', '{:0.3e}', 't'],
                         ['vpar', '{:0.3f}', 'v_{\parallel}'])
+        elif opt_plane == 'tnone':
+            vvar_plane = ref_module.choose_one_var_t(one_signal)
+            x1x2_format(vvar_plane,
+                        ['t', '{:0.3e}', 't'],
+                        [None, None, None])
         elif opt_plane == 'vparmu':
             vvar_plane = ref_module.choose_one_var_vparmu(one_signal)
             x1x2_format(vvar_plane,
@@ -109,22 +116,34 @@ def choose_vars(oo):
             x1x2_format(vvar_plane,
                         ['s', '{:0.3f}', 's'],
                         ['chi', '{:0.3f}', '\chi'])
+        elif opt_plane == 'xy':
+            vvar_plane = ref_module.choose_one_var_xy(one_signal)
+            x1x2_format(vvar_plane,
+                [vvar_plane['x1_name'], vvar_plane['x1_format'], vvar_plane['x1_label']],
+                [vvar_plane['x2_name'], vvar_plane['x2_format'], vvar_plane['x2_label']],
+            )
+        elif opt_plane == 'xnone':
+            vvar_plane = ref_module.choose_one_var_x(one_signal)
+            x1x2_format(vvar_plane,
+                [vvar_plane['x1_name'], vvar_plane['x1_format'], vvar_plane['x1_label']],
+                [None, None, None],
+            )
         else:
-            print('Error: Wrong name of plane in average_one_var')
-            sys.exit(-1)
+            mix.error_mes('Wrong name of plane.')
 
         # set reference signal:
         one_signal.update({'flag_var_first': True}) if count_signal == 0 else \
             one_signal.update({'flag_var_first': False})
         if one_signal['flag_var_first'] and 'x2' in vvar_plane:
-            oo.update({vvar_plane['x1'] + '_ref': vvar_plane[vvar_plane['x1']],
-                       vvar_plane['x2'] + '_ref': vvar_plane[vvar_plane['x2']]})
+            oo.update({vvar_plane['x1'] + '_ref': vvar_plane[vvar_plane['x1']]})
+            if vvar_plane['x2'] is not None:
+                oo.update({vvar_plane['x2'] + '_ref': vvar_plane[vvar_plane['x2']]})
 
         # averaging of the chosen signal
         vvar = ymath.avr_x1x2(vvar_plane, one_signal, oo)
 
         # signal legend
-        pr_name = one_signal['dd']['project_name']
+        pr_name = one_signal['dd']['project_name'] if 'dd' in one_signal else ''
         pr_name += ':\ ' if pr_name is not '' else ''
         vvar['leg'] = pr_name + vvar['line_avr'] + ':\ ' + vvar['tit']
 
@@ -133,57 +152,13 @@ def choose_vars(oo):
     return vvars
 
 
-def normalization(sel_norm, dd=None):
-    line_norm, coef_norm = '', 1
-    if sel_norm == 't-ms':
-        line_norm = '\ (ms)'
-        if dd is not None:
-            coef_norm = 1. / dd['wc'] * 1e3
-    if sel_norm == 'energy-transfer-W':
-        line_norm = '\ [W]'
-        if dd is not None:
-            coef_norm = dd['T_speak'] * dd['wc']
-    if sel_norm == 'energy-J':
-        line_norm = '\ [J]'
-        if dd is not None:
-            coef_norm = dd['T_speak']
-    if sel_norm == 'n-m3':
-        line_norm = '\ [m^{-3}]'
-        if dd is not None:
-            coef_norm = equil_profiles.ne_avr_m3(dd)
-
-    res_data = {
-        'line_norm': line_norm,
-        'coef_norm': coef_norm,
-    }
-    return res_data
-
-
-def choose_wg_normalization(dd, sel_norm):
-    coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = \
-        None, None, '', ''
-    if sel_norm.lower() == 'wc':
-        line_norm_w = line_norm_g = '[\omega_{ci}]'
-        coef_norm_w = coef_norm_g = 1
-    if sel_norm.lower() == 'vt':
-        line_norm_w = line_norm_g = '[sqrt(2)*v_{th,i}/R_0]'
-        coef_norm_w = coef_norm_g = \
-            dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
-    if sel_norm.lower() == 'khz':
-        line_norm_w = '(kHz)'
-        line_norm_g = '(10^3 s)'
-        coef_norm_w = dd['wc'] / (1e3 * 2 * np.pi)
-        coef_norm_g = dd['wc'] / 1e3
-    return coef_norm_w, coef_norm_g, line_norm_w, line_norm_g
-
-
 def plot_vars_2d(oo):
     oo_use = dict(oo)
 
     # correct averaging parameter
     if 'signal' not in oo:
-        print('Error: there is not a field \'signal\' to plot.')
-        sys.exit(-1)
+        mix.error_mes('there is not a field \'signal\' to plot.')
+
     signal = dict(oo.get('signal', None))
     signal['avr_operation'] = 'none-'
     oo_use.update({'signals': [signal]})
@@ -194,10 +169,10 @@ def plot_vars_2d(oo):
     sel_norm_x1   = oo.get('sel_norm_x1', 'orig')
     oo_text   = oo.get('text', [])
     geoms     = oo.get('geoms', [])
-    dd = signal['dd']
+    dd = signal['dd'] if 'dd' in signal else None
 
     # normalization (1st stage)
-    line_x1_norm = normalization(sel_norm_x1)['line_norm']
+    line_x1_norm = mix.normalization(sel_norm_x1)['line_norm']
 
     # title
     ff['title'] = ff['title'] if ff['title'] is not None else vvar['leg']
@@ -222,7 +197,7 @@ def plot_vars_2d(oo):
         data = mix.get_slice(vvar['data'], ids_x1, ids_x2)
 
     # normalization (2nd stage)
-    coef_x1_norm = normalization(sel_norm_x1, dd)['coef_norm']
+    coef_x1_norm = mix.normalization(sel_norm_x1, dd)['coef_norm']
 
     # additional text and geometrical figures:
     curves.newt(oo_text)
@@ -236,8 +211,8 @@ def plot_vars_2d(oo):
 def plot_vars_1d(oo):
     # signals to plot
     vvars = choose_vars(oo)
-    n_vars = len(vvars)
     signals = oo.get('signals', [])
+    n_vars = len(vvars)
 
     # - additional data -
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # format
@@ -245,12 +220,11 @@ def plot_vars_1d(oo):
     geoms = oo.get('geoms', [])
     sel_norm_x = oo.get('sel_norm_x', 'orig')
     sel_norm_ys = oo.get('sel_norm_ys', ['orig'])
-    oo_filt = oo.get('oo_filt', {})
-    oo_postprocessing = oo.get('oo_postprocessing', None)  # postprocessing (one operation for every var)
+    oo_postprocessing = oo.get('oo_postprocessing', None)
 
     # normalization (first stage):
-    line_x_norm = normalization(sel_norm_x)['line_norm']
-    line_y_norm = normalization(sel_norm_ys[0])['line_norm'] \
+    line_x_norm = mix.normalization(sel_norm_x)['line_norm']
+    line_y_norm = mix.normalization(sel_norm_ys[0])['line_norm'] \
         if len(sel_norm_ys) == 1 else ''
 
     # XY labels
@@ -275,28 +249,24 @@ def plot_vars_1d(oo):
     for ivar in range(n_vars):
         vvar = vvars[ivar]
         data = vvar['data']
-        x = np.array(vvar['x'])
+        x    = np.array(vvar['x'])
         leg  = vvar['leg']
-        dd_one = signals[ivar]['dd']
+        dd_one = signals[ivar]['dd'] if 'dd' in signals[ivar] else None
         oo_var_operations = oo_postprocessing[ivar] \
             if oo_postprocessing is not None else None
 
         # normalization (second stage):
-        coef_x_norm = normalization(sel_norm_x, dd_one)['coef_norm']
+        coef_x_norm = mix.normalization(sel_norm_x, dd_one)['coef_norm']
 
         sel_norm_y = sel_norm_ys[ivar] if ivar < len(sel_norm_ys) else 'orig'
-        temp_dict = normalization(sel_norm_y, dd_one)
+        temp_dict = mix.normalization(sel_norm_y, dd_one)
         line_leg_norm = temp_dict['line_norm']
         coef_y_norm   = temp_dict['coef_norm']
 
-        # filtering:
-        data, x_filt = global_filter_signal(x, data, oo_filt)
-        data = np.interp(x, x_filt, data)
-
         # - post-processing -
-        data, x = post_processing(data, x, oo_var_operations)
+        data, x = ymath.post_processing(data, x, oo_var_operations)
 
-        # domain of plotting
+        # domain of plotting:
         # add x_end, x_start in your option
         # to change limits of plots with rescaling of the plot
         x, ids_x = mix.get_array_oo(oo, x, 'x')
@@ -325,98 +295,6 @@ def plot_vars_1d(oo):
     # - plot the curves -
     if len(curves.list_curves) is not 0:
         cpr.plot_curves(curves)
-
-
-def post_processing(data, x, oo_operations):
-    # - additional functions -
-    def get_x_data_interval(x_domain_loc, x_loc, data_loc):
-        ids_x, _, _ = mix.get_ids(x_loc, x_domain_loc)
-        ids_x = range(ids_x[0], ids_x[-1] + 1)
-        return  data_loc[ids_x], x_loc[ids_x]
-
-    def incr(ii):
-        ii[0] += 1
-        return ii[0]
-
-    # - check operations -
-    if oo_operations is None:
-        return data, x
-
-    # adjust the structure of the oo_operations variable
-    if not isinstance(oo_operations[0], list):
-        oo_operations = [oo_operations]
-
-    # -- PERFORM CONSEQUENTLY ALL OPERATIONS --
-    data_work, x_work = np.array(data), np.array(x)
-    for oo_operation in oo_operations:
-        # - index of an option in the oo_operations -
-        idoo = [-1]
-
-        # - operation type and working domain -
-        sel_operation = oo_operation[incr(idoo)]
-        x_domain      = oo_operation[incr(idoo)] if len(oo_operation) > 1 else [x_work[0], x_work[-1]]
-        if x_domain is None:
-            x_domain = [x_work[0], x_work[-1]]
-        data_work, x_work = get_x_data_interval(x_domain, x_work, data_work)
-        data_temp, x_temp = [], []
-
-        # * integration from beginning till the point for every selected x-steps *
-        if sel_operation is None:
-            data_temp, x_temp = data_work, x_work
-        elif sel_operation == 'integration-accumulation':
-            width_domain = oo_operation[incr(idoo)]
-
-            x_start = x_work[0]
-            x_end = x_start + width_domain
-            while x_end <= x_work[-1]:
-                data_curr, x_curr = get_x_data_interval([x_start, x_end], x_work, data_work)
-                value_curr = np.trapz(data_curr, x=x_curr)
-
-                data_temp.append(value_curr)
-                x_temp.append(x_end)
-
-                x_end += width_domain
-
-        # * integration within every x-step *
-        elif sel_operation == 'integration-step':
-            width_domain = oo_operation[incr(idoo)]
-            step_domain  = oo_operation[incr(idoo)]
-
-            x_start = x_work[0]
-            x_end   = x_start + width_domain
-            while x_end <= x_work[-1]:
-                data_curr, x_curr = get_x_data_interval([x_start, x_end], x_work, data_work)
-                value_curr = np.trapz(data_curr, x=x_curr)
-
-                x_point = (x_end + x_start) / 2.
-                data_temp.append(value_curr)
-                x_temp.append(x_point)
-
-                x_start += step_domain
-                x_end    = x_start + width_domain
-
-        # * get peaks of absolute signal *
-        elif sel_operation == 'abs_peaks':
-            ids_abs_peaks, _ = scipy.signal.find_peaks(np.abs(data_work))
-            x_temp    = x_work[ids_abs_peaks]
-            data_temp = data_work[ids_abs_peaks]
-
-        # * take absolute signal *
-        elif sel_operation == 'abs':
-            data_temp, x_temp = np.abs(data_work), x_work
-
-        # * multiply by a value *
-        elif sel_operation == 'mult':
-            coef = oo_operation[incr(idoo)]
-            data_temp, x_temp = coef * data_work, x_work
-        else:
-            print('Wrong operation name')
-            sys.exit(-1)
-
-        # - save modification -
-        data_work, x_work = np.array(data_temp), np.array(x_temp)
-
-    return data_work, x_work
 
 
 # NEW: plot Continuous Wavelet transform
@@ -660,7 +538,7 @@ def plot_fft_in_time(oo):
         leg  = vvar['legs'][0]
 
         # filtering (performed in the whole domain)
-        data_filt, x_filt = global_filter_signal(x, data, oo_filt)
+        data_filt, x_filt = ymath.global_filter_signal(x, data, oo_filt)
         data_filt = np.interp(x, x_filt, data_filt)
 
         # shifted signal:
@@ -734,9 +612,9 @@ def plot_fft_in_time(oo):
                 vpar_max[id_t] = vpar_f_pos[id_f_max[id_t]]
                 vpar_min[id_t] = vpar_f_pos[id_f_min[id_t]]
                 vpar_zero[id_t] = vpar_f_pos[id_f_zero[id_t]]
-            w_from_max = get_w_from_v_res(dd_one, s1_q, vpar_max, species_name)
-            w_from_min = get_w_from_v_res(dd_one, s1_q, vpar_min, species_name)
-            w_from_zero = get_w_from_v_res(dd_one, s1_q, vpar_zero, species_name)
+            w_from_max = ymath.get_w_from_v_res(dd_one, s1_q, vpar_max, species_name)
+            w_from_min = ymath.get_w_from_v_res(dd_one, s1_q, vpar_min, species_name)
+            w_from_zero = ymath.get_w_from_v_res(dd_one, s1_q, vpar_zero, species_name)
 
             curves_draw_vres_max = geom.Curve()
             curves_draw_vres_min = geom.Curve()
@@ -1020,7 +898,7 @@ def get_value_signal(oo):
         if sel_operation == 'filter-mean':
             oo_filt = oo.get('oo_filt', None)
             data_work = data[ids_x_op]
-            data_filt, x_filt = global_filter_signal(x_work, data_work, oo_filt)
+            data_filt, x_filt = ymath.global_filter_signal(x_work, data_work, oo_filt)
             data_filt = np.interp(x_work, x_filt, data_filt)
             value_res = np.mean(data_filt)
             var_res   = np.var(data_filt)
@@ -1070,168 +948,6 @@ def get_value_signal(oo):
     for id_res in range(len(props)):
         print(desc[id_res] + ':\ ' + '{:0.3e} +- {:0.3e}'
               .format(props[id_res], vars_res[id_res]))
-
-
-def operation_along_x_old(oo):
-    def perform_operation(data, x, oo_one_operation, name_x):
-        def get_x_data_interval(x_domain_loc, x_loc, data_loc):
-            ids_x, _, _ = mix.get_ids(x_loc, x_domain_loc)
-            ids_x = range(ids_x[0], ids_x[-1] + 1)
-            return  data_loc[ids_x], x_loc[ids_x]
-
-        # operation and working domain
-        sel_operation = oo_one_operation[0]
-        x_domain = oo_one_operation[1]
-        data_work, x_work = get_x_data_interval(x_domain, x, data)
-
-        data_res, x_res = [], []
-        line_op1, line_op2 = '', ''
-        if sel_operation == 'integration-accumulation':
-            line_op1, line_op2 = '\\int_0^{' + name_x + '}', 'd' + name_x
-            width_domain = oo_one_operation[2]
-
-            x_start = x_work[0]
-            x_end = x_start + width_domain
-            while x_end <= x_work[-1]:
-                data_curr, x_curr = get_x_data_interval([x_start, x_end], x_work, data_work)
-                value_curr = np.trapz(data_curr, x=x_curr)
-
-                data_res.append(value_curr)
-                x_res.append(x_end)
-
-                x_end += width_domain
-            x_res = np.array(x_res)
-            data_res = np.array(data_res)
-        if sel_operation == 'integration-step':
-            line_op1, line_op2 = '\\int_{' + name_x + '1}^{' + name_x + '2}', 'd' + name_x
-            width_domain = oo_one_operation[2]
-            step_domain  = oo_one_operation[3]
-
-            x_start = x_work[0]
-            x_end   = x_start + width_domain
-            while x_end <= x_work[-1]:
-                data_curr, x_curr = get_x_data_interval([x_start, x_end], x_work, data_work)
-                value_curr = np.trapz(data_curr, x=x_curr)
-
-                x_point = (x_end + x_start) / 2.
-                data_res.append(value_curr)
-                x_res.append(x_point)
-
-                x_start += step_domain
-                x_end    = x_start + width_domain
-            x_res = np.array(x_res)
-            data_res = np.array(data_res)
-        if sel_operation == 'none':
-            data_res = np.array(data_work)
-            x_res    = np.array(x_work)
-
-        return data_res, x_res, line_op1, line_op2
-
-    # --- INPUT parameters ---
-    vvars = choose_vars(oo)
-    n_vars = len(vvars)
-    oo_operations = oo.get('oo_operations', None)  # for every var (not averaging)
-    dds = oo.get('dds', None)
-
-    sel_norm_x = oo.get('sel_norm_x', 'orig')
-    sel_norm_ys = oo.get('sel_norm_ys', 'orig')
-    labx       = oo.get('labx', None)  # x-label
-    laby       = oo.get('laby', None)  # y-label
-    leg_pos    = oo.get('leg_pos', None)
-    tit_plot   = oo.get('tit_plot', None)  # title
-    stys       = oo.get('stys', None)
-    cols       = oo.get('cols', None)
-    ylim       = oo.get('ylim', None)
-
-    flag_norm     = oo.get('flag_norm', False)
-    flag_semilogy = oo.get('flag_semilogy', False)
-    opt_legs      = oo.get('legs', [])
-    flag_abs = oo.get('flag_abs', False)
-
-    # normalization (first stage):
-    coef_x_norm, line_x_norm = 1, ''
-    coef_y_norm, line_y_norm = 1, ''
-    if sel_norm_x == 't-mili-seconds':
-        line_x_norm = '(ms)'
-
-    if len(sel_norm_ys) == 1:
-        if sel_norm_ys[0] == 'energy-transfer':
-            line_y_norm = '\ [kW/m^3]'
-        if sel_norm_ys[0] == 'energy-Jpm':
-            line_y_norm = '\ [J/m^3]'
-
-    # --- Calculation ---
-    data_vars, x_vars, line_start_vars, line_end_vars = [], [], [], []
-    for ivar in range(n_vars):
-        vvar = vvars[ivar]
-        data = vvar['data'][0]
-        x     = vvar['x']
-        name_x = vvar['name_x']
-        oo_one_operation = oo_operations[ivar]
-
-        data_one, x_one, line_start_one, line_end_one = \
-            perform_operation(data, x, oo_one_operation, name_x)
-        data_vars.append(data_one)
-        x_vars.append(x_one)
-        line_start_vars.append(line_start_one)
-        line_end_vars.append(line_end_one)
-
-    # --- Plotting ---
-    if labx is not None: labx += line_x_norm
-    if laby is not None: laby += line_y_norm
-    curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)\
-        .leg_pos(leg_pos).ylim(ylim)
-    curves.flag_norm     = flag_norm
-    curves.flag_semilogy = flag_semilogy
-    for ivar in range(n_vars):
-        vvar = vvars[ivar]
-        legs = vvar['legs']
-
-        # normalization (second stage):
-        dd_one = dds[ivar]
-        if sel_norm_x == 't-mili-seconds':
-            coef_x_norm = 1. / dd_one['wc'] * 1e3
-
-        line_y_norm = ''
-        if sel_norm_ys[ivar] == 'energy-transfer':
-            line_y_norm = '\ [kW/m^3]'
-            T_speak_eV   = dd_one['T_speak'] / constants.elementary_charge
-            coef_y_norm  = dd_one['cs'] * T_speak_eV / (dd_one['a0'])
-            coef_y_norm *= 1.e-3
-        if sel_norm_ys[ivar] == 'energy-Jpm':
-            line_y_norm = '\ [J/m^3]'
-            T_speak_eV  = dd_one['T_speak'] / constants.elementary_charge
-            coef_y_norm = dd_one['cs'] * T_speak_eV / (dd_one['a0'] * dd_one['wc'])
-
-        # get data
-        x    = x_vars[ivar]    * coef_x_norm
-        data = data_vars[ivar] * coef_y_norm
-
-        # styles
-        sty_current = '-'
-        if stys is not None:
-            if ivar < len(stys):
-                sty_current = stys[ivar]
-
-        # colors
-        color_current = None
-        if cols is not None:
-            if ivar < len(cols):
-                color_current = cols[ivar]
-
-        # legends
-        one_leg = legs[0] + line_y_norm
-        if ivar < len(opt_legs):
-            if opt_legs[ivar] is not None:
-                one_leg = opt_legs[ivar]
-
-        curves.new()\
-            .XS(x).YS(data)\
-            .leg(one_leg).sty(sty_current).col(color_current)
-        if flag_abs:
-            curves.list_curves[-1].YS(np.abs(data))
-    if len(curves.list_curves) is not 0:
-        cpr.plot_curves(curves)
 
 
 # NEW: FFT 1d:
@@ -1658,8 +1374,7 @@ def calc_wg(oo_var, oo_wg, oo_plot):
                 'adv': None
             }
         else:
-            print('Error:\ Wrong wg-selector: check oo_wg[''sel_wg'']')
-            sys.exit(1)
+            mix.error_mes('Wrong wg-selector: check oo_wg[''sel_wg'']')
 
         return res_dict
 
@@ -2382,7 +2097,7 @@ def calc_wg_t_simplified(oo_wg_t, oo_plot):
         sel_wg = oo_wg.get('sel_wg', 'wg-adv')
 
         # normalization:
-        coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = choose_wg_normalization(dd, sel_norm_w)
+        coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = mix.choose_wg_normalization(dd, sel_norm_w)
 
         # time normalization for plotting
         coef_norm_t, line_norm_t = None, ''
@@ -2573,7 +2288,7 @@ def calc_wg_t(oo_wg_t, oo_plot):
         sel_wg = oo_wg.get('sel_wg', 'wg-adv')
 
         # normalization:
-        coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = choose_wg_normalization(dd, sel_norm_w)
+        coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = mix.choose_wg_normalization(dd, sel_norm_w)
 
         # time normalization for plotting
         coef_norm_t, line_norm_t = None, ''
@@ -2633,7 +2348,7 @@ def calc_wg_t(oo_wg_t, oo_plot):
             gs[i_int] = res_wg[line_res]['g' + line_res_method]
 
         # analytical resonance velocity
-        vres = get_v_res(dd, s1_q, ws, species_name)
+        vres = ymath.get_v_res(dd, s1_q, ws, species_name)
         curves_draw_vres = geom.Curve()
         for i_vres in range(n_analyt_vres):
             vres_data_1 = vres / (i_vres + 1)
@@ -2686,9 +2401,9 @@ def calc_wg_t(oo_wg_t, oo_plot):
                 vpar_max[id_t]  = vpar_f_pos[id_f_max[id_t]]
                 vpar_min[id_t]  = vpar_f_pos[id_f_min[id_t]]
                 vpar_zero[id_t] = vpar_f_pos[id_f_zero[id_t]]
-            w_from_max  = get_w_from_v_res(dd, s1_q, vpar_max, species_name)
-            w_from_min  = get_w_from_v_res(dd, s1_q, vpar_min, species_name)
-            w_from_zero = get_w_from_v_res(dd, s1_q, vpar_zero, species_name)
+            w_from_max  = ymath.get_w_from_v_res(dd, s1_q, vpar_max, species_name)
+            w_from_min  = ymath.get_w_from_v_res(dd, s1_q, vpar_min, species_name)
+            w_from_zero = ymath.get_w_from_v_res(dd, s1_q, vpar_zero, species_name)
 
             curves_draw_vres_max  = geom.Curve()
             curves_draw_vres_min  = geom.Curve()
@@ -4279,43 +3994,6 @@ def animation_1d(oo):
     cpr.animation_1d(curves)
 
 
-# NEW: resonant velocity:
-def get_v_res(dd, s1, w_wci, sel_species):
-    coef_max = np.max(dd[sel_species].nT_equil['T'])
-    Te_speak = dd['electrons'].T_speak(dd)
-    cs_speak = np.sqrt(Te_speak / dd['pf'].mass)
-    norm_v = coef_max / cs_speak
-
-    # Te_max = np.max(dd['electrons'].nT_equil['T_J'])
-    # cs_max = np.sqrt(Te_max / dd['pf'].mass)
-    # norm_v = 1 / cs_max
-
-    w0 = w_wci * dd['wc']
-
-    q_s1, _, line_s1 = equil_profiles.q_s1(dd, s1)
-    vres = (q_s1 * dd['R0'] * w0) * norm_v
-
-    return vres
-
-
-# NEW: get frequency from a resonant velocity:
-def get_w_from_v_res(dd, s1, vres, sel_species):
-    coef_max = np.max(dd[sel_species].nT_equil['T'])
-    Te_speak = dd['electrons'].T_speak(dd)
-    cs_speak = np.sqrt(Te_speak / dd['pf'].mass)
-    norm_v = coef_max / cs_speak
-
-    # Te_max = np.max(dd['electrons'].nT_equil['T_J'])
-    # cs_max = np.sqrt(Te_max / dd['pf'].mass)
-    # norm_v = 1 / cs_max
-
-    q_s1, _, line_s1 = equil_profiles.q_s1(dd, s1)
-    w0 = vres / (q_s1 * dd['R0'] * norm_v)
-    w_wci = w0 / dd['wc']
-
-    return w_wci
-
-
 # Test continuous wavelet transform
 def test_cwt():
     # # Static frequencies
@@ -4367,39 +4045,7 @@ def test_cwt():
     cpr.plot_curves_3d(curves)
 
 
-# - FUNCTION: filtering at one stage -
-def global_several_filters(x, y, oo_filt_loc):
-    oo_filts_res = []
-    if oo_filt_loc is None or len(oo_filt_loc) is 0:
-        oo_filts_res.append(GLO.NONE_FILTER)
-    elif isinstance(oo_filt_loc, dict):
-        oo_filts_res.append(oo_filt_loc)
-    else:
-        oo_filts_res = oo_filt_loc  # array of filters
 
-    # apply one by one the filters in the array :
-    dict_loc = {'x': np.array(x), 'filt': np.array(y)}
-    count_filt = -1
-    for one_filt in oo_filts_res:
-        count_filt += 1
-        dict_loc = ymath.filtering(
-            dict_loc['x'], dict_loc['filt'], one_filt
-        )
-    return dict_loc
-
-
-# -FUNCTION: Filter a signal -
-def global_filter_signal(t, y, oo_filt):
-    # initial fft
-    init_dict = {'x': t, 'data': y}
-
-    # filtering
-    res_dict = dict(init_dict)
-    filt = global_several_filters(init_dict['x'], init_dict['data'], oo_filt)
-    res_dict['data'] = np.array(filt['filt'])
-    res_dict['x']    = np.array(filt['x'])
-
-    return res_dict['data'], res_dict['x']
 
 
 

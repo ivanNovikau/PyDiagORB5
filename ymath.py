@@ -8,7 +8,6 @@ from scipy import constants
 from scipy import interpolate
 import pywt
 import scipy.special
-import sys
 
 
 def reload():
@@ -374,10 +373,8 @@ def filtering(x, y, oo):
     # determine a filter type
     sel_filt = oo.get('sel_filt', None)  # None, 'rough', 'smooth', 'fft_smooth'
     norm_w   = oo.get('norm_w', 1)
-
-    # take the signal in a some predefined interval:
-    x_filt, ids_x_filt = mix.get_array_oo(oo, x, 'x')
-    y_filt = y[ids_x_filt[0]:ids_x_filt[-1] + 1]
+    x_filt = np.array(x)
+    y_filt = np.array(y)
 
     # no any filtering
     out = {}
@@ -603,6 +600,35 @@ def find_norm(y, y_norm_to=None):
     return y_norm
 
 
+# resonant velocity:
+def get_v_res(dd, s1, w_wci, sel_species):
+    cs_speak = np.sqrt(dd['electrons'].T_speak(dd) / dd['pf'].mass)
+    norm_v = np.max(dd[sel_species].nT_equil['T']) / cs_speak
+
+    # Te_max = np.max(dd['electrons'].nT_equil['T_J'])
+    # cs_max = np.sqrt(Te_max / dd['pf'].mass)
+    # norm_v = 1 / cs_max
+
+    w0 = w_wci * dd['wc']
+
+    q_s1 = mix.get_data_at_x1(s1, dd['q']['s'], dd['q']['data'])
+    vres = (q_s1 * dd['R0'] * w0) * norm_v
+
+    return vres
+
+
+# get frequency from a resonant velocity:
+def get_w_from_v_res(dd, s1, vres, sel_species):
+    cs_speak = np.sqrt(dd['electrons'].T_speak(dd) / dd['pf'].mass)
+    norm_v = np.max(dd[sel_species].nT_equil['T']) / cs_speak
+
+    q_s1 = mix.get_data_at_x1(s1, dd['q']['s'], dd['q']['data'])
+    w0 = vres / (q_s1 * dd['R0'] * norm_v)
+    w_wci = w0 / dd['wc']
+
+    return w_wci
+
+
 # Averaging in one domain
 def avr_x1x2(vvar, one_signal, oo ):
     # one_signal = {'avr_operation': sel_av, 'avr_domain': av_domain}
@@ -641,8 +667,7 @@ def avr_x1x2(vvar, one_signal, oo ):
         format_x_work = vvar['fx1']
         name_x_work = vvar['x1']
     else:
-        print('Error: Wrong name of a coordinate for averaging.')
-        sys.exit(-1)
+        mix.error_mes('Wrong name of a coordinate for averaging.')
 
     # use reference axis for averaging:
     if flag_aver_interp:
@@ -687,8 +712,7 @@ def avr_x1x2(vvar, one_signal, oo ):
         opt_av  = x_av[np.argmax(abs_temp, axis=dir_av)]
         line_av = 'max_{' + coord_av + '}'
     else:
-        print('Error: Wrong name of an averaging operation.')
-        sys.exit(-1)
+        mix.error_mes('Wrong name of an averaging operation.')
 
     # form result dictionary
     vvar_avr = {
@@ -707,6 +731,133 @@ def avr_x1x2(vvar, one_signal, oo ):
             vvar_avr[name_field] = vvar[name_field]
 
     return vvar_avr
+
+
+def post_processing(data, x, oo_operations):
+    # - check operations -
+    if oo_operations is None:
+        return data, x
+
+    # -- PERFORM CONSEQUENTLY ALL OPERATIONS --
+    data_work, x_work = np.array(data), np.array(x)
+    for oo_operation in oo_operations:
+        # - operation type and working domain -
+        sel_operation = oo_operation.get('operation', None)
+        x_domain      = oo_operation.get('domain', None)
+        if x_domain is None:
+            x_domain = [x_work[0], x_work[-1]]
+        data_work, x_work = mix.get_x_data_interval(x_domain, x_work, data_work)
+        data_temp, x_temp = [], []
+
+        # * No operations *
+        if sel_operation is None:
+            data_temp, x_temp = data_work, x_work
+
+        # * integration from beginning till the point for every selected x-steps *
+        elif sel_operation == 'integration-accumulation':
+            width_domain = oo_operation.get('width', None)
+            if width_domain is None:
+                mix.error_mes('Postprocessing: You need not-None \'width\' field '
+                              'for \'integration-accumulation\' postprocessing')
+
+            x_start = x_work[0]
+            x_end = x_start + width_domain
+            while x_end <= x_work[-1]:
+                data_curr, x_curr = mix.get_x_data_interval([x_start, x_end], x_work, data_work)
+                value_curr = np.trapz(data_curr, x=x_curr)
+
+                data_temp.append(value_curr)
+                x_temp.append(x_end)
+
+                x_end += width_domain
+
+        # * integration within every x-step *
+        elif sel_operation == 'integration-step':
+            width_domain = oo_operation.get('width', None)
+            step_domain  = oo_operation.get('step', None)
+            if width_domain is None:
+                mix.error_mes('Postprocessing: You need not-None \'width\' field '
+                              'for \'integration-step\' postprocessing')
+            if step_domain is None:
+                mix.error_mes('Postprocessing: You need not-None \'step\' field '
+                              'for \'integration-step\' postprocessing')
+
+            x_start = x_work[0]
+            x_end   = x_start + width_domain
+            while x_end <= x_work[-1]:
+                data_curr, x_curr = mix.get_x_data_interval([x_start, x_end], x_work, data_work)
+                value_curr = np.trapz(data_curr, x=x_curr)
+
+                x_point = (x_end + x_start) / 2.
+                data_temp.append(value_curr)
+                x_temp.append(x_point)
+
+                x_start += step_domain
+                x_end    = x_start + width_domain
+
+        # * get peaks of absolute signal *
+        elif sel_operation == 'abs_peaks':
+            ids_abs_peaks, _ = scipy.signal.find_peaks(np.abs(data_work))
+            x_temp    = x_work[ids_abs_peaks]
+            data_temp = data_work[ids_abs_peaks]
+
+        # * take absolute signal *
+        elif sel_operation == 'abs':
+            data_temp, x_temp = np.abs(data_work), x_work
+
+        # * multiply by a value *
+        elif sel_operation == 'mult':
+            coef = oo_operation.get('coef', None)
+            if coef is None:
+                mix.error_mes('Postprocessing: You need not-None \'coef\' field '
+                              'for \'mult\' postprocessing')
+
+            data_temp, x_temp = coef * data_work, x_work
+
+        # * filtering *
+        elif sel_operation == 'filtering':
+            oo_filters = oo_operation.get('oo_filters', [GLO.NONE_FILTER])
+            data_filt, x_filt = global_filter_signal(x_work, data_work, oo_filters)
+            x_temp = x_work
+            data_temp = np.interp(x_temp, x_filt, data_filt)
+
+        # * wrong operation name *
+        else:
+            mix.error_mes('Wrong operation name')
+
+        # - save modification -
+        data_work, x_work = np.array(data_temp), np.array(x_temp)
+
+    return data_work, x_work
+
+
+def global_several_filters(x, y, oo_filt_loc):
+    oo_filts_res = []
+    if oo_filt_loc is None or len(oo_filt_loc) is 0:
+        oo_filts_res.append(GLO.NONE_FILTER)
+    elif isinstance(oo_filt_loc, dict):
+        oo_filts_res.append(oo_filt_loc)
+    else:
+        oo_filts_res = oo_filt_loc  # array of filters
+
+    # apply one by one the filters in the array :
+    dict_loc = {'x': np.array(x), 'filt': np.array(y)}
+    for one_filt in oo_filts_res:
+        dict_loc = filtering(dict_loc['x'], dict_loc['filt'], one_filt)
+    return dict_loc
+
+
+def global_filter_signal(t, y, oo_filt):
+    # initial fft
+    init_dict = {'x': t, 'data': y}
+
+    # filtering
+    res_dict = dict(init_dict)
+    filt = global_several_filters(init_dict['x'], init_dict['data'], oo_filt)
+    res_dict['data'] = np.array(filt['filt'])
+    res_dict['x']    = np.array(filt['x'])
+
+    return res_dict['data'], res_dict['x']
 
 
 

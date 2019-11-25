@@ -3,6 +3,7 @@ import Constants as cn
 import Species as Species
 import ymath
 import write_data as wr
+import equil_profiles
 import numpy as np
 import h5py as h5
 import platform
@@ -15,6 +16,7 @@ def reload():
     mix.reload_module(Species)
     mix.reload_module(ymath)
     mix.reload_module(wr)
+    mix.reload_module(equil_profiles)
 
 
 def read_signal(path_to_read, var_path):
@@ -266,9 +268,6 @@ def potsc_s(dd, oo):
     return names
 
 
-
-
-
 def radial_heat_flux(dd):
     if 'efluxw_rad' in dd:
         return
@@ -276,20 +275,6 @@ def radial_heat_flux(dd):
     f = h5.File(path_to_file, 'r')
     for sp_name in dd['kin_species_names']:
         dd[sp_name].radial_heat_flux(f)
-
-
-def q(dd):
-    if 'q' in dd:
-        return
-    path_to_file = dd['path'] + '/orb5_res.h5'
-    f = h5.File(path_to_file, 'r')
-    s = np.array(f['/equil/profiles/generic/sgrid_eq'])
-    data = np.array(f['/equil/profiles/generic/q'])
-
-    dd['q'] = {
-        's': s,
-        'data': data
-    }
 
 
 def vti(dd):
@@ -393,6 +378,7 @@ def init(dd):
     # T,n dependent variables:
     dd['T_speak'] = dd['electrons'].T_speak(dd)  # !!!
     dd['rhoL_speak'] = ymath.find_rhoL(dd['T_speak'], dd['B0'], dd['pf'].mass, dd['pf'].Z)
+    dd['ele-nbar-m3'] = equil_profiles.ne_avr_m3(dd)
 
 
 # init ->

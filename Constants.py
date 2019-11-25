@@ -2,8 +2,7 @@ import numpy as np
 
 
 def reload():
-    # Important: put here all modules that you want to reload
-    dummy = 0
+    return
 
 
 qe = 1.602e-19          # electron  charge (C)

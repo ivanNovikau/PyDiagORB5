@@ -91,8 +91,7 @@ def choose_one_var_ts(one_signal):
         var_name = 'vorbar'
         tit_var = '\overline{\Omega}_r'
     else:
-        print('Error: Wrong name of an equilibrium variable.')
-        sys.exit(-1)
+        mix.error_mes('Wrong name of a zonal signal.')
 
     vvar = dd[var_name]['data']
     res = {
