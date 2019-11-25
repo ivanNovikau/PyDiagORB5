@@ -608,37 +608,38 @@ def ernz_chi_chi1(dd, chi_point):
     return var_name
 
 
-# NEW: take signal (t,s)
-def choose_one_var_ts(ovar, dd):
-    opt_var   = ovar[0]
+def choose_one_var_ts(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
+
     var_name, tit_var, line_chi = '', '', ''
     res = {}
     if opt_var == 'phinz':
-        chi_point = ovar[1]
+        chi_point = one_signal['chi-point']
         var_name = phinz_chi1(dd, chi_point)
         tit_var  = '\widetilde{\Phi}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{' + line_chi + '}'
     if opt_var == 'potsc':
-        chi_point = ovar[1]
+        chi_point = one_signal['chi-point']
         var_name = rd.potsc_chi1(dd, chi_point)
         tit_var  = '\Phi'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{' + line_chi + '}'
     if opt_var == 'ernz_r':
-        chi_point = ovar[1]
+        chi_point = one_signal['chi-point']
         var_name = ernz_r_chi1(dd, chi_point)
         tit_var  = '\widetilde{E}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{r,' + line_chi + '}'
     if opt_var == 'er_r':  # full radial electric field along radial coordinate
-        chi_point = ovar[1]
+        chi_point = one_signal['chi-point']
         var_name = er_r_chi1(dd, chi_point)
         tit_var  = 'E'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{r, ' + line_chi + '}'
     if opt_var == 'ernz_chi':
-        chi_point = ovar[1]
+        chi_point = one_signal['chi-point']
         var_name = ernz_chi_chi1(dd, chi_point)
         tit_var  = '\widetilde{E}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
@@ -674,19 +675,20 @@ def choose_one_var_ts(ovar, dd):
     return res
 
 
-# NEW: take signal (r,z)
-def choose_one_var_rz(ovar, dd):
-    opt_var   = ovar[0]
+def choose_one_var_rz(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
+
     var_name, tit_var, line_1 = '', '', ''
     res = {}
     if opt_var == 'phinz':
-        t_point = ovar[1]
+        t_point = one_signal['t-point']
         var_name = phinz_t1(dd, t_point)
         tit_var  = '\widetilde{\Phi}'
         line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
         line_1 = '_{' + line_1 + '}'
     if opt_var == 'potsc':
-        t_point = ovar[1]
+        t_point = one_signal['t-point']
         var_name = rd.potsc_t1(dd, t_point)
         tit_var = '\Phi'
         line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
@@ -712,10 +714,11 @@ def choose_one_var_rz(ovar, dd):
     return res
 
 
-# NEW: take signal (t,chi)
-def choose_one_var_tchi(ovar, dd):
-    opt_var   = ovar[0]
-    s_point = ovar[1]
+def choose_one_var_tchi(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
+    s_point = one_signal['s-point']
+
     var_name, tit_var, line_chi = '', '', ''
     if opt_var == 'phinz':
         var_name = phinz_s1(dd, s_point)

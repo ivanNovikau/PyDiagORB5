@@ -66,10 +66,10 @@ def chi(species_name, dd):
     }
 
 
-# NEW:
-def choose_one_var_ts(ovar, dd):
-    opt_var = ovar[0]
-    species_name = ovar[1]
+def choose_one_var_ts(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
+    species_name = one_signal['species']
 
     data, t, s, tit_var = [], [], [], []
     if opt_var == 'chi_norm':
@@ -112,41 +112,6 @@ def choose_one_var_ts(ovar, dd):
 
     res = {
         'data': data,
-        's': s,
-        't': t,
-        'tit': tit_var
-    }
-
-    return res
-
-
-def choose_var(dd, oo):
-    species_name = oo.get('species_name', 'deuterium')
-
-    opt_var = oo.get('opt_var', 'chi_norm')
-    vvar, t, s, tit_var = [], [], [], []
-    if opt_var == 'chi_norm':
-        chi(species_name, dd)
-        vvar = dd[species_name].chi['data_norm']
-        tit_var = species_name + ':\ \chi/\chi_B'
-        t = dd[species_name].chi['t']
-        s = dd[species_name].chi['s']
-    if opt_var == 'chi_norm0':
-        chi(species_name, dd)
-        vvar = dd[species_name].chi['data_norm0']
-        tit_var = species_name + ':\ \chi_0/\chi_B'
-        t = dd[species_name].chi['t']
-        s = dd[species_name].chi['s']
-    if opt_var == 'efluxw_rad':
-        rd.radial_heat_flux(dd)
-        efluxw_rad = dd[species_name].efluxw_rad
-        vvar = efluxw_rad['data']
-        tit_var = species_name + ':\ efluxw\_rad'
-        t = efluxw_rad['t']
-        s = efluxw_rad['s']
-
-    res = {
-        'var': vvar,
         's': s,
         't': t,
         'tit': tit_var

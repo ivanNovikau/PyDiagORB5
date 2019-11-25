@@ -68,23 +68,16 @@ def choose_one_var_ts(one_signal):
     return res
 
 
-def q_prof(dd):
-    read_q(dd)
-
-    s = dd['q']['s']
-    # rho = dd['deuterium'].nT_equil['rho']
-    #
-    # # analytical expression:
+def q_adhoc(dd, qcoefs):
     # qcoefs = np.array([1.8503, -0.074096, 0.95318, -5.703, 7.5779, -0.19182, -1.8253])
-    # ncoef = np.size(qcoefs)
-    # qa = 0
-    # for icoef in range(ncoef):
-    #     qa += qcoefs[icoef] * rho**icoef
 
-    curves = crv.Curves().xlab('s').ylab('q').tit('safety\ factor\ profile')
-    curves.new().XS(s).YS(dd['q']['data']).leg('q')
-    # curves.new().XS(s).YS(qa).leg('q-analytical')
-    cpr.plot_curves(curves)
+    ncoef = np.size(qcoefs)
+    qa = 0
+    rho = dd['deuterium'].nT_equil['rho']
+    for icoef in range(ncoef):
+        qa += qcoefs[icoef] * rho**icoef
+
+    return qa
 
 
 def B_equil(dd):

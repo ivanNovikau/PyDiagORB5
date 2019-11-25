@@ -16,10 +16,10 @@ def reload():
     mix.reload_module(crv)
 
 
-# NEW:
-def choose_one_var_tvpar(ovar, dd):
-    opt_var = ovar[0]
-    species_name = ovar[1]
+def choose_one_var_tvpar(one_signal):
+    dd      = one_signal['dd']
+    opt_var = one_signal['variable']
+    species_name = one_signal['species']
 
     data, t, tit_var, vpar = [], [], [], []
     if opt_var == 'f_vel_1d':
