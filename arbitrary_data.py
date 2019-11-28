@@ -12,8 +12,10 @@ def reload():
 
 
 def choose_one_var_xy(one_signal):
+    data = None if one_signal['data'] is None \
+        else np.array(one_signal['data'])
     res = {
-        'data': np.array(one_signal['data']),  # 2d data
+        'data': data,  # 2d data
         'x': np.array(one_signal['x']),
         'y': np.array(one_signal['y']),
         'tit': one_signal.get('title', ''),
@@ -28,9 +30,17 @@ def choose_one_var_xy(one_signal):
 
 
 def choose_one_var_x(one_signal):
+    data = None if one_signal['data'] is None \
+        else np.array(one_signal['data'])
+    x_err = None if one_signal['x_err'] is None \
+        else np.array(one_signal['x_err'])
+    y_err = None if one_signal['y_err'] is None \
+        else np.array(one_signal['y_err'])
     res = {
-        'data': np.array(one_signal['data']),  # 1d data
+        'data': data,  # 1d data
         'x': np.array(one_signal['x']),
+        'x_err': x_err,
+        'y_err': y_err,
         'tit': one_signal.get('title', ''),
         'x1_name': one_signal.get('x1_name', 'x'),
         'x1_format': one_signal.get('x1_format', '{:0.3e}'),

@@ -71,3 +71,23 @@ def exp_AUG20787(dd, oo):
         .sty('o').col(col).ms(1)
 
     return curves
+
+
+def exp_AUG31213():
+    # Approximate experimental EGAM spectrogram:
+    exp_w_kHZ = [48, 50.5, 52.25, 53.75, 55, 56, 56.8, 57.4]
+    exp_t_s = [0.8410, 0.8415, 0.8420, 0.8425, 0.8430, 0.8435, 0.8440, 0.8445]
+    exp_t_ms = (np.array(exp_t_s) - exp_t_s[0]) * 1e3
+    exp_w_rel = np.array(exp_w_kHZ) / exp_w_kHZ[0]
+
+    exp_t_ms_cont = np.linspace(exp_t_ms[0], exp_t_ms[-1], 101)
+
+    exp_w_abs_kHz_cont = np.interp(exp_t_ms_cont, exp_t_ms, np.array(exp_w_kHZ))
+    exp_w_rel_cont = np.interp(exp_t_ms_cont, exp_t_ms, exp_w_rel)
+
+    res = {
+        't_ms': exp_t_ms_cont,
+        'w_rel': exp_w_rel_cont,
+        'w_kHz': exp_w_abs_kHz_cont,
+    }
+    return res

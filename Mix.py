@@ -53,7 +53,7 @@ def choose_wg_normalization(dd, sel_norm):
             dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
     if sel_norm.lower() == 'khz':
         line_norm_w = '(kHz)'
-        line_norm_g = '(10^3 s)'
+        line_norm_g = '(10^3\ s^{-1})'
         coef_norm_w = dd['wc'] / (1e3 * 2 * np.pi)
         coef_norm_g = dd['wc'] / 1e3
     return coef_norm_w, coef_norm_g, line_norm_w, line_norm_g
@@ -98,6 +98,12 @@ def get_array_oo(oo, x, name_x):
     x_start = oo.get(name_x + '_start', x[0])
     x_end = oo.get(name_x + '_end', x[-1])
     return get_array(x, x_start, x_end)  # x_new, ids_x
+
+
+def get_x_data_oo(oo, x, name_x, data):
+    x_start = oo.get(name_x + '_start', x[0])
+    x_end = oo.get(name_x + '_end', x[-1])
+    return get_x_data_interval([x_start, x_end], x, data) # data_new, x_new
 
 
 def get_slice(x, ids1, ids2=None, ids3=None):
@@ -220,6 +226,32 @@ def get_x_data_interval(x_domain, x, data):
 def get_data_at_x1(x1, x, data):
     data_x1 = np.interp(x1, x, data)
     return data_x1
+
+
+def create_consequent_time_intervals(oo_t):
+    tmin = oo_t['tmin']
+    tmax = oo_t['tmax']
+    width_t = oo_t['width_t']
+    step_t = oo_t['step_t']
+    flag_inc_boundary = oo_t.get('flag_inc_boundary', False)
+    half_width_t = width_t / 2
+
+    t_right = tmin + width_t
+    t_ints = [[tmin, t_right]]
+    t_center = tmin + half_width_t
+    while t_right < tmax:
+        t_center += step_t
+
+        t_left = t_center - half_width_t
+        t_right = t_center + half_width_t
+        if t_right > tmax:
+            if not flag_inc_boundary:
+                break
+            else:
+                t_right = tmax
+        t_ints.append([t_left, t_right])
+
+    return t_ints
 
 
 # Check if all list-elements are unique in a list y

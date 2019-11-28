@@ -51,9 +51,10 @@ def choose_vars(oo):
         vv['x2'], vv['fx2'], vv['laby'] = xx2[0], xx2[1], xx2[2]
 
     if 'signals' not in oo:
-        mix.error_mes('there is not a field \'signals\' to plot.')
+        oo_signals = [oo.get('signal', None)]
+    else:
+        oo_signals = oo.get('signals', [])
 
-    oo_signals = oo.get('signals', [])
     count_signal, vvars = -1, []
     for one_signal in oo_signals:
         count_signal += 1
@@ -166,13 +167,13 @@ def plot_vars_2d(oo):
 
     # additional data:
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # dictionary with format
-    sel_norm_x1   = oo.get('sel_norm_x1', 'orig')
+    sel_norm_x   = oo.get('sel_norm_x', None)
     oo_text   = oo.get('text', [])
     geoms     = oo.get('geoms', [])
     dd = signal['dd'] if 'dd' in signal else None
 
     # normalization (1st stage)
-    line_x1_norm = mix.normalization(sel_norm_x1)['line_norm']
+    line_x1_norm = mix.normalization(sel_norm_x)['line_norm']
 
     # title
     ff['title'] = ff['title'] if ff['title'] is not None else vvar['leg']
@@ -197,7 +198,7 @@ def plot_vars_2d(oo):
         data = mix.get_slice(vvar['data'], ids_x1, ids_x2)
 
     # normalization (2nd stage)
-    coef_x1_norm = mix.normalization(sel_norm_x1, dd)['coef_norm']
+    coef_x1_norm = mix.normalization(sel_norm_x, dd)['coef_norm']
 
     # additional text and geometrical figures:
     curves.newt(oo_text)
@@ -218,8 +219,8 @@ def plot_vars_1d(oo):
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # format
     oo_text = oo.get('text', [])
     geoms = oo.get('geoms', [])
-    sel_norm_x = oo.get('sel_norm_x', 'orig')
-    sel_norm_ys = oo.get('sel_norm_ys', ['orig'])
+    sel_norm_x = oo.get('sel_norm_x', None)
+    sel_norm_ys = oo.get('sel_norm_ys', [None])
     oo_postprocessing = oo.get('oo_postprocessing', None)
 
     # normalization (first stage):
@@ -244,19 +245,32 @@ def plot_vars_1d(oo):
     stys    = ff.get('styles', [])
     colors  = ff.get('colors', [])
     legends = ff.get('legends', [])
+    flags_hist = ff.get('flags_hist', None)
 
     # - different variables -
     for ivar in range(n_vars):
         vvar = vvars[ivar]
         data = vvar['data']
-        x    = np.array(vvar['x'])
+        if data is None:
+            continue
+        x     = np.array(vvar['x'])
+        x_err = vvar['x_err']
+        y_err = vvar['y_err']
         leg  = vvar['leg']
         dd_one = signals[ivar]['dd'] if 'dd' in signals[ivar] else None
         oo_var_operations = oo_postprocessing[ivar] \
             if oo_postprocessing is not None else None
 
+        # curve format
+        ff_curve = dict(GLO.DEF_CURVE_FORMAT)
+
+        # different flags:
+        if flags_hist is not None:
+            ff_curve['flag_hist'] = flags_hist[ivar]
+
         # normalization (second stage):
-        coef_x_norm = mix.normalization(sel_norm_x, dd_one)['coef_norm']
+        if not ff_curve['flag_hist']:
+            coef_x_norm = mix.normalization(sel_norm_x, dd_one)['coef_norm']
 
         sel_norm_y = sel_norm_ys[ivar] if ivar < len(sel_norm_ys) else 'orig'
         temp_dict = mix.normalization(sel_norm_y, dd_one)
@@ -264,20 +278,20 @@ def plot_vars_1d(oo):
         coef_y_norm   = temp_dict['coef_norm']
 
         # - post-processing -
-        data, x = ymath.post_processing(data, x, oo_var_operations)
+        if not ff_curve['flag_hist']:
+            data, x = ymath.post_processing(data, x, oo_var_operations)
 
         # domain of plotting:
         # add x_end, x_start in your option
         # to change limits of plots with rescaling of the plot
-        x, ids_x = mix.get_array_oo(oo, x, 'x')
-        data = mix.get_slice(data, ids_x)
+        if not ff_curve['flag_hist']:
+            x, ids_x = mix.get_array_oo(oo, x, 'x')
+            data = mix.get_slice(data, ids_x)
 
         # x normalization
-        x    = x * coef_x_norm
+        if not ff_curve['flag_hist']:
+            x = x * coef_x_norm
         data = data * coef_y_norm
-
-        # curve format
-        ff_curve = dict(GLO.DEF_CURVE_FORMAT)
 
         # style, color
         ff_curve['style'] = stys[ivar]   if ivar < len(stys)   else None
@@ -291,10 +305,1110 @@ def plot_vars_1d(oo):
 
         # - add a new curve -
         curves.new().XS(x).YS(data).set_ff(ff_curve)
+        if x_err is not None or y_err is not None:
+            curves.list_curves[-1].set_errorbar(True, ys=y_err, xs=x_err)
 
     # - plot the curves -
     if len(curves.list_curves) is not 0:
         cpr.plot_curves(curves)
+
+
+def fft_in_time(oo):
+    # Signal: should be 1d
+    signal = dict(oo.get('signals', None)[0])
+    vvar = choose_vars(oo)[0]
+    dd_one = signal['dd'] if 'dd' in signal else None
+    oo_postprocessing = oo.get('oo_postprocessing', None)  # have to be defined only for one variable
+    ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # format
+
+    # data to define FFT:
+    flag_data_shifted = oo.get('flag_data_shifted', False)
+    width_x    = oo.get('width_x', None)
+    x_fft_domain = oo.get('x_fft_domain', None)  # x-domain, where FFT will be performed, does not influence
+                                                 # the domain where filtering is perfomed
+    w_norm_domain = oo.get('w_norm_domain', None)
+    sel_norm_w = oo.get('sel_norm_w', 'wc')
+
+    # - frequency normalization (notation) -
+    line_norm_w, coef_norm_w = None, None
+    if sel_norm_w == 'khz':
+        line_norm_w = ',\ kHz'
+        coef_norm_w = dd_one['wc'] / 1.e3
+    if sel_norm_w == 'wc':
+        line_norm_w = '\ [\omega_c]'
+        coef_norm_w = 2 * np.pi
+    if sel_norm_w == 'csa':
+        line_norm_w = '\ [c_s/a_0]'
+        coef_norm_w = 2 * np.pi * dd_one['wc'] / (dd_one['cs'] / dd_one['a0'])
+    if sel_norm_w == 'csr':
+        line_norm_w = '\ [c_s/R_0]'
+        coef_norm_w = 2 * np.pi * dd_one['wc'] / (dd_one['cs'] / dd_one['R0'])
+
+    # consider every variable
+    x    = vvar['x']
+    data = vvar['data']
+    leg  = vvar['leg']
+
+    # - post-processing -
+    data_post, x_post = ymath.post_processing(data, x, oo_postprocessing)
+    data_post = np.interp(x, x_post, data_post)
+    del x_post
+
+    # shifted signal:
+    if flag_data_shifted:
+        data_shifted = data - data_post
+    else:
+        data_shifted = data_post
+
+    # x-domain, where the FFT will be performed:
+    if x_fft_domain is None:
+        x_fft_domain = np.array(x)
+    ids_x_work, x_work, _ = mix.get_ids(x, x_fft_domain)
+    ids_x_work = np.arange(ids_x_work[0], ids_x_work[-1] + 1)
+    data_work = data_shifted[ids_x_work]
+
+    # get frequency grid
+    _, x_interval, _ =  mix.get_ids(x_work, [0, width_x])
+    w = ymath.fft_y(x_interval)['w']
+
+    # Time evolution of the Fourier transform:
+    res_fft = np.zeros([len(x_work), np.size(w)])
+    res_fft.fill(np.nan)
+    for id_x in range(np.size(x_work)):
+        x_right_bound = x_work[id_x] + width_x
+        if x_right_bound > x_work[-1]:
+            continue
+
+        ids_x_interval, x_interval, _ = \
+            mix.get_ids(x_work, [x_work[id_x], x_right_bound])
+        ids_x_interval = np.arange(ids_x_interval[0], ids_x_interval[-1] + 1)
+        res_fft[id_x, :] = ymath.fft_y(x_interval, data_work[ids_x_interval])['f']
+    res_fft = res_fft[np.logical_not(np.isnan(res_fft))]
+    res_fft = np.reshape(res_fft, (-1, np.size(w)))
+
+    # working frequency domain
+    ids_w_work, w_norm_work, _ = mix.get_ids(w * coef_norm_w, w_norm_domain)
+    ids_w_work = np.arange(ids_w_work[0], ids_w_work[-1] + 1)
+    fft_work = res_fft[:, ids_w_work]
+
+    # x domain of plotting
+    x_work_domain = x_work[0:np.shape(res_fft)[0]]
+
+    x_work_plot, ids_x_plot = mix.get_array_oo(oo, x_work_domain, 'x')
+    ids_x_plot = np.arange(ids_x_plot[0], ids_x_plot[-1] + 1)
+    fft_plot = fft_work[ids_x_plot, :]
+    del ids_x_plot
+
+    data_orig_plot, x_plot = mix.get_x_data_interval(x_work_domain, x, data)
+    data_post_plot, _      = mix.get_x_data_interval(x_work_domain, x, data_post)
+    data_shifted_plot, _   = mix.get_x_data_interval(x_work_domain, x, data_shifted)
+    del x_work_domain
+
+    # --- PLOT x-evolution of the signal ---
+    nsignals = 3  # original, treated, shifted
+
+    # signals:
+    ch_signals = GLO.create_signals_dds(
+        GLO.def_arbitrary_1d,
+        [dd_one] * nsignals,
+        flag_arbitrary=True,
+        xs=[x_plot] * nsignals,
+        datas=[data_orig_plot, data_post_plot, data_shifted_plot],
+    )
+
+    # styling:
+    ff_x = dict(ff)
+    ff_x.update({
+        'legends': ['original', 'treated', 'original - treated'],
+        'title': leg,
+        'styles': ['-', ':', ':'],
+        'xlabel': vvar['labx'],
+        'ylabel': 'original\ signal',
+    })
+
+    # plotting:
+    oo_plot_x = dict(oo)
+    oo_plot_x.update({
+        'signals': ch_signals,
+        'ff': ff_x,
+    })
+    plot_vars_1d(oo_plot_x)
+
+    # --- PLOT FFT ---
+    ch_signal = GLO.create_signals_dds(
+        GLO.def_arbitrary_2d,
+        [dd_one],
+        flag_arbitrary=True,
+        xs=[x_work_plot],
+        ys=[w_norm_work],
+        datas=[fft_plot],
+    )[0]
+
+    # styling:
+    ff_fft = dict(ff)
+    ff_fft.update({
+        'title': 'FFT:\ ' + leg,
+        'xlabel': vvar['labx'],
+        'ylabel': ff['ylabel-w'] + line_norm_w,
+    })
+
+    # plotting:
+    oo_plot_fft = dict(oo)
+    oo_plot_fft.update({
+        'signal': ch_signal,
+        'ff': ff_fft,
+    })
+    plot_vars_2d(oo_plot_fft)
+
+
+def wg_in_time(oo):
+    # options
+    oo_wg  = oo.get('oo_wg', None)
+    ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))
+    signal = oo.get('signal', None)
+    dd = signal['dd']
+    flag_rel_freq = oo.get('flag_rel_freq', False)
+
+    # parameters of nonlinear fitting
+    flag_stat = oo_wg.get('flag_stat', False)
+    sel_wg = oo_wg.get('sel_wg', 'wg-adv')
+
+    # create time intervals:
+    t_ints = mix.create_consequent_time_intervals(oo.get('oo_t', None))
+    nt = len(t_ints)
+
+    # precise method of w,g calculation
+    line_res_method = '_adv' if 'adv' in  sel_wg else '_est'
+
+    line_res = 'naive'
+    if flag_stat:
+        line_res = 'stat'
+        line_res_method = ''
+
+    # normalization
+    _, _, line_norm_w, _ = mix.choose_wg_normalization(
+        dd, oo_wg.get('sel_norm_wg', GLO.DEF_NORM_WG))
+
+    # --- CALCULATION of w(t) ---
+    t = np.zeros(nt)
+    ws, ws_err = np.zeros(nt), np.zeros(nt)
+    gs, gs_err = np.zeros(nt), np.zeros(nt)
+    t[:], ws[:], ws_err[:] = [np.nan]*3
+    for i_int in range(nt):
+        t_int = t_ints[i_int]
+        t[i_int] = t_int[0] + (t_int[1] - t_int[0])/2.
+
+        oo_wg.update({'t_work': t_int})
+
+        ff_wg = dict(GLO.DEF_PLOT_FORMAT)
+        ff_wg['flag_plot_print'] = False
+        oo_calc = dict(oo)
+        oo_calc['ff'] = ff_wg
+        res_wg =  calc_wg(oo_calc, oo_wg)
+
+        if flag_stat:
+            ws_err[i_int] = res_wg[line_res]['err_w']
+            gs_err[i_int] = res_wg[line_res]['err_g']
+        ws[i_int] = res_wg[line_res]['w' + line_res_method]
+
+    # --- initial variable ---
+    dict_var = choose_vars(oo)[0]
+    data_var, t_data = mix.get_x_data_interval(
+        [t[0], t[-1]], dict_var['x'], dict_var['data']
+    )
+
+    # --- PLOT ORIGINAL SIGNALS ---
+    # nsignals = 3  # original, treated, shifted
+    nsignals = 1  # original
+
+    # signals:
+    ch_signals = GLO.create_signals_dds(
+        GLO.def_arbitrary_1d,
+        [dd] * nsignals,
+        flag_arbitrary=True,
+        xs=[t_data],
+        datas=[data_var],
+    )
+
+    # styling:
+    ff_x = dict(ff)
+    ff_x.update({
+        'legends': ['original', 'treated', 'original - treated'],
+        'title': dict_var['leg'],
+        'styles': ['-', ':', ':'],
+        'xlabel': dict_var['labx'],
+        'ylabel': 'original\ signal',
+    })
+
+    # plotting:
+    oo_plot_x = {
+        'signals': ch_signals,
+        'ff': ff_x,
+        'sel_norm_x': oo.get('sel_norm_x', None),
+    }
+    plot_vars_1d(oo_plot_x)
+
+    # --- PLOT SPECTROGRAM ---
+    nsignals = 1  # spectrogram
+
+    data_w = ws if not flag_rel_freq else ws/ws[0]
+    data_w_err = ws_err if not flag_rel_freq else ws_err/ws[0]
+    line_w = '\omega'  + line_norm_w if not flag_rel_freq \
+        else '\omega/\omega_{0}'
+
+    # signals:
+    ch_signals = GLO.create_signals_dds(
+        GLO.def_arbitrary_1d,
+        [dd] * nsignals,
+        flag_arbitrary=True,
+        xs=[t],
+        datas=[data_w],
+        ys_err=[data_w_err],
+    )
+
+    # styling:
+    ff_x = dict(ff)
+    ff_x.update({
+        'legends': ['original', 'treated', 'original - treated'],
+        'title': dict_var['leg'],
+        'styles': ['o:'],
+        'xlabel': dict_var['labx'],
+        'ylabel': line_w,
+    })
+
+    # plotting:
+    oo_plot_x = {
+        'signals': ch_signals,
+        'ff': ff_x,
+        'sel_norm_x': oo.get('sel_norm_x', 'wc'),
+    }
+    plot_vars_1d(oo_plot_x)
+
+
+def calc_wg(oo, oo_wg):
+    # -------------------------------------------------------------------------------
+    # -> oo_var - dictionary to choose a variable
+    #   (input dict. for the function choose_vars(...))
+    # -------------------------------------------------------------------------------
+    # -> oo_wg - dictionary with parameters to calculate frequency and dynamic rate:
+    # 't_work' - work time domain
+    # 'sel_wg' - line, name of a method to calculate frequency and rate:
+    #   'wg-adv', 'w-adv', 'g-adv', 'wg-est', 'w-est', 'g-est'
+    # 'flag_two_stages' = True:
+    #       Firstly, one calculates gamma,
+    #       then create a signal = initial_signal * exp(-gamma*t) and
+    #       calculate the frequency
+    #   False:
+    #       calculate gamma and frequency from the initial_signal
+    # 'sel_norm': 'wc', 'vt', 'khz':
+    #       output normalization
+    # ---
+    # 'flag_stat' = True:
+    #       calculate errorbars
+    # 'n_samples' - integer:
+    #       number of time interval variations
+    # 'min_n_peaks' - integer:
+    #       minimum number of peaks in one time interval
+    # 'threshold_w' - float:
+    #       relative difference between estimated (linear fitting) value of frequency
+    #       (w_est) and
+    #       frequency value found from NL fitting (w_adv),
+    #       if |(w_adv - w_est)/w_est| <= threshold_w, then we are taking w_adv as
+    #       a result frequency, otherwise we don't take any value
+    # 'threshold_g' - float:
+    #       the same as threshold_w, but for the damping rate
+    # ---
+    # - FILTERING -
+    #  -> If 'flag_two_stages' = True, there are three stages of the filtering:
+    #       global, for gamma, for frequency;
+    #  -> Globally filtered signal is a starting signal for the calculation of the
+    #       both gamma and frequency;
+    #  -> After that, globally filtered signal can be filtered separately
+    #       before the calculation of the gamma and before the calc. of the frequency
+    #  -> If 'flag_two_stages' = False, there is only global filtering
+    # 'filt_global' - dict. or [dict., dict., ...]:
+    #       global filtering
+    # 'filt_gamma' - dict. or [dict., dict., ...]:
+    #       additional filtering of the globally filtered signal
+    #       before the calculation of the gamma
+    # 'filt_freq' - dict. or [dict., dict., ...]:
+    #       additional filtering of the globally filtered signal
+    #       before the calculation of the frequency
+    #  -> For the description of these dictionaries, see the function ymath.filtering
+    # -------------------------------------------------------------------------------
+    # -> oo_plot - dictionary for plotting:
+    # 't_plot' - domain of plotting;
+    # 'flag_norm' = True: normalized plots;
+    # 'flag_semilogy' = True: Y-axis in logarithmic scale;
+    # 'flag_plot_print' = True: plot results and print values on screen
+    # -------------------------------------------------------------------------------
+
+    # - None-filter -
+    non_filt = GLO.NONE_FILTER
+    out_res = {}
+
+    # - FUNCTION: filtering at one stage -
+    def one_stage_filtering(x, y, oo_filt_loc):
+        oo_filts_res = []
+        if oo_filt_loc is None or len(oo_filt_loc) is 0:
+            oo_filts_res.append(non_filt)
+        elif isinstance(oo_filt_loc, dict):
+            oo_filts_res.append(oo_filt_loc)
+        else:
+            oo_filts_res = oo_filt_loc  # array of filters
+
+        # apply one by one the filters in the array :
+        dict_loc = {'x': np.array(x), 'filt': np.array(y)}
+        count_filt = -1
+        for one_filt in oo_filts_res:
+            count_filt += 1
+            dict_loc = ymath.filtering(
+                dict_loc['x'], dict_loc['filt'], one_filt
+            )
+        return dict_loc
+
+    # - FUNCTION: get result -
+    def give_res(dict_wg_loc, name_method, name_value, coef_norm):
+        value_res, err_value = None, None
+        if dict_wg_loc[name_method] is not None:
+            value_res = dict_wg_loc[name_method][name_value]
+            err_value = dict_wg_loc[name_method][name_value + '_err']
+
+        # normalization:
+        if value_res is not None:
+            value_res *= coef_norm
+        if err_value is not None:
+            err_value *= coef_norm
+
+        line_value = 'None'
+        if value_res is not None:
+            line_value = '{:0.3e}'.format(value_res)
+            if err_value is not None:
+                line_value += ' +- {:0.3e}'.format(err_value)
+
+        return value_res, line_value
+
+    # - FUNCTION: different options of w and g measurement -
+    def find_wg(t, y, sel_wg, flag_print=True):
+        if sel_wg == 'wg-adv':
+            res_dict = ymath.advanced_wg(t, y, flag_print=flag_print)
+        elif sel_wg == 'w-adv':
+            res_dict = ymath.advanced_w(t, y, flag_print=flag_print)
+        elif sel_wg == 'g-adv':
+            res_dict = ymath.advanced_g(t, y, flag_print=flag_print)
+        elif sel_wg == 'wg-est':
+            res_dict = {
+                'est': ymath.estimate_wg(t, y),
+                'adv': None
+            }
+        elif sel_wg == 'w-est':
+            res_dict = {
+                'est': ymath.estimate_w(t, y),
+                'adv': None
+            }
+        elif sel_wg == 'g-est':
+            res_dict = {
+                'est': ymath.estimate_g(t, y),
+                'adv': None
+            }
+        else:
+            mix.error_mes('Wrong wg-selector: check oo_wg[''sel_wg'']')
+
+        return res_dict
+
+    # - project structure -
+    signal = oo.get('signal', None)
+    ff = dict(oo.get('ff', dict(GLO.DEF_PLOT_FORMAT)))
+    flag_plot_print = ff.get('flag_plot_print', True)
+    dd = signal['dd']
+
+    # - choose a variable -
+    dict_var = choose_vars(oo)[0]
+    leg_data = dict_var['leg']
+
+    # - initial data -
+    data_init = dict_var['data']
+    t_init    = dict_var['x']
+    dict_fft_init = ymath.filtering(t_init, data_init, non_filt)
+
+    # --- Frequency/rate calculation PARAMETERS ---
+    t_work = oo_wg.get('t_work', [])
+    sel_wg = oo_wg.get('sel_wg', 'wg-adv')
+
+    if len(t_work) == 0 or t_work is None:
+        t_work = t_init
+    flag_two_stages = oo_wg.get('flag_two_stages', False)
+    if sel_wg == 'w-adv' or sel_wg == 'w-est' or\
+            sel_wg == 'g-adv' or sel_wg == 'g-est':
+        flag_two_stages = False
+
+    oo_filt_global = oo_wg.get('filt_global', None)
+    oo_filt_gamma = oo_wg.get('filt_gamma', None)
+    oo_filt_freq = oo_wg.get('filt_freq', None)
+
+    flag_stat   = oo_wg.get('flag_stat', False)
+    n_samples   = oo_wg.get('n_samples', None)
+    min_n_peaks = oo_wg.get('min_n_peaks', None)
+    threshold_w = oo_wg.get('threshold_w', 0.1)
+    threshold_g = oo_wg.get('threshold_g', 0.2)
+    n_bins = oo_wg.get('n_bins', 40)
+
+    flag_print = False
+    if n_samples <= 10:
+        flag_print = True
+
+    # normalization
+    coef_norm_global_w, coef_norm_global_g, line_norm_w, line_norm_g = \
+        mix.choose_wg_normalization(
+            dd, oo_wg.get('sel_norm_wg', GLO.DEF_NORM_WG)
+        )
+
+    # --- GLOBAL FILTERING ---
+    dict_global = one_stage_filtering(t_init, data_init, oo_filt_global)
+    data_global = dict_global['filt']
+    t_global    = dict_global['x']
+
+    # --- WORK DOMAIN ---
+    ids_work, t_work, _ = mix.get_ids(t_global, t_work)
+    data_work = data_global[ids_work]
+    dict_fft_work_global    = ymath.filtering(t_work, data_work, non_filt)
+    ids_peaks_work, _       = scipy.signal.find_peaks(np.abs(data_work))
+    t_peaks_work = t_work[ids_peaks_work]
+
+    # --- PLOTTING: GLOBAL FILTERING ---
+    if flag_plot_print:
+        # signal
+        nsignals = 3  # original, globally filtered, absolute peaks
+        ch_signals_time_evol = GLO.create_signals_dds(
+            GLO.def_arbitrary_1d, [dd] * nsignals,
+            flag_arbitrary=True,
+            xs=[t_init, t_global, t_peaks_work],
+            datas=[data_init, data_global, data_work[ids_peaks_work]],
+        )
+
+        # styling:
+        ff_time_evol = dict(ff)
+        ff_time_evol.update({
+            'xlabel': 't[\omega_{ci}^{-1}]',
+            'title': dict_var['tit'],
+            'legends': [
+                leg_data, leg_data + ': globally\ filtered', leg_data + ':\ peaks'],
+            'styles': ['-', ':', 'o'],
+        })
+
+        # geometry
+        area_work = geom.Fill()
+        area_work.xs = [t_work[0], t_work[-1], t_work[-1], t_work[0]]
+        area_work.ys = ['limb', 'limb', 'limu', 'limu']
+        area_work.color = 'grey'
+        area_work.alpha = 0.3
+
+        # plotting
+        oo_time_evolution = {
+            'signals': ch_signals_time_evol,
+            'ff': ff_time_evol,
+            'geoms': [area_work],
+        }
+        plot_vars_1d(oo_time_evolution)
+        del ch_signals_time_evol, ff_time_evol, oo_time_evolution
+
+        # - FAST FOURIER TRANSFORM -
+        # signal
+        nsignals = 3  # original, globally filtered, globally filtered in a working domain
+        ch_signals_fft = GLO.create_signals_dds(
+            GLO.def_arbitrary_1d, [dd] * nsignals,
+            flag_arbitrary=True,
+            xs=[
+                dict_fft_init['w2'],
+                dict_global['w2'],
+                dict_fft_work_global['w2']
+            ],
+            datas=[
+                dict_fft_init['fft_init_2'],
+                dict_global['fft_filt_2'],
+                dict_fft_work_global['fft_init_2']
+            ],
+        )
+
+        # styling:
+        ff_fft = dict(ff)
+        ff_fft.update({
+            'xlabel': '\omega[\omega_{ci}]',
+            'title': leg_data + ':\ FFT',
+            'legends': [
+                'FFT:\ initial',
+                'FFT:\ globally\ filtered:\ whole\ time\ domain',
+                'FFT:\ globally\ filtered:\ work\ time\ domain'],
+            'styles': ['-', ':', ':'],
+            'flag_semilogy': False,
+        })
+
+        # plotting
+        oo_fft = {
+            'signals': ch_signals_fft,
+            'ff': ff_fft,
+        }
+        plot_vars_1d(oo_fft)
+        del ch_signals_fft, ff_fft, oo_fft
+
+    # --- NAIVE CALCULATION ---
+    if not flag_two_stages:
+        dict_wg = find_wg(t_work, data_work, sel_wg=sel_wg)
+
+        # - results -
+        w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
+        g_est, line_g_est = give_res(dict_wg, 'est', 'g', coef_norm_global_g)
+        w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
+        g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
+
+        # --- PLOT FITTING ---
+        if flag_plot_print:
+            # signal
+            nsignals = 3  # work signal, peaks, linear regression
+            flag_adv = False
+            if dict_wg['adv'] is not None:
+                flag_adv = True
+                nsignals = 4  # + NL FITTING
+
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[
+                    t_work,
+                    t_work[dict_wg['est']['ids_peaks']],
+                    dict_wg['est']['x_fit']
+                ] + [dict_wg['adv']['x_fit']] if flag_adv else [],
+                datas=[
+                    data_work,
+                    data_work[dict_wg['est']['ids_peaks']],
+                    dict_wg['est']['y_fit']
+                ] + [dict_wg['adv']['y_fit']] if flag_adv else [],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': 't[\omega_{ci}^{-1}]',
+                'title': 'Freq./Gamma\ calculation',
+                'legends': [
+                    leg_data, 'peaks', 'LIN.\ REGRESSION'
+                ] + ['NL\ FITTING']  if flag_adv else [],
+                'styles': [
+                    '-', 'o', ':'
+                ] + [':'] if flag_adv else [],
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # Print results
+            line_res = '--- NAIVE CALCULATION ---\n'
+            line_res += '--- ESTIMATION ---\n'
+            line_res += 'w' + line_norm_w + ' = ' + line_w_est + '\n'
+            line_res += 'g' + line_norm_g + ' = ' + line_g_est + '\n'
+            line_res += '--- NL FITTING ---\n'
+            line_res += 'w' + line_norm_w + ' = ' + line_w_adv + '\n'
+            line_res += 'g' + line_norm_g + ' = ' + line_g_adv
+            print(line_res)
+    else:
+        # - FIND GAMMA -
+        dict_gamma_filt = one_stage_filtering(t_work, data_work, oo_filt_gamma)
+        data_gamma = dict_gamma_filt['filt']
+        t_gamma    = dict_gamma_filt['x']
+        dict_gamma = find_wg(t_gamma, data_gamma, sel_wg)
+
+        w_est_prel, line_w_est_prel = give_res(dict_gamma, 'est', 'w', coef_norm_global_w)
+        g_est, line_g_est           = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
+        w_adv_prel, line_w_adv_prel = give_res(dict_gamma, 'adv', 'w', coef_norm_global_w)
+        g_adv, line_g_adv           = give_res(dict_gamma, 'adv', 'g', coef_norm_global_g)
+
+        # - FIND FREQUENCY -
+        g_mult = g_est
+        if g_adv is not None:
+            g_mult = g_adv
+        g_mult /= coef_norm_global_g
+        data_work_exp = data_work * np.exp(- g_mult * t_work)
+        dict_freq_filt = one_stage_filtering(
+            t_work,
+            data_work_exp,
+            oo_filt_freq
+        )
+        data_freq = dict_freq_filt['filt']
+        t_freq    = dict_freq_filt['x']
+        dict_freq = find_wg(t_freq, data_freq, sel_wg)
+
+        w_est, line_w_est           = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
+        g_est_zero, line_g_est_zero = give_res(dict_freq, 'est', 'g', coef_norm_global_g)
+        w_adv, line_w_adv           = give_res(dict_freq, 'adv', 'w', coef_norm_global_w)
+        g_adv_zero, line_g_adv_zero = give_res(dict_freq, 'adv', 'g', coef_norm_global_g)
+
+        # --- PLOTTING ---
+        if flag_plot_print:
+
+            # --- GAMMA: TIME EVOLUTION ---
+            # signal
+            nsignals = 2  # original, filtered
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[t_work, t_gamma],
+                datas=[data_work, data_gamma],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': 't[\omega_{ci}^{-1}]',
+                'title': 'Gamma\ calculation:\ filtering',
+                'legends': [leg_data, leg_data + ':\ filtered'],
+                'styles': ['-', ':'],
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # --- GAMMA: FFT ---
+            # signal
+            nsignals = 2  # globally filtered, filtered
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[dict_gamma_filt['w2'], dict_gamma_filt['w2']],
+                datas=[dict_gamma_filt['fft_init_2'], dict_gamma_filt['fft_filt_2']],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': '\omega[\omega_{ci}]',
+                'title': 'Gamma\ calculation:\ FFT',
+                'legends': ['FFT:\ global\ filtering', 'FFT:\ gamma\ filtering'],
+                'styles': ['-', ':'],
+                'flag_semilogy': False,
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # --- GAMMA: FITTING ---
+            # signal
+            nsignals = 3  # work signal, peaks, linear regression
+            flag_adv = False
+            if dict_gamma['adv'] is not None:
+                flag_adv = True
+                nsignals = 4  # + NL FITTING
+
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[
+                       t_gamma,
+                       t_work[dict_gamma['est']['ids_peaks']],
+                       dict_gamma['est']['x_fit']
+                   ] + [dict_gamma['adv']['x_fit']] if flag_adv else [],
+                datas=[
+                          data_gamma,
+                          data_work[dict_gamma['est']['ids_peaks']],
+                          dict_gamma['est']['y_fit']
+                      ] + [dict_gamma['adv']['y_fit']] if flag_adv else [],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': 't[\omega_{ci}^{-1}]',
+                'title': 'Gamma\ calculation:\ fitting',
+                'legends': [
+                               leg_data + ':\ filtered',
+                               'peaks',
+                               'LIN.\ REGRESSION'
+                           ] + ['NL\ FITTING'] if flag_adv else [],
+                'styles': [
+                              '-', 'o', ':'
+                          ] + [':'] if flag_adv else [],
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # --- FREQUENCY: TIME EVOLUTION ---
+            # signal
+            nsignals = 2  # original, filtered
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[t_work, t_freq],
+                datas=[data_work, data_freq],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': 't[\omega_{ci}^{-1}]',
+                'title': 'Freq.\ calculation:\ filtering',
+                'legends': [leg_data, leg_data + ':\ *\exp(-g*t),\ filtered'],
+                'styles': ['-', ':'],
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # --- FREQUENCY: FFT ---
+            # signal
+            nsignals = 2  # globally filtered, filtered
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[dict_freq_filt['w2'], dict_freq_filt['w2']],
+                datas=[dict_freq_filt['fft_init_2'], dict_freq_filt['fft_filt_2']],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': '\omega[\omega_{ci}]',
+                'title': 'Freq.\ calculation:\ FFT',
+                'legends': ['FFT:\ global\ filtering', 'FFT:\ freq.\ filtering'],
+                'styles': ['-', ':'],
+                'flag_semilogy': False,
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # --- FREQUENCY: FITTING ---
+            # signal
+            nsignals = 3  # work signal, peaks, linear regression
+            flag_adv = False
+            if dict_freq['adv'] is not None:
+                flag_adv = True
+                nsignals = 4  # + NL FITTING
+
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[
+                       t_freq,
+                       t_work[dict_freq['est']['ids_peaks']],
+                       dict_freq['est']['x_fit']
+                   ] + [dict_freq['adv']['x_fit']] if flag_adv else [],
+                datas=[
+                          data_freq,
+                          data_work_exp[dict_freq['est']['ids_peaks']],
+                          dict_freq['est']['y_fit']
+                      ] + [dict_freq['adv']['y_fit']] if flag_adv else [],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': 't[\omega_{ci}^{-1}]',
+                'title': 'Freq.\ calc.:\ fitting',
+                'legends': [
+                               leg_data + ':\ filtered',
+                               'peaks',
+                               'LIN.\ REGRESSION'
+                           ] + ['NL\ FITTING'] if flag_adv else [],
+                'styles': [
+                              '-', 'o', ':'
+                          ] + [':'] if flag_adv else [],
+                'norm_to': data_work_exp
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # - print results -
+            line_res = '--- NAIVE CALCULATION ---\n'
+            line_res += '- GAMMA: ESTIMATION -\n'
+            line_res += 'prel. w' + line_norm_w + ' = ' + line_w_est_prel + '\n'
+            line_res += 'g' + line_norm_g + ' = ' + line_g_est + '\n'
+            line_res += '- GAMMA: NL FITTING -\n'
+            line_res += 'prel. w' + line_norm_w + ' = ' + line_w_adv_prel + '\n'
+            line_res += 'g' + line_norm_g + ' = ' + line_g_adv + '\n'
+            line_res += '- FREQUENCY: ESTIMATION -\n'
+            line_res += 'w' + line_norm_w + ' = ' + line_w_est + '\n'
+            line_res += '(g_real - g_num)' + line_norm_g + ' = ' + line_g_est_zero + '\n'
+            line_res += '- FREQUENCY: NL FITTING -\n'
+            line_res += 'w' + line_norm_w + ' = ' + line_w_adv + '\n'
+            line_res += '(g_real - g_num)' + line_norm_g + ' = ' + line_g_adv_zero
+            print(line_res)
+
+    # - save results of naive calculation -
+    naive_res = {
+        'w_est': w_est, 'g_est': g_est,
+        'w_adv': w_adv, 'g_adv': g_adv,
+    }
+    out_res.update({'naive': naive_res})
+
+    # --- CALCULATION WITH STATISTICS ---
+    t_intervals = []
+    if flag_stat:
+        oo_get_intervals = {
+            'nsamples': n_samples,
+            't_work': t_work,
+            'min_n_periods': min_n_peaks,
+            't_period': np.mean(np.diff(t_peaks_work))
+        }
+        dict_intervals = mix.get_t_intervals(oo_get_intervals, flag_plot_print)
+        t_intervals = dict_intervals['t_intervals']
+
+        # plot time intervals
+        if flag_print and flag_plot_print:
+            for one_t_interval in t_intervals:
+                # signal
+                nsignals = 2  # globally filtered, peaks
+                ch_signals = GLO.create_signals_dds(
+                    GLO.def_arbitrary_1d, [dd] * nsignals,
+                    flag_arbitrary=True,
+                    xs=[t_global, t_work[ids_peaks_work]],
+                    datas=[data_global, data_work[ids_peaks_work]],
+                )
+
+                # styling:
+                ff_current = dict(ff)
+                ff_current.update({
+                    'xlabel': 't[\omega_{ci}^{-1}]',
+                    'title': 'Chosen\ time\ intervals',
+                    'legends': [
+                        'Globally\ filtered\ data', 'peaks'],
+                    'styles': ['-', 'o'],
+                })
+
+                # geometry
+                area_calc_chosen = geom.Fill()
+                area_calc_chosen.xs = [
+                    one_t_interval[0], one_t_interval[-1],
+                    one_t_interval[-1], one_t_interval[0]
+                ]
+                area_calc_chosen.ys = ['limb', 'limb', 'limu', 'limu']
+                area_calc_chosen.color = 'grey'
+                area_calc_chosen.alpha = 0.6
+
+                # plotting
+                oo_current = {
+                    'signals': ch_signals,
+                    'ff': ff_current,
+                    'geoms': [area_work, area_calc_chosen],
+                }
+                plot_vars_1d(oo_current)
+
+    # - calculation of freq/rate at one stage -
+    ws, gs = [], []
+    if not flag_two_stages and flag_stat:
+        for i_sample in range(n_samples):
+            ids_one_t_interval, t_one_interval, _ = \
+                mix.get_ids(t_work, t_intervals[i_sample])
+
+            dict_wg = find_wg(
+                t_one_interval,
+                data_work[ids_one_t_interval],
+                sel_wg,
+                flag_print=False
+            )
+            w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
+            g_est, line_g_est = give_res(dict_wg, 'est', 'g', coef_norm_global_g)
+            w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
+            g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
+
+            if 'est' not in sel_wg:
+                if w_adv is not None:
+                    if np.abs((w_adv - w_est)/w_est) <= threshold_w:
+                        ws.append(w_adv)
+                if g_adv is not None:
+                    if np.abs((g_adv - g_est) / g_est) <= threshold_g:
+                        gs.append(g_adv)
+            else:
+                if w_est is not None:
+                    ws.append(w_est)
+                if g_est is not None:
+                    gs.append(g_est)
+        ws = np.array(ws)
+        gs = np.array(gs)
+
+    # - calculation of freq/rate at two stages -
+    elif flag_two_stages and flag_stat:
+        for i_sample in range(n_samples):
+
+            # - FIND GAMMA -
+            ids_one_t_interval, t_one_interval, _ = \
+                mix.get_ids(t_gamma, t_intervals[i_sample])
+
+            dict_gamma = find_wg(
+                t_one_interval,
+                data_gamma[ids_one_t_interval],
+                sel_wg,
+                flag_print=False
+            )
+
+            g_est, line_g_est = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
+            g_adv, line_g_adv = give_res(dict_gamma, 'adv', 'g', coef_norm_global_g)
+            if 'est' not in sel_wg:
+                if g_adv is not None:
+                    if np.abs((g_adv - g_est) / g_est) <= threshold_g:
+                        gs.append(g_adv)
+            else:
+                if g_est is not None:
+                    gs.append(g_est)
+
+            # - FIND FREQUENCY -
+            g_mult = g_est
+            if g_adv is not None:
+                g_mult = g_adv
+            g_mult /= coef_norm_global_g
+            dict_freq_filt = one_stage_filtering(
+                t_work,  # filtering is performed in the work domain
+                data_work * np.exp(- g_mult * t_work),
+                oo_filt_freq
+            )
+            data_freq   = dict_freq_filt['filt']
+            t_freq      = dict_freq_filt['x']
+
+            ids_one_t_interval, t_one_interval, _ = \
+                mix.get_ids(t_freq, t_intervals[i_sample])
+
+            dict_freq = find_wg(
+                t_one_interval,  # calculation is performed in one of the time domains
+                data_freq[ids_one_t_interval],
+                sel_wg,
+                flag_print=False
+            )
+
+            w_est, line_w_est = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
+            w_adv, line_w_adv = give_res(dict_freq, 'adv', 'w', coef_norm_global_w)
+            if 'est' not in sel_wg:
+                if w_adv is not None:
+                    if np.abs((w_adv - w_est)/w_est) <= threshold_w:
+                        ws.append(w_adv)
+            else:
+                if w_est is not None:
+                    ws.append(w_est)
+        ws = np.array(ws)
+        gs = np.array(gs)
+
+    # - statistical results -
+    stat_res = {
+        'w': None, 'err_w': None,
+        'g': None, 'err_g': None,
+    }
+    if flag_stat:
+        # frequency histogram
+        hist_w = np.histogram(ws, bins=n_bins)
+        fit_mean_w, fit_sigma_w = stat_norm.fit(ws)
+        f_data_w = stat_norm.pdf(hist_w[1], fit_mean_w, fit_sigma_w)
+
+        # Rate histogram
+        hist_g = np.histogram(gs, bins=n_bins)
+        fit_mean_g, fit_sigma_g = stat_norm.fit(gs)
+        f_data_g = stat_norm.pdf(hist_g[1], fit_mean_g, fit_sigma_g)
+
+        err_w = GLO.COEF_ERR * fit_sigma_w
+        err_g = GLO.COEF_ERR * fit_sigma_g
+
+        # - plotting and printing statistical results -
+        if flag_plot_print:
+            # --- Frequency: Histogram ---
+            # signal
+            nsignals = 2  # histogram, normal distribution
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[n_bins, hist_w[1]],
+                datas=[ws, f_data_w],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': '\omega[\omega_{ci}]',
+                'ylabel': 'a.u',
+                'title': 'Histogram:\ Frequency',
+                'flag_maxlocator': True,
+                'legends': ['histogram', 'normal\ distribution'],
+                'flags_hist': [True, False],
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # --- GAMMA: Histogram ---
+            # signal
+            nsignals = 2  # histogram, normal distribution
+            ch_signals = GLO.create_signals_dds(
+                GLO.def_arbitrary_1d, [dd] * nsignals,
+                flag_arbitrary=True,
+                xs=[n_bins, hist_g[1]],
+                datas=[gs, f_data_g],
+            )
+
+            # styling:
+            ff_current = dict(ff)
+            ff_current.update({
+                'xlabel': '\gamma[\omega_{ci}]',
+                'ylabel': 'a.u',
+                'title': 'Histogram:\ Damping/Growth Rate',
+                'flag_maxlocator': True,
+                'legends': ['histogram', 'normal\ distribution'],
+                'flags_hist': [True, False],
+            })
+
+            # plotting
+            oo_current = {
+                'signals': ch_signals,
+                'ff': ff_current,
+            }
+            plot_vars_1d(oo_current)
+
+            # Print results
+            line_stat = '--- STATISTICS ---\n'
+            line_stat += 'number of frequency samples = ' + '{:d}'.format(len(ws)) + '\n'
+            line_stat += 'number of rate samples = ' + '{:d}'.format(len(gs)) + '\n'
+            line_stat += 'w' + line_norm_w + ' = ' + '{:0.3e}'.format(fit_mean_w) \
+                        + '+-' + '{:0.3e}'.format(err_w) + '\n'
+            line_stat += 'g' + line_norm_g + ' = ' + '{:0.3e}'.format(fit_mean_g) \
+                        + '+-' + '{:0.3e}'.format(err_g)
+            print(line_stat)
+
+        # - save results of naive calculation -
+        stat_res = {
+            'w': fit_mean_w, 'err_w': err_w,
+            'g': fit_mean_g, 'err_g': err_g,
+        }
+    out_res.update({'stat': stat_res})
+
+    return out_res
 
 
 # NEW: plot Continuous Wavelet transform
@@ -474,228 +1588,6 @@ def plot_cwt(oo):
             cpr.plot_curves(curves_t)
         cpr.plot_curves_3d(curves_w)
         cpr.plot_curves(curves_fft)
-
-
-# NEW: plot FFT in time
-def plot_fft_in_time(oo):
-    vvars = choose_vars(oo)  # should be 1d variable
-    n_vars = len(vvars)
-
-    # additional data:
-    labx       = oo.get('labx', None)  # x-label
-    laby       = oo.get('laby', None)  # y-label
-    leg_pos    = oo.get('leg_pos', None)
-    tit_plot   = oo.get('tit_plot', None)  # title
-    ylim       = oo.get('ylim', None)
-    width_x    = oo.get('width_x', None)
-    x_fft_domain = oo.get('x_fft_domain', None)  # x-domain, where FFT will be performed, does not influence
-                                                 # the domain where filtering is perfomed
-    oo_filt    = oo.get('oo_filt', None)  # filter for the signal; to be performed in a whole x-domain
-    w_norm_domain = oo.get('w_norm_domain', None)
-    dds = oo.get('dds', None)
-
-    flag_fv = oo.get('flag_fv', False)  # to calculate frequency from clumps and holes
-    species_name = oo.get('species_name', None)  # species name for distribution function
-    s1_q = oo.get('s1_q', None)  # radial point where a value of q to be taken
-
-    # - frequency normalization (notation) -
-    sel_norm_w = oo.get('sel_norm_w', 'wc')
-    line_norm_w = None
-    if sel_norm_w == 'khz':
-        line_norm_w = '\omega,\ kHz'
-    if sel_norm_w == 'wc':
-        line_norm_w = '\omega[\omega_c]'
-    if sel_norm_w == 'csa':
-        line_norm_w = '\omega[c_s/a_0]'
-    if sel_norm_w == 'csr':
-        line_norm_w = '\omega[c_s/R_0]'
-
-    # time normalization (notation):
-    sel_norm_t = oo.get('sel_norm_t', 'wc')
-    coef_norm_t, line_norm_t = None, None
-    if sel_norm_t == 'orig':
-        coef_norm_t = 1
-        line_norm_t = ''
-    if sel_norm_t == 't-mili-seconds':
-        line_norm_t = '(ms)'
-
-    # consider every variable
-    for ivar in range(n_vars):
-        curves_t = crv.Curves()\
-            .xlab(labx + line_norm_t)\
-            .ylab(laby)\
-            .tit(tit_plot) \
-            .leg_pos(leg_pos).ylim(ylim)
-        curves_w = crv.Curves() \
-            .xlab(labx + line_norm_t) \
-            .ylab(line_norm_w) \
-            .tit(tit_plot)
-
-        dd_one = dds[ivar]
-        vvar = vvars[ivar]
-        x    = vvar['x']
-        data = vvar['data'][0]
-        leg  = vvar['legs'][0]
-
-        # filtering (performed in the whole domain)
-        data_filt, x_filt = ymath.global_filter_signal(x, data, oo_filt)
-        data_filt = np.interp(x, x_filt, data_filt)
-
-        # shifted signal:
-        # data_shifted = data - data_filt
-        data_shifted = data
-
-        # x-domain, where the FFT will be performed:
-        if x_fft_domain is None:
-            x_work = np.array(x)
-            data_work = np.array(data_shifted)
-        else:
-            ids_x_work, x_work, _ = mix.get_ids(x, x_fft_domain)
-            ids_x_work = np.arange(ids_x_work[0], ids_x_work[-1] + 1)
-            data_work = data_shifted[ids_x_work]
-
-        # get frequency grid
-        _, x_interval, _ =  mix.get_ids(x_work, [0, width_x])
-        w = ymath.fft_y(x_interval)['w']
-
-        # Calculate time intervals:
-        n_intervals = 0
-        for x1 in x_work:
-            n_intervals += 1
-            x_right_bound = x1 + width_x
-            if x_right_bound > x_work[-1]:
-                continue
-
-        # Time evolution of the Fourier transform:
-        res_fft = np.zeros([n_intervals, np.size(w)])
-        for id_x in range(np.size(x_work)):
-            x_right_bound = x_work[id_x] + width_x
-            if x_right_bound > x_work[-1]:
-                continue
-
-            ids_x_interval, x_interval, _ = \
-                mix.get_ids(x_work, [x_work[id_x], x_right_bound])
-            ids_x_interval = np.arange(ids_x_interval[0], ids_x_interval[-1] + 1)
-            res_fft[id_x, :] = ymath.fft_y(x_interval, data_work[ids_x_interval])['f']
-
-        # time normalization (second stage):
-        if sel_norm_t == 't-mili-seconds':
-            coef_norm_t = 1. / dd_one['wc'] * 1e3
-
-        # Clumps and Holes and zeros: parallel velocities, result frequencies ---
-        if flag_fv:
-            # delta f
-            oo_get_f = {'avrs': [['tvpar', 'none-']], 'dds': [dd_one],
-                        'ovars': [['distribution', 'df_vel_1d', species_name]]}
-            vvar_delta_f = choose_vars(oo_get_f)[0]
-            deltaf = vvar_delta_f['data']
-            t_f = vvar_delta_f['t']
-            vpar_f = vvar_delta_f['vpar']
-
-            # d \delta f / dv
-            oo_get_f['ovars'] = [['distribution', 'ddeltaf_vel_1d-dv', species_name]]
-            vvar_d_delta_f = choose_vars(oo_get_f)[0]
-            ddeltaf = vvar_d_delta_f['data']
-
-            # clumps, holes, zeros:
-            ids_pos, _, _ = mix.get_ids(vpar_f, [0.0, np.max(vpar_f[-1])])
-            ids_pos = range(ids_pos[0], ids_pos[-1] + 1)
-            vpar_f_pos = vpar_f[ids_pos]
-
-            id_f_max = np.argmax(deltaf[:, ids_pos], axis=1)
-            id_f_min = np.argmin(deltaf[:, ids_pos], axis=1)
-            id_f_zero = np.argmin(ddeltaf[:, ids_pos], axis=1)
-
-            vpar_max, vpar_min, vpar_zero = \
-                np.zeros(np.size(id_f_max)), np.zeros(np.size(id_f_min)), np.zeros(np.size(id_f_zero))
-            for id_t in range(np.size(id_f_max)):
-                vpar_max[id_t] = vpar_f_pos[id_f_max[id_t]]
-                vpar_min[id_t] = vpar_f_pos[id_f_min[id_t]]
-                vpar_zero[id_t] = vpar_f_pos[id_f_zero[id_t]]
-            w_from_max = ymath.get_w_from_v_res(dd_one, s1_q, vpar_max, species_name)
-            w_from_min = ymath.get_w_from_v_res(dd_one, s1_q, vpar_min, species_name)
-            w_from_zero = ymath.get_w_from_v_res(dd_one, s1_q, vpar_zero, species_name)
-
-            curves_draw_vres_max = geom.Curve()
-            curves_draw_vres_min = geom.Curve()
-            curves_draw_vres_zero = geom.Curve()
-            curves_draw_vres_max.add_curve(t_f * coef_norm_t, vpar_max)
-            curves_draw_vres_min.add_curve(t_f * coef_norm_t, vpar_min)
-            curves_draw_vres_zero.add_curve(t_f * coef_norm_t, vpar_zero)
-            curves_draw_vres_max.color, curves_draw_vres_min.color, curves_draw_vres_zero.color = \
-                'black', 'black', 'black'
-            curves_draw_vres_max.style, curves_draw_vres_min.style, curves_draw_vres_zero.style = \
-                ':', ':', ':'
-            curves_draw_vres_max.width, curves_draw_vres_min.width, curves_draw_vres_zero.width = \
-                4, 4, 4
-
-            label_deltaf = species_name + ':\ \delta f(t, v_{res})'
-            label_ddeltaf = species_name + ':\ \partial \delta f(t, v_{res})/\partial v'
-
-        # - frequency normalization (coefficient) -
-        coef_norm_w = None
-        if sel_norm_w == 'khz':
-            coef_norm_w = dd_one['wc'] / 1.e3
-        if sel_norm_w == 'wc':
-            coef_norm_w = 2 * np.pi
-        if sel_norm_w == 'csa':
-            coef_norm_w = 2 * np.pi * dd_one['wc'] / (dd_one['cs'] / dd_one['a0'])
-        if sel_norm_w == 'csr':
-            coef_norm_w = 2 * np.pi * dd_one['wc'] / (dd_one['cs'] / dd_one['R0'])
-
-        # working frequency domain
-        ids_w_work, w_norm_work, _ = mix.get_ids(w * coef_norm_w, w_norm_domain)
-        ids_w_work = np.arange(ids_w_work[0], ids_w_work[-1] + 1)
-        fft_work = res_fft[:, ids_w_work]
-
-        # x domain of plotting
-        x_plot, ids_x_plot = mix.get_array_oo(oo, x_work, 'x')
-        ids_x_plot = np.arange(ids_x_plot[0], ids_x_plot[-1] + 1)
-        fft_plot = fft_work[ids_x_plot, :]
-
-        # plot x-evolution of the signal
-        curves_t.new()\
-            .XS(x * coef_norm_t)\
-            .YS(data)\
-            .leg(leg + ':\ original').sty('-')
-        curves_t.new() \
-            .XS(x * coef_norm_t) \
-            .YS(data_filt) \
-            .leg(leg + ':\ filtered').sty(':')
-        curves_t.new() \
-            .XS(x * coef_norm_t) \
-            .YS(data_work) \
-            .leg(leg + ':\ original - filtered').sty('-')
-
-        # plot x-evolution of the signal FFT
-        curves_w.new()\
-            .XS(x_plot * coef_norm_t)\
-            .YS(w_norm_work)\
-            .ZS(fft_plot).lev(60)
-
-        if flag_fv:
-            curves_w.new()\
-                .XS(t_f * coef_norm_t)\
-                .YS(w_from_max * coef_norm_w / (2 * np.pi))
-            curves_w.new() \
-                .XS(t_f * coef_norm_t) \
-                .YS(w_from_min * coef_norm_w / (2 * np.pi))
-
-            curves_f = crv.Curves() \
-                .xlab(labx + line_norm_t) \
-                .ylab('v_{\parallel}') \
-                .tit(label_deltaf)
-            curves_f.new() \
-                .XS(t_f * coef_norm_t) \
-                .YS(vpar_f)\
-                .ZS(deltaf)
-            curves_f.newg(curves_draw_vres_max)
-
-        # if len(curves_t.list_curves) is not 0:
-        #     cpr.plot_curves(curves_t)
-        cpr.plot_curves_3d(curves_w)
-        if flag_fv:
-            cpr.plot_curves_3d(curves_f)
 
 
 # NEW: 1d plot: localisation:
@@ -1246,706 +2138,6 @@ def find_gamma(oo):
     return
 
 
-# NEW: calculation of the frequency and dynamic rate at one radial point:
-def calc_wg(oo_var, oo_wg, oo_plot):
-    # -------------------------------------------------------------------------------
-    # -> oo_var - dictionary to choose a variable
-    #   (input dict. for the function choose_vars(...))
-    # -------------------------------------------------------------------------------
-    # -> oo_wg - dictionary with parameters to calculate frequency and dynamic rate:
-    # 't_work' - work time domain
-    # 'sel_wg' - line, name of a method to calculate frequency and rate:
-    #   'wg-adv', 'w-adv', 'g-adv', 'wg-est', 'w-est', 'g-est'
-    # 'flag_two_stages' = True:
-    #       Firstly, one calculates gamma,
-    #       then create a signal = initial_signal * exp(-gamma*t) and
-    #       calculate the frequency
-    #   False:
-    #       calculate gamma and frequency from the initial_signal
-    # 'sel_norm': 'wc', 'vt', 'khz':
-    #       output normalization
-    # ---
-    # 'flag_stat' = True:
-    #       calculate errorbars
-    # 'n_samples' - integer:
-    #       number of time interval variations
-    # 'min_n_peaks' - integer:
-    #       minimum number of peaks in one time interval
-    # 'threshold_w' - float:
-    #       relative difference between estimated (linear fitting) value of frequency
-    #       (w_est) and
-    #       frequency value found from NL fitting (w_adv),
-    #       if |(w_adv - w_est)/w_est| <= threshold_w, then we are taking w_adv as
-    #       a result frequency, otherwise we don't take any value
-    # 'threshold_g' - float:
-    #       the same as threshold_w, but for the damping rate
-    # ---
-    # - FILTERING -
-    #  -> If 'flag_two_stages' = True, there are three stages of the filtering:
-    #       global, for gamma, for frequency;
-    #  -> Globally filtered signal is a starting signal for the calculation of the
-    #       both gamma and frequency;
-    #  -> After that, globally filtered signal can be filtered separately
-    #       before the calculation of the gamma and before the calc. of the frequency
-    #  -> If 'flag_two_stages' = False, there is only global filtering
-    # 'filt_global' - dict. or [dict., dict., ...]:
-    #       global filtering
-    # 'filt_gamma' - dict. or [dict., dict., ...]:
-    #       additional filtering of the globally filtered signal
-    #       before the calculation of the gamma
-    # 'filt_freq' - dict. or [dict., dict., ...]:
-    #       additional filtering of the globally filtered signal
-    #       before the calculation of the frequency
-    #  -> For the description of these dictionaries, see the function ymath.filtering
-    # -------------------------------------------------------------------------------
-    # -> oo_plot - dictionary for plotting:
-    # 't_plot' - domain of plotting;
-    # 'flag_norm' = True: normalized plots;
-    # 'flag_semilogy' = True: Y-axis in logarithmic scale;
-    # 'flag_plot_print' = True: plot results and print values on screen
-    # -------------------------------------------------------------------------------
-
-    # - None-filter -
-    non_filt = {'sel_filt': None}
-    out_res = {}
-
-    # - FUNCTION: filtering at one stage -
-    def one_stage_filtering(x, y, oo_filt_loc):
-        oo_filts_res = []
-        if oo_filt_loc is None or len(oo_filt_loc) is 0:
-            oo_filts_res.append(non_filt)
-        elif isinstance(oo_filt_loc, dict):
-            oo_filts_res.append(oo_filt_loc)
-        else:
-            oo_filts_res = oo_filt_loc  # array of filters
-
-        # apply one by one the filters in the array :
-        dict_loc = {'x': np.array(x), 'filt': np.array(y)}
-        count_filt = -1
-        for one_filt in oo_filts_res:
-            count_filt += 1
-            dict_loc = ymath.filtering(
-                dict_loc['x'], dict_loc['filt'], one_filt
-            )
-        return dict_loc
-
-    # - FUNCTION: get result -
-    def give_res(dict_wg_loc, name_method, name_value, coef_norm):
-        value_res, err_value = None, None
-        if dict_wg_loc[name_method] is not None:
-            value_res = dict_wg_loc[name_method][name_value]
-            err_value = dict_wg_loc[name_method][name_value + '_err']
-
-        # normalization:
-        if value_res is not None:
-            value_res *= coef_norm
-        if err_value is not None:
-            err_value *= coef_norm
-
-        line_value = 'None'
-        if value_res is not None:
-            line_value = '{:0.3e}'.format(value_res)
-            if err_value is not None:
-                line_value += ' +- {:0.3e}'.format(err_value)
-
-        return value_res, line_value
-
-    # - FUNCTION: different options of w and g measurement -
-    def find_wg(t, y, sel_wg, flag_print=True):
-        if sel_wg == 'wg-adv':
-            res_dict = ymath.advanced_wg(t, y, flag_print=flag_print)
-        elif sel_wg == 'w-adv':
-            res_dict = ymath.advanced_w(t, y, flag_print=flag_print)
-        elif sel_wg == 'g-adv':
-            res_dict = ymath.advanced_g(t, y, flag_print=flag_print)
-        elif sel_wg == 'wg-est':
-            res_dict = {
-                'est': ymath.estimate_wg(t, y),
-                'adv': None
-            }
-        elif sel_wg == 'w-est':
-            res_dict = {
-                'est': ymath.estimate_w(t, y),
-                'adv': None
-            }
-        elif sel_wg == 'g-est':
-            res_dict = {
-                'est': ymath.estimate_g(t, y),
-                'adv': None
-            }
-        else:
-            mix.error_mes('Wrong wg-selector: check oo_wg[''sel_wg'']')
-
-        return res_dict
-
-    # - project structure -
-    dd = oo_var.get('dds', None)[0]
-
-    # - choose a variable -
-    dict_var = choose_vars(oo_var)[0]
-
-    # - initial data -
-    data_init = dict_var['data'][0]
-    t_init = dict_var['x']
-    dict_fft_init = ymath.filtering(t_init, data_init, non_filt)
-
-    # --- Frequency/rate calculation PARAMETERS ---
-    t_work = oo_wg.get('t_work', [])
-    sel_wg = oo_wg.get('sel_wg', 'wg-adv')
-
-    if len(t_work) == 0 or t_work is None:
-        t_work = t_init
-    flag_two_stages = oo_wg.get('flag_two_stages', False)
-    if sel_wg == 'w-adv' or sel_wg == 'w-est' or\
-            sel_wg == 'g-adv' or sel_wg == 'g-est':
-        flag_two_stages = False
-
-    oo_filt_global = oo_wg.get('filt_global', None)
-    oo_filt_gamma = oo_wg.get('filt_gamma', None)
-    oo_filt_freq = oo_wg.get('filt_freq', None)
-
-    flag_stat   = oo_wg.get('flag_stat', False)
-    n_samples   = oo_wg.get('n_samples', None)
-    min_n_peaks = oo_wg.get('min_n_peaks', None)
-    threshold_w = oo_wg.get('threshold_w', 0.1)
-    threshold_g = oo_wg.get('threshold_g', 0.2)
-    n_bins = oo_wg.get('n_bins', 40)
-
-    flag_print = False
-    if n_samples <= 10:
-        flag_print = True
-
-    sel_norm = oo_wg.get('sel_norm', 'wc')
-    coef_norm_global_w, coef_norm_global_g, line_norm_w, line_norm_g = None, None, '', ''
-    if sel_norm == 'wc':
-        line_norm_w = line_norm_g = '[wci]'
-        coef_norm_global_w = coef_norm_global_g = 1
-    if sel_norm == 'vt':
-        line_norm_w = line_norm_g = '[sqrt(2)*vt/R0]'
-        coef_norm_global_w = coef_norm_global_g = \
-            dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
-    if sel_norm == 'khz':
-        line_norm_w = '(kHz)'
-        line_norm_g = '(10^3 s)'
-        coef_norm_global_w = dd['wc'] / (1e3 * 2*np.pi)
-        coef_norm_global_g = dd['wc'] / 1e3
-
-    # --- GLOBAL FILTERING ---
-    dict_global = one_stage_filtering(t_init, data_init, oo_filt_global)
-    data_global = dict_global['filt']
-    t_global    = dict_global['x']
-
-    # --- WORK DOMAIN ---
-    ids_work, t_work, _ = mix.get_ids(t_global, t_work)
-    data_work = data_global[ids_work]
-    dict_fft_work_global    = ymath.filtering(t_work, data_work, non_filt)
-    ids_peaks_work, _       = scipy.signal.find_peaks(np.abs(data_work))
-    t_peaks_work = t_work[ids_peaks_work]
-
-    # - PLOTTING: GLOBAL FILTERING -
-
-    # parameters of plotting
-    flag_plot_print = oo_plot.get('flag_plot_print', True)
-
-    if flag_plot_print:
-        t_plot = oo_plot.get('t_plot', [])
-        if len(t_plot) == 0:
-            t_plot = t_init
-
-        ids_plot_init, _, _   = mix.get_ids(t_init,   t_plot)
-        ids_plot_global, _, _ = mix.get_ids(t_global, t_plot)
-        ids_plot_work, _, _   = mix.get_ids(t_work,   t_plot)
-
-        flag_norm     = oo_plot.get('flag_norm', False)
-        flag_semilogy = oo_plot.get('flag_semilogy', False)
-
-        leg_data = dict_var['legs'][0]
-
-        # work domain
-        area_work = geom.Fill()
-        area_work.xs = [t_work[0], t_work[-1], t_work[-1], t_work[0]]
-        area_work.ys = ['limb', 'limb', 'limu', 'limu']
-        area_work.color = 'grey'
-        area_work.alpha = 0.3
-
-        # plotting time evolution
-        curves = crv.Curves() \
-            .xlab('t[\omega_{ci}^{-1}]') \
-            .tit(dict_var['tit']) \
-            .xlim([t_plot[0], t_plot[-1]])
-        curves.flag_norm = flag_norm
-        curves.flag_semilogy = flag_semilogy
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.newg(area_work)
-        curves.new() \
-            .XS(t_init[ids_plot_init]) \
-            .YS(data_init[ids_plot_init]) \
-            .leg(leg_data)
-        curves.new() \
-            .XS(t_global[ids_plot_global]) \
-            .YS(data_global[ids_plot_global]) \
-            .leg(leg_data + ': globally\ filtered').sty(':')
-        curves.new().norm_to(data_global[ids_plot_init])\
-            .XS(t_peaks_work)\
-            .YS(data_work[ids_peaks_work])\
-            .leg(leg_data + ':\ peaks').sty('o')
-        cpr.plot_curves(curves)
-
-        # plotting FFT
-        curves = crv.Curves() \
-            .xlab('\omega[\omega_{ci}]') \
-            .tit(leg_data + ':\ FFT')
-        curves.flag_norm = flag_norm
-        if flag_norm:
-            curves.ylab('norm.')
-        curves.new() \
-            .XS(dict_fft_init['w2']) \
-            .YS(dict_fft_init['fft_init_2']) \
-            .leg('FFT:\ initial')
-        curves.new() \
-            .XS(dict_global['w2']) \
-            .YS(dict_global['fft_filt_2']) \
-            .leg('FFT:\ globally\ filtered:\ whole\ time\ domain').sty(':')
-        curves.new() \
-            .XS(dict_fft_work_global['w2']) \
-            .YS(dict_fft_work_global['fft_init_2']) \
-            .leg('FFT:\ globally\ filtered:\ work\ time\ domain').sty(':')
-        cpr.plot_curves(curves)
-
-    # --- NAIVE CALCULATION ---
-    if not flag_two_stages:
-        dict_wg = find_wg(t_work, data_work, sel_wg=sel_wg)
-
-        # - results -
-        w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
-        g_est, line_g_est = give_res(dict_wg, 'est', 'g', coef_norm_global_g)
-        w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
-        g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
-
-        if flag_plot_print:
-            # - plotting -
-            curves = crv.Curves() \
-                .xlab('t[\omega_{ci}^{-1}]') \
-                .tit('Freq./Gamma\ calculation')
-            curves.flag_norm = flag_norm
-            curves.flag_semilogy = flag_semilogy
-            if flag_norm:
-                curves.ylab('norm.')
-            curves.new() \
-                .XS(t_work) \
-                .YS(data_work) \
-                .leg(leg_data)
-            curves.new().norm_to(data_work) \
-                .XS(t_work[dict_wg['est']['ids_peaks']]) \
-                .YS(data_work[dict_wg['est']['ids_peaks']]) \
-                .leg('peaks').sty('o')
-            curves.new().norm_to(data_work)  \
-                .XS(dict_wg['est']['x_fit']) \
-                .YS(dict_wg['est']['y_fit']) \
-                .leg('LIN.\ REGRESSION').sty(':')
-            if dict_wg['adv'] is not None:
-                curves.new() \
-                    .XS(dict_wg['adv']['x_fit']) \
-                    .YS(dict_wg['adv']['y_fit']) \
-                    .leg('NL\ FITTING').sty(':')
-            cpr.plot_curves(curves)
-
-            line_res = '--- NAIVE CALCULATION ---\n'
-            line_res += '--- ESTIMATION ---\n'
-            line_res += 'w' + line_norm_w + ' = ' + line_w_est + '\n'
-            line_res += 'g' + line_norm_g + ' = ' + line_g_est + '\n'
-            line_res += '--- NL FITTING ---\n'
-            line_res += 'w' + line_norm_w + ' = ' + line_w_adv + '\n'
-            line_res += 'g' + line_norm_g + ' = ' + line_g_adv
-            print(line_res)
-    else:
-        # - FIND GAMMA -
-        dict_gamma_filt = one_stage_filtering(t_work, data_work, oo_filt_gamma)
-        data_gamma = dict_gamma_filt['filt']
-        t_gamma    = dict_gamma_filt['x']
-        dict_gamma = find_wg(t_gamma, data_gamma, sel_wg)
-
-        w_est_prel, line_w_est_prel = give_res(dict_gamma, 'est', 'w', coef_norm_global_w)
-        g_est, line_g_est           = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
-        w_adv_prel, line_w_adv_prel = give_res(dict_gamma, 'adv', 'w', coef_norm_global_w)
-        g_adv, line_g_adv           = give_res(dict_gamma, 'adv', 'g', coef_norm_global_g)
-
-        # - FIND FREQUENCY -
-        g_mult = g_est
-        if g_adv is not None:
-            g_mult = g_adv
-        g_mult /= coef_norm_global_g
-        data_work_exp = data_work * np.exp(- g_mult * t_work)
-        dict_freq_filt = one_stage_filtering(
-            t_work,
-            data_work_exp,
-            oo_filt_freq
-        )
-        data_freq = dict_freq_filt['filt']
-        t_freq    = dict_freq_filt['x']
-        dict_freq = find_wg(t_freq, data_freq, sel_wg)
-
-        w_est, line_w_est           = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
-        g_est_zero, line_g_est_zero = give_res(dict_freq, 'est', 'g', coef_norm_global_g)
-        w_adv, line_w_adv           = give_res(dict_freq, 'adv', 'w', coef_norm_global_w)
-        g_adv_zero, line_g_adv_zero = give_res(dict_freq, 'adv', 'g', coef_norm_global_g)
-
-        if flag_plot_print:
-            # plotting: gamma: filtering
-            curves = crv.Curves() \
-                .xlab('t[\omega_{ci}^{-1}]') \
-                .tit('Gamma\ calculation:\ filtering')
-            curves.flag_norm        = flag_norm
-            curves.flag_semilogy    = flag_semilogy
-            if flag_norm:
-                curves.ylab('norm.')
-            curves.new() \
-                .XS(t_work) \
-                .YS(data_work) \
-                .leg(leg_data)
-            curves.new() \
-                .XS(t_gamma) \
-                .YS(data_gamma) \
-                .leg(leg_data + ':\ filtered').sty(':')
-            cpr.plot_curves(curves)
-
-            # plotting: gamma: fft
-            curves = crv.Curves() \
-                .xlab('\omega[\omega_{ci}]') \
-                .tit('Gamma\ calculation:\ FFT')
-            curves.flag_norm = flag_norm
-            if flag_norm:
-                curves.ylab('norm.')
-            curves.new() \
-                .XS(dict_gamma_filt['w2']) \
-                .YS(dict_gamma_filt['fft_init_2']) \
-                .leg('FFT:\ global\ filtering')
-            curves.new() \
-                .XS(dict_gamma_filt['w2']) \
-                .YS(dict_gamma_filt['fft_filt_2']) \
-                .leg('FFT:\ gamma\ filtering').sty(':')
-            cpr.plot_curves(curves)
-
-            # plotting: gamma: fitting
-            curves = crv.Curves() \
-                .xlab('t[\omega_{ci}^{-1}]') \
-                .tit('Gamma\ calculation:\ fitting')
-            curves.flag_norm = flag_norm
-            curves.flag_semilogy = flag_semilogy
-            if flag_norm:
-                curves.ylab('norm.')
-            curves.new() \
-                .XS(t_gamma) \
-                .YS(data_gamma) \
-                .leg(leg_data + ':\ filtered')
-            curves.new().norm_to(data_work) \
-                .XS(t_work[dict_gamma['est']['ids_peaks']]) \
-                .YS(data_work[dict_gamma['est']['ids_peaks']]) \
-                .leg('peaks').sty('o')
-            curves.new().norm_to(data_work) \
-                .XS(dict_gamma['est']['x_fit']) \
-                .YS(dict_gamma['est']['y_fit']) \
-                .leg('LIN.\ REGRESSION').sty(':')
-            if dict_gamma['adv'] is not None:
-                curves.new() \
-                    .XS(dict_gamma['adv']['x_fit']) \
-                    .YS(dict_gamma['adv']['y_fit']) \
-                    .leg('NL\ FITTING').sty(':')
-            cpr.plot_curves(curves)
-
-            # plotting: frequency: filtering
-            curves = crv.Curves() \
-                .xlab('t[\omega_{ci}^{-1}]') \
-                .tit('Freq.\ calc.:\ filtering')
-            curves.flag_norm = flag_norm
-            curves.flag_semilogy = flag_semilogy
-            if flag_norm:
-                curves.ylab('norm.')
-            curves.new() \
-                .XS(t_work) \
-                .YS(data_work) \
-                .leg(leg_data)
-            curves.new() \
-                .XS(t_freq) \
-                .YS(data_freq) \
-                .leg(leg_data + ':\ *\exp(-g*t),\ filtered').sty(':')
-            cpr.plot_curves(curves)
-
-            # plotting: frequency: fft
-            curves = crv.Curves() \
-                .xlab('\omega[\omega_{ci}]') \
-                .tit('Freq.\ calc.:\ FFT')
-            curves.flag_norm = flag_norm
-            if flag_norm:
-                curves.ylab('norm.')
-            curves.new() \
-                .XS(dict_freq_filt['w2']) \
-                .YS(dict_freq_filt['fft_init_2']) \
-                .leg('FFT:\ global\ filtering')
-            curves.new() \
-                .XS(dict_freq_filt['w2']) \
-                .YS(dict_freq_filt['fft_filt_2']) \
-                .leg('FFT:\ freq.\ filtering').sty(':')
-            cpr.plot_curves(curves)
-
-            # plotting: frequency: fitting
-            curves = crv.Curves() \
-                .xlab('t[\omega_{ci}^{-1}]') \
-                .tit('Freq.\ calc.:\ fitting')
-            curves.flag_norm = flag_norm
-            curves.flag_semilogy = flag_semilogy
-            if flag_norm:
-                curves.ylab('norm.')
-            curves.new() \
-                .XS(t_freq) \
-                .YS(data_freq) \
-                .leg('filtered')
-            curves.new().norm_to(data_work_exp) \
-                .XS(t_work[dict_freq['est']['ids_peaks']]) \
-                .YS(data_work_exp[dict_freq['est']['ids_peaks']]) \
-                .leg('peaks').sty('o')
-            curves.new() \
-                .XS(dict_freq['est']['x_fit']) \
-                .YS(dict_freq['est']['y_fit']) \
-                .leg('LIN.\ REGRESSION').sty(':')
-            if dict_freq['adv'] is not None:
-                curves.new() \
-                    .XS(dict_freq['adv']['x_fit']) \
-                    .YS(dict_freq['adv']['y_fit']) \
-                    .leg('NL\ FITTING').sty(':')
-            cpr.plot_curves(curves)
-
-            # - print results -
-            line_res = '--- NAIVE CALCULATION ---\n'
-            line_res += '- GAMMA: ESTIMATION -\n'
-            line_res += 'prel. w' + line_norm_w + ' = ' + line_w_est_prel + '\n'
-            line_res += 'g' + line_norm_g + ' = ' + line_g_est + '\n'
-            line_res += '- GAMMA: NL FITTING -\n'
-            line_res += 'prel. w' + line_norm_w + ' = ' + line_w_adv_prel + '\n'
-            line_res += 'g' + line_norm_g + ' = ' + line_g_adv + '\n'
-            line_res += '- FREQUENCY: ESTIMATION -\n'
-            line_res += 'w' + line_norm_w + ' = ' + line_w_est + '\n'
-            line_res += '(g_real - g_num)' + line_norm_g + ' = ' + line_g_est_zero + '\n'
-            line_res += '- FREQUENCY: NL FITTING -\n'
-            line_res += 'w' + line_norm_w + ' = ' + line_w_adv + '\n'
-            line_res += '(g_real - g_num)' + line_norm_g + ' = ' + line_g_adv_zero
-            print(line_res)
-
-    # - save results of naive calculation -
-    naive_res = {
-        'w_est': w_est, 'g_est': g_est,
-        'w_adv': w_adv, 'g_adv': g_adv,
-    }
-    out_res.update({'naive': naive_res})
-
-    # --- CALCULATION WITH STATISTICS ---
-    t_intervals = []
-    if flag_stat:
-        oo_get_intervals = {
-            'nsamples': n_samples,
-            't_work': t_work,
-            'min_n_periods': min_n_peaks,
-            't_period': np.mean(np.diff(t_peaks_work))
-        }
-        dict_intervals = mix.get_t_intervals(oo_get_intervals, flag_plot_print)
-        t_intervals = dict_intervals['t_intervals']
-
-        # plot time intervals
-        if flag_print and flag_plot_print:
-            for one_t_interval in t_intervals:
-                area_calc_chosen = geom.Fill()
-                area_calc_chosen.xs = [
-                    one_t_interval[0], one_t_interval[-1],
-                    one_t_interval[-1], one_t_interval[0]
-                ]
-                area_calc_chosen.ys = ['limb', 'limb', 'limu', 'limu']
-                area_calc_chosen.color = 'grey'
-                area_calc_chosen.alpha = 0.6
-
-                curves = crv.Curves() \
-                    .xlab('t[\omega_{ci}^{-1}]') \
-                    .tit('Chosen\ time\ intervals')
-                curves.flag_norm = flag_norm
-                curves.flag_semilogy = flag_semilogy
-                if flag_norm:
-                    curves.ylab('norm.')
-                curves.newg(area_work)
-                curves.newg(area_calc_chosen)
-                curves.new() \
-                    .XS(t_global) \
-                    .YS(data_global) \
-                    .leg('Globally\ filtered\ data')
-                curves.new().norm_to(data_global) \
-                    .XS(t_work[ids_peaks_work]) \
-                    .YS(data_work[ids_peaks_work]) \
-                    .leg('peaks').sty('o')
-                cpr.plot_curves(curves)
-
-    # - calculation of freq/rate at one stage -
-    ws, gs = [], []
-    if not flag_two_stages and flag_stat:
-        for i_sample in range(n_samples):
-            ids_one_t_interval, t_one_interval, _ = \
-                mix.get_ids(t_work, t_intervals[i_sample])
-
-            dict_wg = find_wg(
-                t_one_interval,
-                data_work[ids_one_t_interval],
-                sel_wg,
-                flag_print=False
-            )
-            w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
-            g_est, line_g_est = give_res(dict_wg, 'est', 'g', coef_norm_global_g)
-            w_adv, line_w_adv = give_res(dict_wg, 'adv', 'w', coef_norm_global_w)
-            g_adv, line_g_adv = give_res(dict_wg, 'adv', 'g', coef_norm_global_g)
-
-            if 'est' not in sel_wg:
-                if w_adv is not None:
-                    if np.abs((w_adv - w_est)/w_est) <= threshold_w:
-                        ws.append(w_adv)
-                if g_adv is not None:
-                    if np.abs((g_adv - g_est) / g_est) <= threshold_g:
-                        gs.append(g_adv)
-            else:
-                if w_est is not None:
-                    ws.append(w_est)
-                if g_est is not None:
-                    gs.append(g_est)
-        ws = np.array(ws)
-        gs = np.array(gs)
-
-    # - calculation of freq/rate at two stages -
-    elif flag_two_stages and flag_stat:
-        for i_sample in range(n_samples):
-
-            # - FIND GAMMA -
-            ids_one_t_interval, t_one_interval, _ = \
-                mix.get_ids(t_gamma, t_intervals[i_sample])
-
-            dict_gamma = find_wg(
-                t_one_interval,
-                data_gamma[ids_one_t_interval],
-                sel_wg,
-                flag_print=False
-            )
-
-            g_est, line_g_est = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
-            g_adv, line_g_adv = give_res(dict_gamma, 'adv', 'g', coef_norm_global_g)
-            if 'est' not in sel_wg:
-                if g_adv is not None:
-                    if np.abs((g_adv - g_est) / g_est) <= threshold_g:
-                        gs.append(g_adv)
-            else:
-                if g_est is not None:
-                    gs.append(g_est)
-
-            # - FIND FREQUENCY -
-            g_mult = g_est
-            if g_adv is not None:
-                g_mult = g_adv
-            g_mult /= coef_norm_global_g
-            dict_freq_filt = one_stage_filtering(
-                t_work,  # filtering is performed in the work domain
-                data_work * np.exp(- g_mult * t_work),
-                oo_filt_freq
-            )
-            data_freq   = dict_freq_filt['filt']
-            t_freq      = dict_freq_filt['x']
-
-            ids_one_t_interval, t_one_interval, _ = \
-                mix.get_ids(t_freq, t_intervals[i_sample])
-
-            dict_freq = find_wg(
-                t_one_interval,  # calculation is performed in one of the time domains
-                data_freq[ids_one_t_interval],
-                sel_wg,
-                flag_print=False
-            )
-
-            w_est, line_w_est = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
-            w_adv, line_w_adv = give_res(dict_freq, 'adv', 'w', coef_norm_global_w)
-            if 'est' not in sel_wg:
-                if w_adv is not None:
-                    if np.abs((w_adv - w_est)/w_est) <= threshold_w:
-                        ws.append(w_adv)
-            else:
-                if w_est is not None:
-                    ws.append(w_est)
-        ws = np.array(ws)
-        gs = np.array(gs)
-
-    # - statistical results -
-    stat_res = {
-        'w': None, 'err_w': None,
-        'g': None, 'err_g': None,
-    }
-    if flag_stat:
-        # frequency histogram
-        hist_w = np.histogram(ws, bins=n_bins)
-        fit_mean_w, fit_sigma_w = stat_norm.fit(ws)
-        f_data_w = stat_norm.pdf(hist_w[1], fit_mean_w, fit_sigma_w)
-
-        # Rate histogram
-        hist_g = np.histogram(gs, bins=n_bins)
-        fit_mean_g, fit_sigma_g = stat_norm.fit(gs)
-        f_data_g = stat_norm.pdf(hist_g[1], fit_mean_g, fit_sigma_g)
-
-        err_w = ymath.COEF_ERR * fit_sigma_w
-        err_g = ymath.COEF_ERR * fit_sigma_g
-
-        # - plotting and printing statistical results -
-        if flag_plot_print:
-            curves = crv.Curves() \
-                .xlab('\omega[\omega_{ci}]') \
-                .ylab('a.u.') \
-                # .tit('Histogram:\ Frequency')
-            curves.flag_maxlocator = True
-            curves.new() \
-                .XS(n_bins) \
-                .YS(ws) \
-                .set_hist().alpha(1).leg('histogram')
-            curves.new() \
-                .XS(hist_w[1]) \
-                .YS(f_data_w) \
-                .col('red').leg('normal\ distribution')
-            cpr.plot_curves(curves)
-
-            curves = crv.Curves() \
-                .xlab('\gamma[\omega_{ci}]') \
-                .ylab('a.u.') \
-                # .tit('Histogram:\ Damping Rate')
-            curves.flag_maxlocator = True
-            curves.new() \
-                .XS(n_bins) \
-                .YS(gs) \
-                .set_hist().alpha(1).leg('histogram')
-            curves.new() \
-                .XS(hist_g[1]) \
-                .YS(f_data_g) \
-                .col('red').leg('normal\ distribution')
-            cpr.plot_curves(curves)
-
-            # Print results
-            line_stat = '--- STATISTICS ---\n'
-            line_stat += 'number of frequency samples = ' + '{:d}'.format(len(ws)) + '\n'
-            line_stat += 'number of rate samples = ' + '{:d}'.format(len(gs)) + '\n'
-            line_stat += 'w' + line_norm_w + ' = ' + '{:0.3e}'.format(fit_mean_w) \
-                        + '+-' + '{:0.3e}'.format(err_w) + '\n'
-            line_stat += 'g' + line_norm_g + ' = ' + '{:0.3e}'.format(fit_mean_g) \
-                        + '+-' + '{:0.3e}'.format(err_g)
-            print(line_stat)
-
-        # - save results of naive calculation -
-        stat_res = {
-            'w': fit_mean_w, 'err_w': err_w,
-            'g': fit_mean_g, 'err_g': err_g,
-        }
-    out_res.update({'stat': stat_res})
-
-    return out_res
-
-
 # NEW: calculation of the frequency and dynamic rate in a radial interval:
 def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
     # Calculate frequency (w) and damping/growth rate (g) at radial points in the some
@@ -2050,539 +2242,6 @@ def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
     cpr.plot_curves(curves)
 
     return
-
-
-# NEW: calculation of the w/g in different time intervals:
-def calc_wg_t_simplified(oo_wg_t, oo_plot):
-    # configurations
-    oo_cong_names = oo_wg_t['conf_names']
-    oo_ts   = oo_wg_t['oo_ts']
-    oo_vars = oo_wg_t['oo_vars']
-    oo_wgs  = oo_wg_t['oo_wgs']
-
-    # number of configurations
-    n_conf = len(oo_cong_names)
-
-    # output properties
-    tit_plot = oo_plot.get('tit_plot', None)
-    stys_plot = oo_plot.get('stys_plot', [':'])
-    sel_norm_w = oo_plot.get('sel_norm_w', 'wc')
-    sel_norm_t = oo_plot.get('sel_norm_t', 'wc')  # 'wc', 's'
-    oo_texts  = oo_plot.get('text', None)
-
-    # calculate data for different configurations
-    conf_res = []
-    for i_conf in range(n_conf):
-        conf_name = oo_cong_names[i_conf]
-
-        print('Calculation: ' + conf_name)
-
-        oo_t   = dict(oo_ts[i_conf])
-        oo_var = dict(oo_vars[i_conf])
-        oo_wg  = dict(oo_wgs[i_conf])
-
-        dd = oo_var['dds'][0]
-
-        tmin = oo_t['tmin']
-        tmax = oo_t['tmax']
-        width_t = oo_t['width_t']
-        step_t = oo_t['step_t']
-        flag_inc_boundary = oo_t.get('flag_inc_boundary', False)
-        flag_fv = oo_t.get('flag_fv', False)
-        flag_je = oo_t.get('flag_je', False)
-
-        half_width_t = width_t/2
-
-        flag_stat = oo_wg.get('flag_stat', False)
-        sel_wg = oo_wg.get('sel_wg', 'wg-adv')
-
-        # normalization:
-        coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = mix.choose_wg_normalization(dd, sel_norm_w)
-
-        # time normalization for plotting
-        coef_norm_t, line_norm_t = None, ''
-        if sel_norm_t == 'wc':
-            coef_norm_t, line_norm_t = 1, '[\omega_{ci}]'
-        if sel_norm_t == 's':
-            coef_norm_t, line_norm_t = 1.e3 / dd['wc'], '(ms)'
-
-        # create time intervals:
-        t_right = tmin + width_t
-        t_ints  = [[tmin, t_right]]
-        t_center = tmin + half_width_t
-        while t_right < tmax:
-            t_center += step_t
-
-            t_left  = t_center - half_width_t
-            t_right = t_center + half_width_t
-            if t_right > tmax:
-                if not flag_inc_boundary:
-                    break
-                else:
-                    t_right = tmax
-            t_ints.append([t_left, t_right])
-
-        # result number of time intervals:
-        nt = len(t_ints)
-
-        # precise method of w,g calculation
-        if 'adv' in  sel_wg:
-            line_res_method = '_adv'
-        else:
-            line_res_method = '_est'
-
-        line_res = 'naive'
-        if flag_stat:
-            line_res = 'stat'
-            line_res_method = ''
-
-        # --- CALCULATION of w(t) ---
-        t = np.zeros(nt)
-        ws, ws_err = np.zeros(nt), np.zeros(nt)
-        gs, gs_err = np.zeros(nt), np.zeros(nt)
-        t[:], ws[:], ws_err[:] = [np.nan]*3
-        for i_int in range(nt):
-            t_int = t_ints[i_int]
-            t[i_int] = t_int[0] + (t_int[1] - t_int[0])/2.
-
-            oo_wg.update({
-                't_work': t_int,
-            })
-            res_wg =  calc_wg(oo_var, oo_wg, {'flag_plot_print': False})
-
-            if flag_stat:
-                ws_err[i_int] = res_wg[line_res]['err_w']
-                gs_err[i_int] = res_wg[line_res]['err_g']
-            ws[i_int] = res_wg[line_res]['w' + line_res_method]
-
-        # --- initial variable ---
-        dict_var = choose_vars(oo_var)[0]
-        data_var = dict_var['data'][0]
-
-        t_data   = dict_var['x']
-        ids_t_data, t_data, _ = mix.get_ids(t_data, [t[0], t[-1]])
-        data_var = data_var[ids_t_data[0]:ids_t_data[-1] + 1]
-
-        conf_res_one = {
-            'name': conf_name,
-            't': t,
-            'ws': ws,
-            'ws_err': ws_err,
-            'flag_fv': flag_fv,
-            'flag_je': flag_je,
-            'data_var': data_var,
-            't_data': t_data,
-        }
-
-        # --- RESULTS ---
-        conf_res.append(conf_res_one)
-
-    # Exp. NLED AUG:
-    exp_w_kHZ = [48, 50.5, 52.25, 53.75, 55, 56, 56.8, 57.4]
-    exp_t_s = [0.8410, 0.8415, 0.8420, 0.8425, 0.8430, 0.8435, 0.8440, 0.8445]
-    exp_t_ms = (np.array(exp_t_s) - exp_t_s[0]) * 1e3
-    exp_w_rel = np.array(exp_w_kHZ) / exp_w_kHZ[0]
-
-    exp_t_ms_cont = np.linspace(exp_t_ms[0], exp_t_ms[-1], 101)
-    exp_w_rel_cont = np.interp(exp_t_ms_cont, exp_t_ms, exp_w_rel)
-
-    # --- PLOT RESULTS ---
-    if len(stys_plot) < n_conf:
-        last_sty = stys_plot[-1]
-        stys_plot += [last_sty] * (n_conf - len(stys_plot))
-
-    # plotting
-    curves_orig = crv.Curves().xlab('t' + line_norm_t).ylab('signal')
-    curves_orig.flag_semilogy = True
-
-    # curves = crv.Curves().xlab('t' + line_norm_t).ylab('\omega' + line_norm_w).tit(tit_plot)
-    curves = crv.Curves().xlab('t' + line_norm_t).ylab('\omega/\omega_{0}')
-    # additional text:
-    for oo_text in oo_texts:
-        oText = crv.PlText(oo_text)
-        curves.newt(oText)
-
-    curves_exp = crv.Curves().xlab('(t - t_{0})(ms)')\
-        .ylab('\omega/\omega_{0}').tit('Experimental\ spectrogram')
-    for i_conf in range(n_conf):
-        one_conf = conf_res[i_conf]
-        curves_orig.new() \
-            .XS(one_conf['t_data'] * coef_norm_t) \
-            .YS(one_conf['data_var']) \
-            .leg(one_conf['name'])
-        # curves.new()\
-        #     .XS(one_conf['t']  * coef_norm_t)\
-        #     .YS(one_conf['ws'] * coef_norm_w) \
-        #     .set_errorbar(True, ys=one_conf['ws_err'] * coef_norm_w)\
-        #     .leg(one_conf['name'])\
-        #     .sty(stys_plot[i_conf])
-        curves.new() \
-            .XS(one_conf['t'] * coef_norm_t) \
-            .YS(one_conf['ws']/one_conf['ws'][0]) \
-            .set_errorbar(True, ys=one_conf['ws_err']/one_conf['ws'][0]) \
-            .sty(stys_plot[i_conf])
-
-        curves.new() \
-            .XS(0.15 * exp_t_ms_cont) \
-            .YS(exp_w_rel_cont) \
-            .sty(':')
-        curves_exp.new()\
-            .XS(exp_t_ms)\
-            .YS(exp_w_rel)\
-            .leg('Long\ branch')\
-            .sty('o')
-        curves_exp.new() \
-            .XS(exp_t_ms_cont) \
-            .YS(exp_w_rel_cont) \
-            .leg('interpolation') \
-            .sty(':')
-    cpr.plot_curves(curves_orig)
-    cpr.plot_curves(curves)
-    cpr.plot_curves(curves_exp)
-
-
-# NEW: calculation of the w/g in different time intervals:
-def calc_wg_t(oo_wg_t, oo_plot):
-    # configurations
-    oo_cong_names = oo_wg_t['conf_names']
-    oo_ts   = oo_wg_t['oo_ts']
-    oo_vars = oo_wg_t['oo_vars']
-    oo_wgs  = oo_wg_t['oo_wgs']
-
-    # number of configurations
-    n_conf = len(oo_cong_names)
-
-    # output properties
-    tit_plot = oo_plot.get('tit_plot', None)
-    stys_plot = oo_plot.get('stys_plot', [':'])
-    sel_norm_w = oo_plot.get('sel_norm_w', 'wc')
-    sel_norm_t = oo_plot.get('sel_norm_t', 'wc')  # 'wc', 's'
-
-    # calculate data for different configurations
-    conf_res = []
-    for i_conf in range(n_conf):
-        conf_name = oo_cong_names[i_conf]
-
-        print('Calculation: ' + conf_name)
-
-        oo_t   = dict(oo_ts[i_conf])
-        oo_var = dict(oo_vars[i_conf])
-        oo_wg  = dict(oo_wgs[i_conf])
-
-        dd = oo_var['dds'][0]
-
-        tmin = oo_t['tmin']
-        tmax = oo_t['tmax']
-        width_t = oo_t['width_t']
-        step_t = oo_t['step_t']
-        flag_inc_boundary = oo_t.get('flag_inc_boundary', False)
-        species_name = oo_t.get('species_name', None)
-        flag_fv = oo_t.get('flag_fv', False)
-        flag_je = oo_t.get('flag_je', False)
-        s1_q    = oo_t.get('s1_q', None)
-        n_analyt_vres = oo_t.get('n_analyt_vres', 1)
-
-        half_width_t = width_t/2
-
-        flag_stat = oo_wg.get('flag_stat', False)
-        sel_wg = oo_wg.get('sel_wg', 'wg-adv')
-
-        # normalization:
-        coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = mix.choose_wg_normalization(dd, sel_norm_w)
-
-        # time normalization for plotting
-        coef_norm_t, line_norm_t = None, ''
-        if sel_norm_t == 'wc':
-            coef_norm_t, line_norm_t = 1, '[\omega_{ci}]'
-        if sel_norm_t == 's':
-            coef_norm_t, line_norm_t = 1.e3 / dd['wc'], '(ms)'
-
-        # create time intervals:
-        t_right = tmin + width_t
-        t_ints  = [[tmin, t_right]]
-        t_center = tmin + half_width_t
-        while t_right < tmax:
-            t_center += step_t
-
-            t_left  = t_center - half_width_t
-            t_right = t_center + half_width_t
-            if t_right > tmax:
-                if not flag_inc_boundary:
-                    break
-                else:
-                    t_right = tmax
-            t_ints.append([t_left, t_right])
-
-        # result number of time intervals:
-        nt = len(t_ints)
-
-        # precise method of w,g calculation
-        if 'adv' in  sel_wg:
-            line_res_method = '_adv'
-        else:
-            line_res_method = '_est'
-
-        line_res = 'naive'
-        if flag_stat:
-            line_res = 'stat'
-            line_res_method = ''
-
-        # --- CALCULATION of w(t) ---
-        t = np.zeros(nt)
-        ws, ws_err = np.zeros(nt), np.zeros(nt)
-        gs, gs_err = np.zeros(nt), np.zeros(nt)
-        t[:], ws[:], ws_err[:], gs[:], gs_err[:] = [np.nan]*5
-        for i_int in range(nt):
-            t_int = t_ints[i_int]
-            t[i_int] = t_int[0] + (t_int[1] - t_int[0])/2.
-
-            oo_wg.update({
-                't_work': t_int,
-            })
-            res_wg =  calc_wg(oo_var, oo_wg, {'flag_plot_print': False})
-
-            if flag_stat:
-                ws_err[i_int] = res_wg[line_res]['err_w']
-                gs_err[i_int] = res_wg[line_res]['err_g']
-            ws[i_int] = res_wg[line_res]['w' + line_res_method]
-            gs[i_int] = res_wg[line_res]['g' + line_res_method]
-
-        # analytical resonance velocity
-        vres = ymath.get_v_res(dd, s1_q, ws, species_name)
-        curves_draw_vres = geom.Curve()
-        for i_vres in range(n_analyt_vres):
-            vres_data_1 = vres / (i_vres + 1)
-            curves_draw_vres.add_curve(t * coef_norm_t, + vres_data_1)
-            curves_draw_vres.add_curve(t * coef_norm_t, - vres_data_1)
-        curves_draw_vres.color = 'grey'
-        curves_draw_vres.style = ':'
-        curves_draw_vres.width = 4
-
-        conf_res_one = {
-            'name': conf_name,
-            't': t,
-            'ws': ws,
-            'gs': gs,
-            'ws_err': ws_err,
-            'gs_err': gs_err,
-            'vres': vres,
-            'curves_draw_vres': curves_draw_vres,
-            'flag_fv': flag_fv,
-            'flag_je': flag_je,
-        }
-
-        # --- clumps and holes and zeros: parallel velocities, result frequencies ---
-        if flag_fv:
-            # delta f
-            oo_get_f = {'avrs':  [['tvpar', 'none-']], 'dds': [dd],
-                        'ovars': [['distribution', 'df_vel_1d', species_name]]}
-            vvar_delta_f = choose_vars(oo_get_f)[0]
-            deltaf = vvar_delta_f['data']
-            t_f = vvar_delta_f['t']
-            vpar_f = vvar_delta_f['vpar']
-
-            # d \delta f / dv
-            oo_get_f['ovars'] = [['distribution', 'ddeltaf_vel_1d-dv', species_name]]
-            vvar_d_delta_f = choose_vars(oo_get_f)[0]
-            ddeltaf = vvar_d_delta_f['data']
-
-            # clumps, holes, zeros:
-            ids_pos, _, _ = mix.get_ids(vpar_f, [0.0, np.max(vpar_f[-1])])
-            ids_pos = range(ids_pos[0], ids_pos[-1]+1)
-            vpar_f_pos = vpar_f[ids_pos]
-
-            id_f_max = np.argmax(vvar_delta_f['data'][:, ids_pos], axis=1)
-            id_f_min = np.argmin(vvar_delta_f['data'][:, ids_pos], axis=1)
-            id_f_zero = np.argmin(vvar_d_delta_f['data'][:, ids_pos], axis=1)
-
-            vpar_max, vpar_min, vpar_zero = \
-                np.zeros(np.size(id_f_max)), np.zeros(np.size(id_f_min)), np.zeros(np.size(id_f_zero))
-            for id_t in range(np.size(id_f_max)):
-                vpar_max[id_t]  = vpar_f_pos[id_f_max[id_t]]
-                vpar_min[id_t]  = vpar_f_pos[id_f_min[id_t]]
-                vpar_zero[id_t] = vpar_f_pos[id_f_zero[id_t]]
-            w_from_max  = ymath.get_w_from_v_res(dd, s1_q, vpar_max, species_name)
-            w_from_min  = ymath.get_w_from_v_res(dd, s1_q, vpar_min, species_name)
-            w_from_zero = ymath.get_w_from_v_res(dd, s1_q, vpar_zero, species_name)
-
-            curves_draw_vres_max  = geom.Curve()
-            curves_draw_vres_min  = geom.Curve()
-            curves_draw_vres_zero = geom.Curve()
-            curves_draw_vres_max.add_curve(t_f * coef_norm_t, vpar_max)
-            curves_draw_vres_min.add_curve(t_f * coef_norm_t, vpar_min)
-            curves_draw_vres_zero.add_curve(t_f * coef_norm_t, vpar_zero)
-            curves_draw_vres_max.color, curves_draw_vres_min.color, curves_draw_vres_zero.color = \
-                'black', 'black', 'black'
-            curves_draw_vres_max.style, curves_draw_vres_min.style, curves_draw_vres_zero.style = \
-                ':', ':', ':'
-            curves_draw_vres_max.width, curves_draw_vres_min.width, curves_draw_vres_zero.width = \
-                4, 4, 4
-
-            label_deltaf  = species_name + ':\ \delta f(t, v_{res})'
-            label_ddeltaf = species_name + ':\ \partial \delta f(t, v_{res})/\partial v'
-
-            conf_res_one.update({
-                'vpar_max':  vpar_max,
-                'vpar_min':  vpar_min,
-                'vpar_zero': vpar_zero,
-                'w_from_max':  w_from_max,
-                'w_from_min':  w_from_min,
-                'w_from_zero': w_from_zero,
-                't_f': t_f,
-                'vpar_f': vpar_f,
-                'deltaf': deltaf,
-                'ddeltaf': ddeltaf,
-                'curves_draw_vres_max': curves_draw_vres_max,
-                'curves_draw_vres_min': curves_draw_vres_min,
-                'curves_draw_vres_zero': curves_draw_vres_zero,
-                'label_deltaf': label_deltaf,
-                'label_ddeltaf': label_ddeltaf,
-            })
-
-        # --- Investigate time evolution of a species J*E signal: <JE(t, vpar)>_{nT_gam} ---
-        if flag_je:
-            oo_get_je = {
-                'ovars': [['mpr', 'je', species_name]],
-                'avrs': [['tvpar', 'none-']],
-                'dds': [dd],
-            }
-            vvar_je = choose_vars(oo_get_je)[0]
-            t_je = vvar_je['t']
-            vpar = vvar_je['vpar']
-
-            je_data = np.zeros([nt, len(vpar)])
-            for i_int in range(nt):
-                tmin1 = t_ints[i_int][0]
-                tmax1 = t_ints[i_int][-1]
-                T_loc = 2*np.pi / ws[i_int]
-                n_periods = np.floor((tmax1 - tmin1)/T_loc)
-                ids_min1, tmin1, _ = mix.get_ids(vvar_je['t'], tmin1)
-                ids_max1, tmax1, _ = mix.get_ids(vvar_je['t'],
-                                                 tmin1 + T_loc * n_periods
-                                                 )
-                je_data[i_int, :] = np.squeeze(np.nansum(
-                    vvar_je['data'][ids_min1:ids_max1+1, :], axis=0
-                ))
-
-            conf_res_one.update({
-                'je_tvpar': je_data,
-                'je_tje_vpar': vvar_je['data'],
-                't_je': t_je,
-                'vpar_je': vpar,
-                'tit_je': vvar_je['tit'],
-            })
-
-        # --- RESULTS ---
-        conf_res.append(conf_res_one)
-
-    # --- PLOT RESULTS ---
-    if len(stys_plot) < n_conf:
-        last_sty = stys_plot[-1]
-        stys_plot += [last_sty] * (n_conf - len(stys_plot))
-
-    # frequency
-    curves = crv.Curves().xlab('t' + line_norm_t).ylab('\omega' + line_norm_w).tit(tit_plot)
-    for i_conf in range(n_conf):
-        one_conf = conf_res[i_conf]
-        curves.new()\
-            .XS(one_conf['t'] * coef_norm_t)\
-            .YS(one_conf['ws'] * coef_norm_w)\
-            .set_errorbar(True, ys=one_conf['ws_err'] * coef_norm_w)\
-            .leg(one_conf['name'])\
-            .sty(stys_plot[i_conf])
-    cpr.plot_curves(curves)
-
-    # distribution function (t,vpar):
-    for i_conf in range(n_conf):
-        one_conf = conf_res[i_conf]
-        if not one_conf['flag_fv']:
-            continue
-
-        vpar_plot, ids_vpar_plot = mix.get_array_oo(
-            oo_plot, one_conf['vpar_f'], 'vpar')
-        ids_vpar_plot = range(ids_vpar_plot[0], ids_vpar_plot[-1] + 1)
-
-        curves = crv.Curves() \
-            .xlab('t' + line_norm_t).ylab('v_{\parallel}') \
-            .tit(one_conf['name']).titn(one_conf['label_deltaf'])
-        curves.new() \
-            .XS(one_conf['t_f'] * coef_norm_t) \
-            .YS(vpar_plot) \
-            .ZS(one_conf['deltaf'][:, ids_vpar_plot]) \
-            .lev(60)
-        curves.newg(one_conf['curves_draw_vres'])
-        curves.newg(one_conf['curves_draw_vres_max'])
-        curves.newg(one_conf['curves_draw_vres_min'])
-        cpr.plot_curves_3d(curves)
-
-        curves = crv.Curves() \
-            .xlab('t' + line_norm_t).ylab('v_{\parallel}') \
-            .tit(one_conf['name']).titn(one_conf['label_ddeltaf'])
-        curves.new() \
-            .XS(one_conf['t_f'] * coef_norm_t) \
-            .YS(vpar_plot) \
-            .ZS(one_conf['ddeltaf'][:, ids_vpar_plot]) \
-            .lev(60)
-        curves.newg(one_conf['curves_draw_vres'])
-        curves.newg(one_conf['curves_draw_vres_zero'])
-        cpr.plot_curves_3d(curves)
-
-        curves = crv.Curves() \
-            .xlab('t' + line_norm_t).ylab('\omega' + line_norm_w) \
-            .tit(one_conf['name'])
-        curves.new() \
-            .XS(one_conf['t_f'] * coef_norm_t) \
-            .YS(one_conf['w_from_max'] * coef_norm_w) \
-            .leg('clumps').sty('-')
-        curves.new() \
-            .XS(one_conf['t_f'] * coef_norm_t) \
-            .YS(one_conf['w_from_min'] * coef_norm_w) \
-            .leg('holes').sty('-')
-        curves.new() \
-            .XS(one_conf['t_f'] * coef_norm_t) \
-            .YS(one_conf['w_from_zero'] * coef_norm_w) \
-            .leg('zeros').sty(':')
-        curves.new() \
-            .XS(one_conf['t'] * coef_norm_t) \
-            .YS(one_conf['ws'] * coef_norm_w) \
-            .leg('fitting').sty(':o').col('black')
-        cpr.plot_curves(curves)
-
-    # <je(t,vpar)>_nT
-    for i_conf in range(n_conf):
-        one_conf = conf_res[i_conf]
-        if one_conf['flag_je']:
-            vpar_plot, ids_vpar_plot = mix.get_array_oo(
-                oo_plot, one_conf['vpar_je'], 'vpar')
-
-            curves = crv.Curves()\
-                .xlab('t' + line_norm_t).ylab('v_{\parallel}')\
-                .tit(one_conf['name'] + ':\ <' + one_conf['tit_je'] + '>_{nT_{egam}}')
-            curves.new() \
-                .XS(one_conf['t'] * coef_norm_t) \
-                .YS(vpar_plot) \
-                .ZS(one_conf['je_tvpar'][:, ids_vpar_plot[0]:ids_vpar_plot[-1]+1]) \
-                .lev(60)
-            curves.newg(one_conf['curves_draw_vres'])
-            cpr.plot_curves_3d(curves)
-
-    # je(t,vpar)
-    for i_conf in range(n_conf):
-        one_conf = conf_res[i_conf]
-        if one_conf['flag_je']:
-            vpar_plot, ids_vpar_plot = mix.get_array_oo(
-                oo_plot, one_conf['vpar_je'], 'vpar')
-
-            curves = crv.Curves() \
-                .xlab('t' + line_norm_t).ylab('v_{\parallel}') \
-                .tit(one_conf['name'] + ':\ ' + one_conf['tit_je'])
-            curves.new() \
-                .XS(one_conf['t_je'] * coef_norm_t) \
-                .YS(vpar_plot) \
-                .ZS(one_conf['je_tje_vpar'][:, ids_vpar_plot[0]:ids_vpar_plot[-1] + 1]) \
-                .lev(60)
-            curves.newg(one_conf['curves_draw_vres'])
-            cpr.plot_curves_3d(curves)
 
 
 # NEW: get FFT 1d

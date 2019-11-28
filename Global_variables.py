@@ -37,6 +37,7 @@ DEF_ONE_COLOR = 'blue'
 DEF_ONE_STYLE = '-'
 DEF_COLORMAP = 'jet'
 DEF_COEF_WIDTH_GEOM = 0.5
+DEF_NORM_WG = 'wc'
 if FLAG_LATEX:
     FLAG_LATEX = True
     FIG_SIZE_W = 15
@@ -108,6 +109,7 @@ DEF_CURVE_FORMAT = {  # describe format of a curve
     'pr_alpha': 1,
     'flag_errorbar': False,
     'flag_hist': False,
+    'norm_to': None,
 }
 
 
@@ -183,6 +185,15 @@ def_efield = {
     'avr_operation':    'none-',
     'species':          'total',
 }
+def_arbitrary_1d = {
+    'type':             'arbitrary',
+    'plane':            'xnone',
+    'avr_operation':    'none-',
+}
+def_arbitrary_2d = {
+    'type':             'arbitrary',
+    'plane':            'xy',
+}
 
 
 def create_signal(default_signal, dd):
@@ -195,7 +206,9 @@ def create_signal(default_signal, dd):
 
 def create_signals_dds(default_signal, dds,
                       types=None, variables=None, species=None,
-                      planes=None, operations=None, domains=None):
+                      planes=None, operations=None, domains=None,
+                      flag_arbitrary=False, xs=None, ys=None, datas=None,
+                       xs_err=None, ys_err=None):
     n_signals = len(dds)
     res_signals = []
     for id_signal in range(n_signals):
@@ -216,6 +229,21 @@ def create_signals_dds(default_signal, dds,
             'avr_operation': one_operation,
             'avr_domain': one_domain,
         })
+
+        if flag_arbitrary:
+            x    = get_field(id_signal, xs, None)
+            y    = get_field(id_signal, ys, None)
+            x_err = get_field(id_signal, xs_err, None)
+            y_err = get_field(id_signal, ys_err, None)
+            data = get_field(id_signal, datas, None)
+            one_signal.update({
+                'x': x,
+                'y': y,
+                'data': data,
+                'x_err': x_err,
+                'y_err': y_err,
+            })
+
         res_signals.append(one_signal)
     return res_signals
 

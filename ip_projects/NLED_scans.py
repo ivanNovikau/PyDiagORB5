@@ -3,7 +3,6 @@ import ControlPlot as cpr
 import ymath
 import curve as crv
 import numpy as np
-from scipy import interpolate
 from scipy import constants
 
 
@@ -2240,107 +2239,6 @@ def es_egam_energy_transfer_scan_diff_t(oo):
                       tit='t(ms)= [0.0, 1.0]', ylim=[-3e-1, 1.4e1])
 
 
-def es_egam_satur_scan_overshoot_TALK(oo):
-    # NL ES EGAMb:  scan on EGAM growth rates
-    dd = oo.get('dd', None)
-    sel_norm_x = oo.get('sel_norm_x', 'none')
-    oo_texts = oo.get('text', [])
-
-    # x, y normalization
-    line_x, coef_x  = '', None
-    if sel_norm_x == 'inv-s':
-        line_x = '(10^3/s)'
-        coef_x = dd['wc'] / 1.e3
-
-    def create_init_dict():
-        data_save = {'xs': [], 'ys': [], 'xs_err': [], 'ys_err': [], 'leg': '', 'sty': 'o', 'col': 'blue'}
-        return data_save
-
-    def add_f(x, y):
-        data_plot['xs'].append(x[0])
-        data_plot['xs_err'].append(x[1])
-        data_plot['ys'].append(y[0])
-        data_plot['ys_err'].append(y[1])
-
-    def plot_several_data(res_data_plot, oo_texts, xlab='x', ylab='y', tit='', ylim=None):
-        curves = crv.Curves() \
-            .xlab(xlab + line_x) \
-            .ylab(ylab) \
-            .tit(tit).xsty('plain').ylim(ylim)
-        # additional text:
-        for oo_text in oo_texts:
-            oText = crv.PlText(oo_text)
-            curves.newt(oText)
-        for id_data in range(len(res_data_plot)):
-            data_plot_one = res_data_plot[id_data]
-            curves.new() \
-                .XS(np.array(data_plot_one['xs']) * coef_x) \
-                .YS(np.array(data_plot_one['ys'])) \
-                .set_errorbar(True,
-                              xs=data_plot_one['xs_err'],
-                              ys=data_plot_one['ys_err']
-                              ) \
-                .leg(data_plot_one['leg']) \
-                .sty(data_plot_one['sty']) \
-                .col(data_plot_one['col'])
-        cpr.plot_curves(curves)
-
-        return
-
-    # ------------------------------------------------
-    # --- SATURATION LEVELS OF OSCILLATING SIGNALS ---
-    # ------------------------------------------------
-    res_data = []
-
-    # scan on T, v = 3.5
-    data_plot = create_init_dict()
-
-    add_f(
-        [9.063e-05, 2.111e-06],
-        [7.809e+00, 0])  # f = 0.0945, vp = 3.5, T = 0.25, sf = 0.25
-    add_f(
-        [1.065e-04, 2.010e-06],
-        [9.929e+00, 0])  # f = 0.0945, vp = 3.5, T = 0.22, sf = 0.25
-    add_f(
-        [1.173e-04, 2.003e-06],
-        [1.121e+01, 0])  # f = 0.0945, vp = 3.5, T = 0.20, sf = 0.25
-    add_f(
-        [1.451e-04, 2.436e-06],
-        [1.636e+01, 0])  # f = 0.0945, vp = 3.5, T = 0.15, sf = 0.25
-
-    data_plot['leg'] = None
-    data_plot['sty'] = 'o'
-    data_plot['col'] = 'blue'
-    res_data.append(data_plot)
-
-    # scan on T, v = 6.0
-    data_plot = create_init_dict()
-
-    add_f(
-        [6.304e-05, 2.952e-06],
-        [3.509e+00, 0])  # T = 1.0, f = 0.01, vp = 6.0, sf = 0.25
-    add_f(
-        [9.558e-05, 3.320e-06],
-        [6.822e+00, 0])  # T = 0.8, f = 0.01, vp = 6.0, sf = 0.25
-    add_f(
-        [1.351e-04, 2.423e-06],
-        [1.173e+01, 0])  # T = 0.6, f = 0.01, vp = 6.0, sf = 0.25
-    add_f(
-        [1.843e-04, 2.755e-06],
-        [1.754e+01, 0])  # T = 0.4, f = 0.01, vp = 6.0, sf = 0.25
-
-    data_plot['leg'] = None
-    data_plot['sty'] = '*'
-    data_plot['col'] = 'red'
-    res_data.append(data_plot)
-
-    # plot results: saturation levels of oscillating signals
-    plot_several_data(res_data, oo_texts,
-                      xlab='\gamma_{egam, lin}',
-                      ylab='max.\ of\ \sqrt{<\overline{E}^2>_s}',
-                      tit=None)
-
-
 def es_egam_energy_transfer_scan_diff_t_TALK(oo):
     # NL ES EGAMb:  scan on EGAM growth rates
     dd = oo.get('dd', None)
@@ -2524,5 +2422,225 @@ def egam_fpart_AE_KE_g_mpr_tot_TALK(oo):
     # *** combined plot ***
     plot_several_scans_adv(data_plot, sel_norm, oo_texts, xlim=[0.0, 0.1],
                            ylab_g=None, tit_w='EGAM\ frequency')
+
+
+# Refactored
+def get_scan_overshoot_TALK():
+    # AUG31213: NL ES EGAM with two-bumps-on-tail
+    # Scan on EGAM saturation levels
+    # Saturation levels are represented as overshoots
+
+    # result data
+    di = new_dict()
+
+    # scan on T: f = 0.0945, vp = 3.5, sf = 0.25
+    count_curve = 0
+    add_point(di, count_curve,
+        [9.063e-05, 2.111e-06],
+        [7.809e+00, 0])  # T = 0.25
+    add_point(di, count_curve,
+        [1.065e-04, 2.010e-06],
+        [9.929e+00, 0])  # T = 0.22
+    add_point(di, count_curve,
+        [1.173e-04, 2.003e-06],
+        [1.121e+01, 0])  # T = 0.20
+    add_point(di, count_curve,
+        [1.451e-04, 2.436e-06],
+        [1.636e+01, 0])  # T = 0.15
+
+    # scan on T: f = 0.01, vp = 6.0, sf = 0.25
+    count_curve = 1
+    add_point(di, count_curve,
+        [6.304e-05, 2.952e-06],
+        [3.509e+00, 0])  # T = 1.0
+    add_point(di, count_curve,
+        [9.558e-05, 3.320e-06],
+        [6.822e+00, 0])  # T = 0.8
+    add_point(di, count_curve,
+        [1.351e-04, 2.423e-06],
+        [1.173e+01, 0])  # T = 0.6
+    add_point(di, count_curve,
+        [1.843e-04, 2.755e-06],
+        [1.754e+01, 0])  # T = 0.4
+
+    # result
+    prepare_narrays(di)
+    return di
+
+
+# Refactored
+def get_scan_overshoot_heat_TALK(dd):
+    # AUG31213: NL ES EGAM with two-bumps-on-tail.
+    # Dependence on EGAM-D energy exchange on EGAM saturation levels.
+    # Saturation levels are represented as overshoots.
+
+    # xs - saturation levels
+    # ys - EGAM-D energy exchange
+
+    T_speak_eV = dd['T_speak'] / constants.elementary_charge
+    coef_norm_inv = 1. / (dd['cs'] * T_speak_eV / (dd['a0'] * dd['wc']))
+    coef_norm_inv *= 1e2
+
+    # result data
+    di = new_dict()
+
+    # scan on T: f = 0.0945, vp = 3.5, sf = 0.25
+    count_curve = 0
+    add_point(di, count_curve,
+              [7.809e+00, 0],
+              [8.111e-02  * coef_norm_inv, 0])  # T = 0.25
+    add_point(di, count_curve,
+              [9.929e+00, 0],
+              [1.154e-01  * coef_norm_inv, 0])  # T = 0.22
+    add_point(di, count_curve,
+              [1.121e+01, 0],
+              [1.433e-01  * coef_norm_inv, 0])  # T = 0.20
+    add_point(di, count_curve,
+              [1.636e+01, 0],
+              [2.252e-01  * coef_norm_inv, 0])  # T = 0.15
+
+    # scan on T: f = 0.01, vp = 6.0, sf = 0.25
+    count_curve = 1
+    add_point(di, count_curve,
+              [3.509e+00, 0],
+              [3.978e-03  * coef_norm_inv, 0])  # T = 1.0
+    add_point(di, count_curve,
+              [6.822e+00, 0],
+              [1.185e-02  * coef_norm_inv, 0])  # T = 0.8
+    add_point(di, count_curve,
+              [1.173e+01, 0],
+              [3.030e-02  * coef_norm_inv, 0])  # T = 0.6
+    add_point(di, count_curve,
+              [1.754e+01, 0],
+              [6.345e-02  * coef_norm_inv, 0])  # T = 0.4
+
+    # result
+    prepare_narrays(di)
+    return di
+
+
+# Refactored
+def get_scan_overshoot_heat_PAPER(dd):
+    # AUG31213: NL ES EGAM with two-bumps-on-tail.
+    # Dependence on EGAM-D energy exchange on EGAM saturation levels.
+    # Saturation levels are represented as overshoots.
+
+    # xs - saturation levels
+    # ys - EGAM-D energy exchange
+
+    T_speak_eV = dd['T_speak'] / constants.elementary_charge
+    coef_norm_inv = 1. / (dd['cs'] * T_speak_eV / (dd['a0'] * dd['wc']))
+    coef_norm_inv *= 1e2
+
+    # result data
+    di = new_dict()
+
+    # scan on fpart: vp = 8.0, T = 1.0, sf = 0.25
+    count_curve = 0
+    add_point(di, count_curve,
+        [2.270e+00, 0],
+        [1.997e-03 * coef_norm_inv, 0])  # f = 0.0040
+    add_point(di, count_curve,
+        [1.689e+01, 0],
+        [3.957e-02 * coef_norm_inv, 0])  # f = 0.0100
+    add_point(di, count_curve,
+        [3.427e+01, 0],
+        [2.068e-01 * coef_norm_inv, 0])  # f = 0.0200
+
+    # scan on vp: f = 0.0100, T = 1.0
+    count_curve = 1
+    add_point(di, count_curve,
+        [1.103e+01, 0],
+        [1.046e-02 * coef_norm_inv, 0])  # vp = 9.0
+    add_point(di, count_curve,
+        [1.246e+01, 0],
+        [2.695e-02 * coef_norm_inv, 0])  # vp = 7.0
+    add_point(di, count_curve,
+        [1.593e+01, 0],
+        [3.535e-02 * coef_norm_inv, 0])  # vp = 7.5
+
+    # scan on T: f = 0.0945, vp = 3.5, sf = 0.25
+    count_curve = 2
+    add_point(di, count_curve,
+              [7.809e+00, 0],
+              [8.111e-02  * coef_norm_inv, 0])  # T = 0.25
+    add_point(di, count_curve,
+              [9.929e+00, 0],
+              [1.154e-01  * coef_norm_inv, 0])  # T = 0.22
+    add_point(di, count_curve,
+              [1.121e+01, 0],
+              [1.433e-01  * coef_norm_inv, 0])  # T = 0.20
+    add_point(di, count_curve,
+              [1.636e+01, 0],
+              [2.252e-01  * coef_norm_inv, 0])  # T = 0.15
+
+    # scan on T: f = 0.01, vp = 6.0, sf = 0.25
+    count_curve = 3
+    add_point(di, count_curve,
+              [3.509e+00, 0],
+              [3.978e-03  * coef_norm_inv, 0])  # T = 1.0
+    add_point(di, count_curve,
+              [6.822e+00, 0],
+              [1.185e-02  * coef_norm_inv, 0])  # T = 0.8
+    add_point(di, count_curve,
+              [1.173e+01, 0],
+              [3.030e-02  * coef_norm_inv, 0])  # T = 0.6
+    add_point(di, count_curve,
+              [1.754e+01, 0],
+              [6.345e-02  * coef_norm_inv, 0])  # T = 0.4
+
+    # result
+    prepare_narrays(di)
+    return di
+
+
+def new_dict():
+    data_save = {'xs': [], 'ys': [],
+                 'xs_err': [], 'ys_err': []}
+    return data_save
+
+
+def add_point(di, count_curve, x, y):
+    if count_curve >= len(di['xs']):
+        di['xs'].append([])
+        di['xs_err'].append([])
+        di['ys'].append([])
+        di['ys_err'].append([])
+
+    di['xs'][count_curve].append(x[0])
+    di['xs_err'][count_curve].append(x[1])
+    di['ys'][count_curve].append(y[0])
+    di['ys_err'][count_curve].append(y[1])
+
+
+def prepare_narrays(di):
+    for count_array in range(len(di['xs'])):
+        di['xs'][count_array]       = np.array(di['xs'][count_array])
+        di['xs_err'][count_array]   = np.array(di['xs_err'][count_array])
+        di['ys'][count_array]       = np.array(di['ys'][count_array])
+        di['ys_err'][count_array]   = np.array(di['ys_err'][count_array])
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
 
 

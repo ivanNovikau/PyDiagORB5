@@ -20,7 +20,6 @@ class Curve:
     ys = None
     zs = None
     ws = None
-    data_norm_to = None
 
     def __init__(self):
         self.ff = dict(GLO.DEF_CURVE_FORMAT)
@@ -47,10 +46,6 @@ class Curve:
 
     def set_ff(self, v):
         self.ff = dict(v)
-        return self
-
-    def norm_to(self, v):
-        self.data_norm_to = v
         return self
 
     def set_errorbar(self, v, ys=None, xs=None):

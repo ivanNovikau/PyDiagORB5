@@ -115,7 +115,7 @@ def set_curves(curves, ax, id_curve_start=0):
                         density=True)
         else:
             if curves.ff['flag_norm']:
-                y_res = ymath.find_norm(y_res, curve.data_norm_to)
+                y_res = ymath.find_norm(y_res, curve.ff['norm_to'])
             if curves.ff['flag_semilogy']:
                 y_res = abs(y_res)
 
