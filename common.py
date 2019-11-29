@@ -61,6 +61,7 @@ def choose_vars(oo):
 
         # choose type of the signal
         opt_type = one_signal['type']
+        ref_module = None
         if opt_type == 'zonal':
             ref_module = zf
         elif opt_type == 'transport':
@@ -82,6 +83,7 @@ def choose_vars(oo):
 
         # choose coordinate system, where the signal will be considered:
         opt_plane = one_signal['plane']
+        vvar_plane = None
         if opt_plane == 'ts':
             vvar_plane = ref_module.choose_one_var_ts(one_signal)
             x1x2_format(vvar_plane,
@@ -269,10 +271,11 @@ def plot_vars_1d(oo):
             ff_curve['flag_hist'] = flags_hist[ivar]
 
         # normalization (second stage):
+        coef_x_norm = 1
         if not ff_curve['flag_hist']:
             coef_x_norm = mix.normalization(sel_norm_x, dd_one)['coef_norm']
 
-        sel_norm_y = sel_norm_ys[ivar] if ivar < len(sel_norm_ys) else 'orig'
+        sel_norm_y = sel_norm_ys[ivar] if ivar < len(sel_norm_ys) else None
         temp_dict = mix.normalization(sel_norm_y, dd_one)
         line_leg_norm = temp_dict['line_norm']
         coef_y_norm   = temp_dict['coef_norm']
@@ -318,31 +321,26 @@ def fft_in_time(oo):
     signal = dict(oo.get('signals', None)[0])
     vvar = choose_vars(oo)[0]
     dd_one = signal['dd'] if 'dd' in signal else None
-    oo_postprocessing = oo.get('oo_postprocessing', None)  # have to be defined only for one variable
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # format
+
+    # post-processing has to be define for only one signal ->
+    # structure is [{}, {}, ...]
+    oo_postprocessing = oo.get('oo_postprocessing', None)
 
     # data to define FFT:
     flag_data_shifted = oo.get('flag_data_shifted', False)
     width_x    = oo.get('width_x', None)
-    x_fft_domain = oo.get('x_fft_domain', None)  # x-domain, where FFT will be performed, does not influence
-                                                 # the domain where filtering is perfomed
+
     w_norm_domain = oo.get('w_norm_domain', None)
     sel_norm_w = oo.get('sel_norm_w', 'wc')
 
+    # domain where FFT will be performed,
+    # this domain does not influence
+    # the domain where postprocessing is perfomed
+    x_fft_domain = oo.get('x_fft_domain', None)
+
     # - frequency normalization (notation) -
-    line_norm_w, coef_norm_w = None, None
-    if sel_norm_w == 'khz':
-        line_norm_w = ',\ kHz'
-        coef_norm_w = dd_one['wc'] / 1.e3
-    if sel_norm_w == 'wc':
-        line_norm_w = '\ [\omega_c]'
-        coef_norm_w = 2 * np.pi
-    if sel_norm_w == 'csa':
-        line_norm_w = '\ [c_s/a_0]'
-        coef_norm_w = 2 * np.pi * dd_one['wc'] / (dd_one['cs'] / dd_one['a0'])
-    if sel_norm_w == 'csr':
-        line_norm_w = '\ [c_s/R_0]'
-        coef_norm_w = 2 * np.pi * dd_one['wc'] / (dd_one['cs'] / dd_one['R0'])
+    coef_norm_w, _, line_norm_w, _ = mix.choose_wg_normalization(sel_norm_w, dd_one)
 
     # consider every variable
     x    = vvar['x']
@@ -467,67 +465,70 @@ def wg_in_time(oo):
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))
     signal = oo.get('signal', None)
     dd = signal['dd']
+
+    # to calculate relative spetrogram: w/w0
     flag_rel_freq = oo.get('flag_rel_freq', False)
+
+    # to calculate spectrogram of a shifted signal:
+    # (data - data_postproc)
+    flag_data_shifted = oo.get('flag_data_shifted', False)
+
+    # post-processing has to be define for only one signal ->
+    # structure is [{}, {}, ...]
+    oo_postprocessing = oo.get('oo_postprocessing', None)
 
     # parameters of nonlinear fitting
     flag_stat = oo_wg.get('flag_stat', False)
     sel_wg = oo_wg.get('sel_wg', 'wg-adv')
 
-    # create time intervals:
-    t_ints = mix.create_consequent_time_intervals(oo.get('oo_t', None))
-    nt = len(t_ints)
-
-    # precise method of w,g calculation
-    line_res_method = '_adv' if 'adv' in  sel_wg else '_est'
+    # define a name of the method used for w,g calculation
+    line_res_method = '_adv' if 'adv' in sel_wg else '_est'
 
     line_res = 'naive'
     if flag_stat:
         line_res = 'stat'
         line_res_method = ''
 
-    # normalization
+    # define frequency label according to its normalization
     _, _, line_norm_w, _ = mix.choose_wg_normalization(
-        dd, oo_wg.get('sel_norm_wg', GLO.DEF_NORM_WG))
-
-    # --- CALCULATION of w(t) ---
-    t = np.zeros(nt)
-    ws, ws_err = np.zeros(nt), np.zeros(nt)
-    gs, gs_err = np.zeros(nt), np.zeros(nt)
-    t[:], ws[:], ws_err[:] = [np.nan]*3
-    for i_int in range(nt):
-        t_int = t_ints[i_int]
-        t[i_int] = t_int[0] + (t_int[1] - t_int[0])/2.
-
-        oo_wg.update({'t_work': t_int})
-
-        ff_wg = dict(GLO.DEF_PLOT_FORMAT)
-        ff_wg['flag_plot_print'] = False
-        oo_calc = dict(oo)
-        oo_calc['ff'] = ff_wg
-        res_wg =  calc_wg(oo_calc, oo_wg)
-
-        if flag_stat:
-            ws_err[i_int] = res_wg[line_res]['err_w']
-            gs_err[i_int] = res_wg[line_res]['err_g']
-        ws[i_int] = res_wg[line_res]['w' + line_res_method]
-
-    # --- initial variable ---
-    dict_var = choose_vars(oo)[0]
-    data_var, t_data = mix.get_x_data_interval(
-        [t[0], t[-1]], dict_var['x'], dict_var['data']
+        oo_wg.get('sel_norm_wg', GLO.DEF_NORM_WG), dd
     )
 
-    # --- PLOT ORIGINAL SIGNALS ---
-    # nsignals = 3  # original, treated, shifted
-    nsignals = 1  # original
+    # read variable
+    dict_var = choose_vars(oo)[0]
+    data_init, t = dict_var['data'], dict_var['x']
+
+    # create time intervals:
+    oo_t = oo['oo_t']
+    tmin, tmax = oo_t['tmin'], oo_t['tmax']
+    t_ints = mix.create_consequent_time_intervals(oo_t)
+    nt = len(t_ints)
+    t_centers = [t_int[0] + (t_int[1] - t_int[0]) / 2. for t_int in t_ints]
+
+    # initial data (in a working domain between tmin and tmax)
+    data_init, t = mix.get_x_data_interval(
+        [tmin, tmax], t, data_init
+    )
+
+    # - post-processing -
+    data_post, t_post = ymath.post_processing(data_init, t, oo_postprocessing)
+    data_post = np.interp(t, t_post, data_post)
+    del t_post
+
+    # shifted signal:
+    data_shifted = (data_init - data_post) if flag_data_shifted \
+        else data_post
+
+    # --- PLOT TIME EVOLUTION OF SIGNALS ---
+    nsignals = 3  # original, treated, shifted
 
     # signals:
     ch_signals = GLO.create_signals_dds(
         GLO.def_arbitrary_1d,
         [dd] * nsignals,
         flag_arbitrary=True,
-        xs=[t_data],
-        datas=[data_var],
+        xs=[t] * nsignals,
+        datas=[data_init, data_post, data_shifted],
     )
 
     # styling:
@@ -548,6 +549,61 @@ def wg_in_time(oo):
     }
     plot_vars_1d(oo_plot_x)
 
+    # --- PLOT FFT OF SIGNALS ---
+    # signals are the same
+
+    # styling
+    ff_x = dict(ff_x)
+    ff_x.update({
+        'title': 'FFT\ of\ ' + dict_var['leg'],
+        'xlabel': '\omega'
+    })
+
+    # postprocessing:
+    post_var = [dict(GLO.DEF_OPERATION_FFT_1D)]
+    oo_post_current = [post_var] * nsignals
+
+    # plotting:
+    oo_plot_x = {
+        'signals': ch_signals,
+        'ff': ff_x,
+        'sel_norm_x': None,
+        'oo_postprocessing': oo_post_current,
+    }
+    plot_vars_1d(oo_plot_x)
+
+    # --- CALCULATION of w(t) ---
+    ws, ws_err = np.zeros(nt), np.zeros(nt)
+    gs, gs_err = np.zeros(nt), np.zeros(nt)
+    ws[:], ws_err[:] = [np.nan]*2
+    for i_int in range(nt):
+        oo_wg.update({'t_work': t_ints[i_int]})
+
+        # signal
+        ch_signal = GLO.create_signals_dds(
+            GLO.def_arbitrary_1d, [dd],
+            flag_arbitrary=True,
+            datas=[data_shifted],
+            xs=[t]
+        )[0]
+
+        # styling
+        ff_wg = dict(GLO.DEF_PLOT_FORMAT)
+        ff_wg['flag_plot_print'] = False
+
+        # calculation
+        oo_calc = dict(oo)
+        oo_calc.update({
+            'signal': ch_signal,
+            'ff': ff_wg,
+        })
+        res_wg =  calc_wg(oo_calc, oo_wg)
+
+        if flag_stat:
+            ws_err[i_int] = res_wg[line_res]['err_w']
+            gs_err[i_int] = res_wg[line_res]['err_g']
+        ws[i_int] = res_wg[line_res]['w' + line_res_method]
+
     # --- PLOT SPECTROGRAM ---
     nsignals = 1  # spectrogram
 
@@ -561,7 +617,7 @@ def wg_in_time(oo):
         GLO.def_arbitrary_1d,
         [dd] * nsignals,
         flag_arbitrary=True,
-        xs=[t],
+        xs=[t_centers],
         datas=[data_w],
         ys_err=[data_w_err],
     )
@@ -690,6 +746,7 @@ def calc_wg(oo, oo_wg):
 
     # - FUNCTION: different options of w and g measurement -
     def find_wg(t, y, sel_wg, flag_print=True):
+        res_dict = {}
         if sel_wg == 'wg-adv':
             res_dict = ymath.advanced_wg(t, y, flag_print=flag_print)
         elif sel_wg == 'w-adv':
@@ -760,7 +817,7 @@ def calc_wg(oo, oo_wg):
     # normalization
     coef_norm_global_w, coef_norm_global_g, line_norm_w, line_norm_g = \
         mix.choose_wg_normalization(
-            dd, oo_wg.get('sel_norm_wg', GLO.DEF_NORM_WG)
+            oo_wg.get('sel_norm_wg', GLO.DEF_NORM_WG), dd
         )
 
     # --- GLOBAL FILTERING ---
@@ -1842,87 +1899,6 @@ def get_value_signal(oo):
               .format(props[id_res], vars_res[id_res]))
 
 
-# NEW: FFT 1d:
-def plot_fft_1d(oo):
-    # oo.ovars = [[type, opt_var, opts], [], ...]
-    # oo.dds = [dd1, dd2, dd3, ...]
-    # oo.avrs = [[coords, type-coord_av, domains], [], ...]
-    # oo.x_fft_domains = [domain1, domain2, ...]
-    # oo.w_domain = [w_start, w_end],
-    # oo.tit_plot
-    # oo.labx
-    # oo.laby
-    # oo.sel_norm - normalization of frequency: 'khz', 'wc', 'csa', 'csr'
-    # oo.flag_f2 - one or two-sided FFT
-
-    # Domains (oo.x_fft_domains), where FFT will be found, are the same for all
-    # variables.
-
-    # number of dds has to be equal to n_points * n_x_fft_domains
-
-    # choose variables and their averaging:
-    vvars = get_fft_1d(oo)
-    n_vars = len(vvars['datas'])
-
-    dds = oo.get('dds', None)
-
-    # frequency domain for plotting:
-    w_domain = oo.get('w_domain', None)
-
-    # - frequency normalization (notation) -
-    sel_norm = oo.get('sel_norm', 'wc')
-
-    line_w = None
-    if sel_norm == 'khz':
-        line_w = '\omega,\ kHz'
-    if sel_norm == 'wc':
-        line_w = '\omega[\omega_c]'
-    if sel_norm == 'csa':
-        line_w = '\omega[c_s/a_0]'
-    if sel_norm == 'csr':
-        line_w = '\omega[c_s/R_0]'
-
-    # additional data:
-    labx = oo.get('labx', line_w)  # x-label
-    laby = oo.get('laby', None)  # y-label
-    tit_plot  = oo.get('tit_plot', None)  # title
-
-    flag_norm = oo.get('flag_norm', False)
-
-    curves = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)
-    curves.flag_norm = flag_norm
-    for ivar in range(n_vars):
-        dd = dds[ivar]
-        data = vvars['datas'][ivar]
-        w    = vvars['ws'][ivar]
-        leg  = vvars['legs'][ivar]
-
-        # - frequency normalization (coefficient) -
-        coef_norm = None
-        if sel_norm == 'khz':
-            coef_norm = dd['wc'] / 1.e3
-        if sel_norm == 'wc':
-            coef_norm = 2 * np.pi
-        if sel_norm == 'csa':
-            coef_norm = 2 * np.pi * dd['wc'] / (dd['cs'] / dd['a0'])
-        if sel_norm == 'csr':
-            coef_norm = 2 * np.pi * dd['wc'] / (dd['cs'] / dd['R0'])
-        w = w * coef_norm
-
-        # - frequency interval for plotting -
-        ids_w, w, _ = mix.get_ids(w, w_domain)
-        data = mix.get_slice(data, ids_w)
-
-        # - plotting -
-        curves.new() \
-            .XS(w) \
-            .YS(data) \
-            .leg(leg)
-
-    curves.set_colors_styles()
-    cpr.plot_curves(curves)
-
-
 # NEW: FFT 2d:
 def plot_fft_2d(oo):
     # oo.ovars = [[type, opt_var, opts], [], ...]
@@ -2030,114 +2006,6 @@ def plot_fft_2d(oo):
         cpr.plot_curves_3d(curves)
 
 
-# NEW: find dynamic rate for several signals and in several time intervals
-def find_gamma(oo):
-    # the same time domains for different signals:
-    # oo.t_work_domains - where to find gamma
-    # oo.ovars, oo.avrs
-
-    vvars = choose_vars(oo)
-    nvars = len(vvars)
-
-    tit_plot = oo.get('tit_plot', None)  # title
-    labx = oo.get('labx', 't[wci^{-1}]')
-    laby = oo.get('laby', None)  # y-label
-    flag_semilogy = oo.get('flag_semilogy', True)
-    line_g = '\gamma[\omega_{ci}]'
-
-    t_work_domains = oo.get('t_work_domains', None)
-    nt_domains = len(t_work_domains)
-
-    # --- find dynamic rates ---
-    vvars_work_vars, ts_work_vars, lines_t_work_vars, gs_est_vars = [], [], [], []
-    for id_var in range(nvars):
-        # current data
-        data = vvars[id_var]['data'][0]
-        t    = vvars[id_var]['x']
-
-        vvars_work, ts_work, lines_t_work, gs_est = [], [], [], []
-        for id_t_interval in range(nt_domains):
-            t_work_domain = t_work_domains[id_t_interval]
-
-            # time domain where the gamma will be computed
-            ids_t_work, t_work, line_t_work = mix.get_ids(t, t_work_domain)
-            data_work = np.squeeze(data[ids_t_work])
-
-            # find gamma in this time domain
-            g_est = ymath.estimate_g(t_work, data_work)
-
-            # results for a given time interval
-            vvars_work.append(data_work)
-            ts_work.append(t_work)
-            lines_t_work.append(line_t_work)
-            gs_est.append(g_est)
-
-        # results for a given variable
-        vvars_work_vars.append(vvars_work)
-        ts_work_vars.append(ts_work)
-        lines_t_work_vars.append(lines_t_work)
-        gs_est_vars.append(gs_est)
-
-    # --- PLOT INITIAL SIGNALS and WORKING DOMAINS (curves_work) ---
-    styles_loc = ['-.'] * 20
-
-    curves_work = crv.Curves().xlab(labx).ylab(laby).tit(tit_plot)
-    curves_work.flag_semilogy = flag_semilogy
-
-    curves_fit = crv.Curves().xlab(labx).tit(tit_plot)
-    curves_fit.flag_semilogy = flag_semilogy
-
-    for id_var in range(nvars):
-        data = vvars[id_var]['data'][0]
-        t    = vvars[id_var]['x']
-        leg = vvars[id_var]['legs'][0]
-
-        vvars_work   = vvars_work_vars[id_var]
-        ts_work      = ts_work_vars[id_var]
-        lines_t_work = lines_t_work_vars[id_var]
-        gs_est       = gs_est_vars[id_var]
-
-        # intervals
-        t, ids_t = mix.get_array_oo(oo, t, 't')
-        data = mix.get_slice(data, ids_t)
-
-        # plot initial signals
-        curves_work.new().XS(t).YS(data).leg(leg)
-        curves_fit.new().XS(t).YS(data).leg(leg)
-
-        # plot data for every time interval
-        for id_t_interval in range(len(ts_work)):
-            data_work   = vvars_work[id_t_interval]
-            t_work      = ts_work[id_t_interval]
-            line_t_work = lines_t_work[id_t_interval]
-            g_est       = gs_est[id_t_interval]
-
-            line_legend_fit = leg + ':\ ' + line_t_work
-
-            # work domain
-            curves_work.new() \
-                .XS(t_work) \
-                .YS(data_work) \
-                .sty(styles_loc[id_t_interval])
-
-            # fitting
-            # curves_fit.new() \
-            #     .XS(g_est['x_peaks']) \
-            #     .YS(g_est['y_peaks']) \
-            #     .leg(line_legend_fit).sty('o').col('green')
-            curves_fit.new() \
-                .XS(g_est['x_fit']) \
-                .YS(g_est['y_fit']) \
-                .leg(line_legend_fit).sty(styles_loc[id_t_interval])
-
-            print(leg + ': ' + line_t_work + ': ' + line_g + ' = {:0.3e}'.format(g_est['g']))
-
-    cpr.plot_curves(curves_work)
-    cpr.plot_curves(curves_fit)
-
-    return
-
-
 # NEW: calculation of the frequency and dynamic rate in a radial interval:
 def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
     # Calculate frequency (w) and damping/growth rate (g) at radial points in the some
@@ -2242,87 +2110,6 @@ def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
     cpr.plot_curves(curves)
 
     return
-
-
-# NEW: get FFT 1d
-def get_fft_1d(oo):
-    # oo.x_fft_domains = [domain1, domain2, ...]
-    # oo.w_domain = [w_start, w_end],
-    # oo.flag_f2 - one or two sided FFT
-
-    # Domains (oo.x_fft_domains), where FFT will be found, are the same for all
-    # variables.
-
-    # choose variables and their averaging:
-    vvars = choose_vars(oo)
-    n_vars = len(vvars)
-
-    # domains, where the FFT will be calculated:
-    x_fft_domains = oo.get('x_fft_domains', None)
-    ndomains_fft = len(x_fft_domains)
-
-    # one or two-sided FFT
-    flag_f2 = oo.get('flag_f2', False)
-
-    vars_fft, ws, legs_fft = [], [], []
-    for ivar in range(n_vars):
-        vvar = vvars[ivar]
-        datas = vvar['data']
-        legs = vvar['legs']
-        x        = vvar['x']
-        name_x   = vvar['name_x']
-        format_x = vvar['format_x']
-
-        # calculate domains, where FFT will be calculated:
-        xs_fft, ids_xs_fft, lines_x_fft = [], [], []
-        for idomain in range(ndomains_fft):
-            ids_x_fft, x_fft, line_x_fft = mix.get_ids(
-                x, x_fft_domains[idomain], format_x
-            )
-            xs_fft.append(x_fft)
-            ids_xs_fft.append(ids_x_fft)
-            lines_x_fft.append(line_x_fft)
-
-        ns_av = len(datas)
-        for is_av in range(ns_av):
-            data_av = datas[is_av]
-            leg = legs[is_av]
-            for idomain in range(ndomains_fft):
-                x_fft = xs_fft[idomain]
-                ids_x_fft = ids_xs_fft[idomain]
-                line_x_fft = lines_x_fft[idomain]
-
-                data = mix.get_slice(data_av, ids_x_fft)
-
-                # - frequency grid -
-                ffres = ymath.fft_y(x_fft)
-                if flag_f2:
-                    w = ffres['w2']
-                else:
-                    w = ffres['w']
-
-                # - FFT -
-                var_fft = ymath.fft_y(x_fft, data, {'flag_f2_arranged': flag_f2})
-
-                # - result FFT -
-                if flag_f2:
-                    var_fft = var_fft['f2_arranged']
-                else:
-                    var_fft = var_fft['f']
-
-                leg_line = leg + ':\ ' + name_x + ' = ' + line_x_fft
-
-                # save
-                vars_fft.append(var_fft)
-                ws.append(w)
-                legs_fft.append(leg_line)
-
-    res = {
-        'datas': vars_fft,
-        'ws': ws,
-        'legs': legs_fft
-    }
-    return res
 
 
 # NEW: get FFT 2d
@@ -2684,183 +2471,6 @@ def check_absmax_s(oo, t_point):
         .YS(data_max) \
         .leg('max').sty('o')
     cpr.plot_curves(curves)
-
-
-# Plot main 1d figures for the MPR diagnostic:
-def MPR_plot_1d(dd, oo):
-    # Local data
-    DL = {}
-
-    # --- Names ---
-    sp_names = dd['kin_species_names']
-    total_name = 'total'
-    part_names = sp_names + [total_name]
-
-    je_name = 'jdote_es'
-    ef_name = 'efield'
-    var_names = [je_name, ef_name]
-
-    # --- GET JE and Efield (t) ---
-    oo_vvar = {
-        'avrs': [['t']],
-        'dds': [dd],
-    }
-    for var_name in var_names:
-        DL[var_name] = {}
-        for part_name in part_names:
-            oo_vvar.update({
-                'ovars': [ ['mpr', var_name, part_name] ],
-            })
-            DL[var_name][part_name] = choose_vars(oo_vvar)[0]
-
-    del oo_vvar
-
-    # # Plot species signals:
-    # vvar = DL[je_name]['deuterium']
-    # curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit(vvar['tit'])
-    # curves.new().XS(vvar['x']).YS(vvar['data']).leg(vvar['line_sum'])
-    # cpr.plot_curves(curves)
-    #
-    # vvar = DL[ef_name]['deuterium']
-    # curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit(vvar['tit'])
-    # curves.new().XS(vvar['x']).YS(vvar['data'])
-    # cpr.plot_curves(curves)
-
-    # --- ELIMINATE CONTRIBUTION of Zero-Frequency Zonal Flows (ZFZF) ---
-
-    # - Get GAM and ZFZF components of the zonal electric field -
-    def obtain_e0e1(g, e, t, t_point_inf):
-        id_t_inf, t_point_inf, _ = mix.get_ids(t, t_point_inf)
-
-        A_zfzf = np.mean(e[id_t_inf:])
-        e_gam = e - A_zfzf
-        e_gam_cos = e_gam * np.exp(-g * t)
-
-        ids_peaks, e_gam_peaks = scipy.signal.find_peaks(e_gam_cos, height=0)
-        e_gam_peaks = e_gam_peaks['peak_heights']
-        t_peaks = t[ids_peaks]
-
-        A_gam = np.mean(e_gam_peaks)
-
-        res = {
-            'A_zfzf': A_zfzf, 'A_gam': A_gam,
-            'e_gam': e_gam,
-            'e_gam_cos': e_gam_cos,
-            't_peaks': t_peaks, 'e_gam_peaks': e_gam_peaks,
-        }
-
-        return res
-
-    # - Eliminate ZFZF from field energy and energy transfer signals -
-    def obtain_gam(w, g, E, P, t, id_peak, eta):
-        # E - field energy
-        # P - J*E
-
-        ids_peaks, _ = scipy.signal.find_peaks(E, height=0)
-
-        E_peak1 = E[ids_peaks[id_peak]]
-        E_peak2 = E[ids_peaks[id_peak+1]]
-        if eta > 0:
-            idd = np.array([E_peak1, E_peak2]).argmax()
-        else:
-            # in this case you should take at the beginning where
-            # there are still alternating peaks
-            idd = np.array([E_peak1, E_peak2]).argmin()
-        if idd == 1:
-            id_peak += 1
-
-        t_peak = t[ids_peaks[id_peak]]
-        Eref   = E[ids_peaks[id_peak]]
-
-        e12 = Eref / (0.5 * eta**2 + eta * np.exp(g*t_peak) + 0.5 * np.exp(2*g*t_peak))
-        e1 = np.sqrt(e12)
-        e0 = e1 * eta
-
-        Egam = E - 0.5 * e0 ** 2 - e0 * e1 * np.cos(w * t) * np.exp(g * t)
-        Pgam = P + e0*e1 * np.exp(g*t) * (g * np.cos(w*t) - w * np.sin(w*t))
-
-        res = {
-            'ids_peaks': ids_peaks,
-            'id_peak': id_peak,
-            'Egam': Egam,
-            'Pgam': Pgam
-        }
-        return res
-
-    # - FREQUENCY and DAMPING RATE -
-    w = 3.9e-3
-    g = -1.1e-4
-
-    t_point_inf = 1.0e4
-
-    # - Field energy and time -
-    Efield = DL[ef_name]['deuterium']['data']
-    t = DL[ef_name]['deuterium']['x']
-
-    # - Energy transfer signal -
-    P = DL[je_name]['deuterium']['data']
-    P = np.interp(t, DL[je_name]['deuterium']['x'], P)
-
-    # - Zonal electric field at s1 -
-    s1 = 0.76
-    oo_erbar = {
-        'ovars': [ ['zonal', 'erbar'] ],
-        'avrs': [ ['ts', 'point-s', [s1]] ],
-        'dds': [dd]
-    }
-    erbar_dict = choose_vars(oo_erbar)[0]
-    erbar = erbar_dict['data'][0]
-    erbar = np.interp(t, erbar_dict['x'], erbar)
-
-    # find ZFZF and GAM amplitudes in zonal electri field:
-    res_e = obtain_e0e1(g, erbar, t, t_point_inf)
-
-    # - Exclude ZFZF from electric field, field energy and energy transfer signals -
-    id_peak = 4
-    eta = res_e['A_zfzf'] / res_e['A_gam']
-    res_f = obtain_gam(w, g, Efield, P, t, id_peak, eta)
-    id_peak = res_f['id_peak']
-
-    # - PLOTTING: electric field -
-    curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit('Electric\ field')
-    curves.flag_norm = False
-    curves.new() \
-        .XS(t).YS(erbar) \
-        .leg('ZF + GAM')
-    curves.new() \
-        .XS(t).YS(res_e['e_gam_cos']) \
-        .leg('GAM:\ cos')
-    curves.new() \
-        .XS(res_e['t_peaks']).YS(res_e['e_gam_peaks']) \
-        .leg('GAM:\ cos:\ peaks').sty('o')
-    curves.new() \
-        .XS(t).YS(res_e['e_gam']) \
-        .leg('GAM')
-    cpr.plot_curves(curves)
-
-    # - PLOTTING: field energy -
-    curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit('Field\ energy')
-    curves.flag_norm = False
-    curves.new().XS(t).YS(Efield).leg('ZF+GAM')
-    curves.new() \
-        .XS(t[res_f['ids_peaks']]) \
-        .YS(Efield[res_f['ids_peaks']]) \
-        .leg('peaks').sty('o')
-    curves.new() \
-        .XS( t[res_f['ids_peaks'][id_peak]] ) \
-        .YS( Efield[res_f['ids_peaks'][id_peak]] ) \
-        .leg('chosen\ peak').sty('s')
-    curves.new().XS(t).YS(res_f['Egam']).leg('GAM')
-    cpr.plot_curves(curves)
-
-    # - PLOTTING: energy transfer signal -
-    curves = crv.Curves().xlab('t[\omega_{ci}^{-1}]').tit('Field\ energy')
-    curves.flag_norm = False
-    curves.new().XS(t).YS(P).leg('ZF+GAM')
-    curves.new().XS(t).YS(res_f['Pgam']).leg('GAM')
-    cpr.plot_curves(curves)
-
-    return
 
 
 # Plot main 2d figures for the MPR diagnostic:

@@ -21,6 +21,20 @@ DEF_FILTER_SMOOTH = {
         {'sel_filt': 'smooth', 'norm_w': 1, 'wind': 3}
     ]
 }
+DEF_FILTER_ROUGH = {
+    'operation': 'filtering',
+    'domain': None,
+    'oo_filters': [
+        {'sel_filt': 'rough', 'norm_w': 1, 'w_interval': [0, 1e-3]}
+    ]
+}
+DEF_FFT = {
+    'flag_f2': False
+}
+DEF_OPERATION_FFT_1D = {
+    'operation': 'fft-1d',
+    'oo_fft': DEF_FFT,
+}
 
 # ---------------------------------------------------------------------------
 if 'Terminal' in get_ipython().__class__.__name__:

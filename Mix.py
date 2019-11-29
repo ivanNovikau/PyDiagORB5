@@ -17,6 +17,7 @@ def reload_module(obj_module):
 
 def normalization(sel_norm, dd=None):
     line_norm, coef_norm = '', 1
+
     if sel_norm == 't-ms':
         line_norm = '\ (ms)'
         if dd is not None:
@@ -34,6 +35,17 @@ def normalization(sel_norm, dd=None):
         if dd is not None:
             coef_norm = dd['ele-nbar-m3']
 
+    if sel_norm is not None:
+        if len(sel_norm.split('-')) == 2:
+            selector_type, sel_norm_new = sel_norm.split('-')
+            if selector_type == 'frequency' or selector_type == 'gamma':
+                coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = \
+                    choose_wg_normalization(sel_norm_new, dd)
+                if selector_type == 'frequency':
+                    line_norm, coef_norm = line_norm_w, coef_norm_w
+                if selector_type == 'gamma':
+                    line_norm, coef_norm = line_norm_g, coef_norm_g
+
     res_data = {
         'line_norm': line_norm,
         'coef_norm': coef_norm,
@@ -41,22 +53,60 @@ def normalization(sel_norm, dd=None):
     return res_data
 
 
-def choose_wg_normalization(dd, sel_norm):
+def choose_wg_normalization(sel_norm, dd=None):
     coef_norm_w, coef_norm_g, line_norm_w, line_norm_g = \
         None, None, '', ''
+
+    if sel_norm is None:
+        sel_norm = 'wc'
+
     if sel_norm.lower() == 'wc':
-        line_norm_w = line_norm_g = '[\omega_{ci}]'
+        line_norm_w = line_norm_g = '\ [\omega_{ci}]'
         coef_norm_w = coef_norm_g = 1
     if sel_norm.lower() == 'vt':
-        line_norm_w = line_norm_g = '[sqrt(2)*v_{th,i}/R_0]'
-        coef_norm_w = coef_norm_g = \
-            dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
+        line_norm_w = line_norm_g = '\ [sqrt(2)*v_{th,i}/R_0]'
+        if dd is not None:
+            coef_norm_w = coef_norm_g = \
+                dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
     if sel_norm.lower() == 'khz':
-        line_norm_w = '(kHz)'
-        line_norm_g = '(10^3\ s^{-1})'
-        coef_norm_w = dd['wc'] / (1e3 * 2 * np.pi)
-        coef_norm_g = dd['wc'] / 1e3
+        line_norm_w = '\ [kHz]'
+        line_norm_g = '\ [10^3\ s^{-1}]'
+        if dd is not None:
+            coef_norm_w = dd['wc'] / (1e3 * 2 * np.pi)
+            coef_norm_g = dd['wc'] / 1e3
+    if sel_norm == 'csa':
+        line_norm_w = line_norm_g = '\ [c_s/a_0]'
+        if dd is not None:
+            coef_norm_w = coef_norm_g =\
+                dd['wc'] / (dd['cs'] / dd['a0'])
+    if sel_norm == 'csr':
+        line_norm_w = line_norm_g = '\ [c_s/R_0]'
+        if dd is not None:
+            coef_norm_w = coef_norm_g =\
+                dd['wc'] / (dd['cs'] / dd['R0'])
     return coef_norm_w, coef_norm_g, line_norm_w, line_norm_g
+
+
+# def w_normalization_after_fft(sel_norm, dd=None):
+#     coef_norm, line_norm = None,  ''
+#
+#     if sel_norm is None:
+#         sel_norm = 'wc'
+#
+#     if sel_norm.lower() == 'wc':
+#         line_norm = '\ [\omega_{ci}]'
+#         coef_norm = 2 * np.pi
+#     if sel_norm.lower() == 'vt':
+#         line_norm =  '\ [sqrt(2)*v_{th,i}/R_0]'
+#         if dd is not None:
+#             coef_norm =  2 * np.pi * \
+#                 dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
+#     if sel_norm.lower() == 'khz':
+#         line_norm = '\ [kHz]'
+#         if dd is not None:
+#             coef_norm = dd['wc'] / 1e3
+#
+#     return coef_norm, line_norm
 
 
 def get_attribute(ff, path):

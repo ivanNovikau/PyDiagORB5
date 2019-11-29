@@ -284,7 +284,7 @@ def fft_y(x, y=None, oo=None):
 
     x_new = np.linspace(x[0], x[-1], nx)
     dx = np.min(np.diff(x_new))
-    freq_max = 1. / dx
+    freq_max = 2*np.pi / dx
     dfreq = freq_max / nx
 
     w = np.array([dfreq * i for i in range(nx_half + 1)])
@@ -293,7 +293,7 @@ def fft_y(x, y=None, oo=None):
     right_a = w[1:np.size(w)-1]
     w2 = np.concatenate((left_a, right_a))
 
-    w2_ref = np.fft.fftfreq(nx, dx)  # to check in debuging the structure of the f2_raw
+    # w2_ref = np.fft.fftfreq(nx, dx/(2*np.pi))  # to check in debuging the structure of the f2_raw
 
     # first part of results
     res = {
@@ -600,7 +600,6 @@ def find_norm(y, y_norm_to=None):
     return y_norm
 
 
-# resonant velocity:
 def get_v_res(dd, s1, w_wci, sel_species):
     cs_speak = np.sqrt(dd['electrons'].T_speak(dd) / dd['pf'].mass)
     norm_v = np.max(dd[sel_species].nT_equil['T']) / cs_speak
@@ -617,7 +616,6 @@ def get_v_res(dd, s1, w_wci, sel_species):
     return vres
 
 
-# get frequency from a resonant velocity:
 def get_w_from_v_res(dd, s1, vres, sel_species):
     cs_speak = np.sqrt(dd['electrons'].T_speak(dd) / dd['pf'].mass)
     norm_v = np.max(dd[sel_species].nT_equil['T']) / cs_speak
@@ -629,7 +627,6 @@ def get_w_from_v_res(dd, s1, vres, sel_species):
     return w_wci
 
 
-# Averaging in one domain
 def avr_x1x2(vvar, one_signal, oo ):
     # one_signal = {'avr_operation': sel_av, 'avr_domain': av_domain}
     # sel_av = 'type_av-coord_av'
@@ -821,6 +818,12 @@ def post_processing(data, x, oo_operations):
             x_temp = x_work
             data_temp = np.interp(x_temp, x_filt, data_filt)
 
+        # * 1d Fourier transformation *
+        elif sel_operation == 'fft-1d':
+            oo_fft = oo_operation.get('oo_fft', [GLO.DEF_FFT])
+            data_fft, x_fft = get_fft_1d(x_work, data_work, oo_fft)
+            data_temp, x_temp = data_fft, x_fft
+
         # * wrong operation name *
         else:
             mix.error_mes('Wrong operation name')
@@ -858,6 +861,22 @@ def global_filter_signal(t, y, oo_filt):
     res_dict['x']    = np.array(filt['x'])
 
     return res_dict['data'], res_dict['x']
+
+
+def get_fft_1d(x, data, oo):
+    # one or two-sided FFT
+    flag_f2 = oo['flag_f2']
+
+    # - frequency grid -
+    ffres = fft_y(x)
+    w = ffres['w2'] if flag_f2 else ffres['w']
+
+    # - fft -
+    var_fft = fft_y(x, data, {'flag_f2_arranged': flag_f2})
+    data_fft = var_fft['f2_arranged'] if flag_f2 \
+        else var_fft['f']
+
+    return data_fft, w
 
 
 
