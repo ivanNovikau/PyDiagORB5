@@ -35,6 +35,14 @@ DEF_OPERATION_FFT_1D = {
     'operation': 'fft-1d',
     'oo_fft': DEF_FFT,
 }
+DEF_FFT_2D = {
+    'flag_f2': False,
+    'name_coord_fft': 't',
+}
+DEF_OPERATION_FFT_2D = {
+    'operation': 'fft-2d',
+    'oo_fft': DEF_FFT_2D,
+}
 
 # ---------------------------------------------------------------------------
 if 'Terminal' in get_ipython().__class__.__name__:

@@ -6,7 +6,6 @@ import curve as crv
 import gam_theory
 import numpy as np
 from scipy import interpolate
-import sys
 import h5py as h5
 
 

@@ -811,7 +811,7 @@ def post_processing(data, x, oo_operations):
 
             data_temp, x_temp = coef * data_work, x_work
 
-        # * multiply by a value *
+        # * multiply x by a value *
         elif sel_operation == 'mult-x':
             coef = oo_operation.get('coef', None)
             if coef is None:
@@ -841,6 +841,65 @@ def post_processing(data, x, oo_operations):
         data_work, x_work = np.array(data_temp), np.array(x_temp)
 
     return data_work, x_work
+
+
+def post_processing_2d(data, x, y, name_x, name_y, oo_operations):
+    # - check operations -
+    if oo_operations is None:
+        return data, x, y
+
+    # names of variables:
+    name_x_res, name_y_res = name_x, name_y
+
+    # -- PERFORM CONSEQUENTLY ALL OPERATIONS --
+    data_work, x_work, y_work = np.array(data), np.array(x), np.array(y)
+    for oo_operation in oo_operations:
+        # - operation type and working domain -
+        sel_operation = oo_operation.get('operation', None)
+        x_domain = oo_operation.get('domain-' + name_x_res, None)
+        y_domain = oo_operation.get('domain-' + name_y_res, None)
+        if x_domain is None:
+            x_domain = [x_work[0], x_work[-1]]
+        if y_domain is None:
+            y_domain = [y_work[0], y_work[-1]]
+        data_work, x_work, y_work = mix.get_data_interval_2d(
+            data, x_work, x_domain, y_work, y_domain
+         )
+        data_temp, x_temp, y_temp = [], [], []
+
+        # * No operations *
+        if sel_operation is None:
+            data_temp, x_temp, y_temp = data_work, x_work, y_work
+
+        # * multiply by a value *
+        elif sel_operation == 'mult':
+            coef = oo_operation.get('coef', None)
+            if coef is None:
+                mix.error_mes('Postprocessing: You need not-None \'coef\' field '
+                              'for \'mult\' postprocessing')
+            data_temp, x_temp, y_temp = coef * data_work, x_work, y_work
+
+        # * take an absolute signal *
+        elif sel_operation == 'abs':
+            data_temp, x_temp, y_temp = np.abs(data_work), x_work, y_work
+
+        # * 2d Fourier transformation *
+        elif sel_operation == 'fft-2d':
+            oo_fft = oo_operation.get('oo_fft', [GLO.DEF_FFT_2D])
+            data_work, x_work, name_x_res, y_work, name_y_res = get_fft_2d(
+                x_work, name_x_res, y_work, name_y_res, data_work, oo_fft
+            )
+            data_temp, x_temp, y_temp = data_work, x_work, y_work
+
+        # * wrong operation name *
+        else:
+            mix.error_mes('Wrong operation name')
+
+        # - save modification -
+        data_work, x_work, y_work = \
+            np.array(data_temp), np.array(x_temp), np.array(y_temp)
+
+    return data_work, x_work, name_x_res, y_work, name_y_res
 
 
 def global_several_filters(x, y, oo_filt_loc):
@@ -886,6 +945,48 @@ def get_fft_1d(x, data, oo):
         else var_fft['f']
 
     return data_fft, w
+
+
+def get_fft_2d(x, name_x, y, name_y, data, oo):
+    # compare name_x and name_y with oo.name_coord_fft
+    # if name_x = name_coord_fft -> transpose the data to gurantee
+    #   that the FFT will be perform along the second axis
+
+    # name of the coordinate axis, along which FFT will be taken
+    name_coord_fft = oo.get('name_coord_fft', None)
+
+    # one or two-sided FFT
+    flag_f2 = oo.get('flag_f2', False)
+
+    # axis along which will be performed the FFT
+    axis_fft = 1
+
+    # name of a new axis where FFT has been performed
+    name_w = 'w'
+
+    # choose coordinate to perform Fourier transformation
+    if name_coord_fft == name_x:
+        coord_fft = x
+        coord_along = y
+        data = data.T
+        name_along = name_y
+    else:
+        coord_fft = y
+        coord_along = x
+        name_along = name_x
+
+    # - frequency grid -
+    ffres = fft_y(coord_fft)
+    w = ffres['w2'] if flag_f2 else ffres['w']
+
+    # - FFT -
+    data_fft = fft_y(coord_fft, data,
+                    {'flag_f2_arranged': flag_f2, 'axis': axis_fft})
+
+    # - result FFT -
+    data_fft = data_fft['f2_arranged'] if flag_f2 else data_fft['f']
+
+    return data_fft, coord_along, name_along, w, name_w
 
 
 

@@ -37,27 +37,6 @@ def read_signal(path_to_read, var_path):
     return vvar
 
 
-def potsc(dd):
-    if 'potsc' in dd:
-        return
-    path_to_file = dd['path'] + '/orb5_res.h5'
-    f = h5.File(path_to_file, 'r')
-
-    t = np.array(f['/data/var2d/generic/potsc/time'])
-    s = np.array(f['/data/var2d/generic/potsc/coord1'])
-    chi = np.array(f['/data/var2d/generic/potsc/coord2'])
-    r = np.array(f['/data/var2d/generic/potsc/rsc'])
-    z = np.array(f['/data/var2d/generic/potsc/zsc'])
-    potsc_data = np.array(f['/data/var2d/generic/potsc/data'])
-    dd['potsc'] = {
-        't': t,
-        's': s,
-        'chi': chi,
-        'r': r,
-        'z': z,
-        'data': potsc_data}
-
-
 def potsc_grids(dd):
     var_name = 'potsc_grids'
     if var_name in dd:

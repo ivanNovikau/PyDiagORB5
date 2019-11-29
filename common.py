@@ -169,45 +169,60 @@ def plot_vars_2d(oo):
 
     # additional data:
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))  # dictionary with format
-    sel_norm_x   = oo.get('sel_norm_x', None)
+    sel_norm_x = oo.get('sel_norm_x', None)
+    sel_norm_y = oo.get('sel_norm_y', None)
     oo_text   = oo.get('text', [])
     geoms     = oo.get('geoms', [])
     dd = signal['dd'] if 'dd' in signal else None
 
-    # normalization (1st stage)
-    line_x1_norm = mix.normalization(sel_norm_x)['line_norm']
+    # postprocessing must be defined for only one signal,
+    # it must have a following structure: [{}, {}, ...]
+    oo_postprocessing = oo.get('oo_postprocessing', None)
+
+    # normalization
+    dict_norm = mix.normalization(sel_norm_x)
+    coef_x_norm, line_x_norm = dict_norm['coef_norm'], dict_norm['line_norm']
+    dict_norm = mix.normalization(sel_norm_y)
+    coef_y_norm, line_y_norm = dict_norm['coef_norm'], dict_norm['line_norm']
 
     # title
     ff['title'] = ff['title'] if ff['title'] is not None else vvar['leg']
 
-    # xlabel
+    # xlabel and ylabel
     if ff['xlabel'] is not None:
-        ff['xlabel'] += line_x1_norm
+        ff['xlabel'] += line_x_norm
+    if ff['ylabel'] is not None:
+        ff['ylabel'] += line_y_norm
+
+    # get grids and a variable
+    data, x1, x2 = vvar['data'], vvar[vvar['x1']], vvar[vvar['x2']]
+
+    # post-processing
+    name_x1, name_x2 = vvar['x1'], vvar['x2']
+    data, x1, name_x1, x2, name_x2 = ymath.post_processing_2d(data, x1, x2,
+                                            name_x1, name_x2, oo_postprocessing)
 
     # create curves:
     curves = crv.Curves().set_ff(ff)
 
     # original or cartesian 2d grid:
-    if vvar['x1'] is 'r' and vvar['x2'] is 'z':
-        _, ids_s   = mix.get_array_oo(oo, vvar['s'],   's')
-        _, ids_chi = mix.get_array_oo(oo, vvar['chi'], 'chi')
+    if name_x1 is 'r' and name_x2 is 'z':
+        _, ids_s   = mix.get_array_oo(oo, x1,   's')
+        _, ids_chi = mix.get_array_oo(oo, x2, 'chi')
         x1 = mix.get_slice(vvar['r'], ids_chi, ids_s)
         x2 = mix.get_slice(vvar['z'], ids_chi, ids_s)
-        data = mix.get_slice(vvar['data'], ids_s, ids_chi)
+        data = mix.get_slice(data, ids_s, ids_chi)
     else:
-        x1, ids_x1 = mix.get_array_oo(oo, vvar[vvar['x1']], vvar['x1'])
-        x2, ids_x2 = mix.get_array_oo(oo, vvar[vvar['x2']], vvar['x2'])
-        data = mix.get_slice(vvar['data'], ids_x1, ids_x2)
-
-    # normalization (2nd stage)
-    coef_x1_norm = mix.normalization(sel_norm_x, dd)['coef_norm']
+        x1, ids_x1 = mix.get_array_oo(oo, x1, name_x1)
+        x2, ids_x2 = mix.get_array_oo(oo, x2, name_x2)
+        data = mix.get_slice(data, ids_x1, ids_x2)
 
     # additional text and geometrical figures:
     curves.newt(oo_text)
     curves.newg(geoms)
 
     # plot
-    curves.new().XS(x1 * coef_x1_norm).YS(x2).ZS(data)
+    curves.new().XS(x1 * coef_x_norm).YS(x2 * coef_y_norm).ZS(data)
     cpr.plot_curves_3d(curves)
 
 
@@ -257,8 +272,8 @@ def plot_vars_1d(oo):
         if data is None:
             continue
         x     = np.array(vvar['x'])
-        x_err = vvar['x_err']
-        y_err = vvar['y_err']
+        x_err = vvar.get('x_err', None)
+        y_err = vvar.get('y_err', None)
         leg  = vvar['leg']
         dd_one = signals[ivar]['dd'] if 'dd' in signals[ivar] else None
         oo_var_operations = oo_postprocessing[ivar] \
@@ -1931,113 +1946,6 @@ def get_value_signal(oo):
               .format(props[id_res], vars_res[id_res]))
 
 
-# NEW: FFT 2d:
-def plot_fft_2d(oo):
-    # oo.ovars = [[type, opt_var, opts], [], ...]
-    # oo.dds = [dd1, dd2, dd3, ...]
-    # oo.avrs = [[coords, type-coord_av, domains], [], ...]
-    # oo.x_fft_domains = [domain1, domain2, ...]
-    # oo.w_domain = [w_start, w_end],
-    # oo.dep_domain = [dep_start, dep_end]
-    # oo.tit_plot
-    # oo.labx
-    # oo.laby
-    # oo.sel_cmp - colormap
-    # oo.sel_norm - normalization of frequency: 'khz', 'wc', 'csa', 'csr'
-    # oo.flag_f2 - one or two-sided FFT
-    # oo.coord_fft - coordinate axis, along which FFT will be taken
-
-    # Domains (oo.x_fft_domains), where FFT will be found, are the same for all
-    # variables.
-
-    # choose variables and their averaging:
-    vvars = get_fft_2d(oo)
-    n_vars = len(vvars['datas'])
-
-    dds = oo.get('dds', None)
-
-    # theoretical and experimental
-    flag_gao = oo.get('flag_gao', True)
-    flag_gk_fit = oo.get('flag_gk_fit', False)
-    flag_aug20787 = oo.get('flag_aug20787', False)
-
-    # - frequency normalization (notation) -
-    sel_norm = oo.get('sel_norm', 'wc')
-
-    line_w = None
-    if sel_norm == 'khz':
-        line_w = '\omega,\ kHz'
-    if sel_norm == 'wc':
-        line_w = '\omega[\omega_c]'
-    if sel_norm == 'csa':
-        line_w = '\omega[c_s/a_0]'
-    if sel_norm == 'csr':
-        line_w = '\omega[c_s/R_0]'
-
-    # additional data:
-    laby = oo.get('laby', line_w)  # y-label
-    sel_cmp = oo.get('sel_cmp', 'jet')
-
-    for ivar in range(n_vars):
-        dd = dds[ivar]
-        data      = vvars['datas'][ivar]  # [coord_dep, w]
-        w         = vvars['ws'][ivar]
-        coord_dep = vvars['ys'][ivar]
-        name_dep  = vvars['names_y'][ivar]
-        tit       = vvars['legs'][ivar]
-
-        labx = oo.get('labx', name_dep)  # x-label
-        tit = oo.get('tit_plot', tit)  # title
-
-        # - create a figure -
-        curves = crv.Curves().xlab(labx).ylab(laby).tit(tit)
-
-        # intervals for plotting:
-        w_domain = oo.get('w_domain', [w[0], w[-1]])
-        dep_domain = oo.get('dep_domain', [coord_dep[0], coord_dep[-1]])
-
-        # - frequency normalization (coefficient) -
-        coef_norm = None
-        if sel_norm == 'khz':
-            coef_norm = dd['wc'] / 1.e3
-        if sel_norm == 'wc':
-            coef_norm = 2 * np.pi
-        if sel_norm == 'csa':
-            coef_norm = 2 * np.pi * dd['wc'] / (dd['cs'] / dd['a0'])
-        if sel_norm == 'csr':
-            coef_norm = 2 * np.pi * dd['wc'] / (dd['cs'] / dd['R0'])
-        w = w * coef_norm
-
-        # - frequency and dependence-coordinate interval for plotting -
-        ids_w,           w, _ = mix.get_ids(w,         w_domain)
-        ids_dep, coord_dep, _ = mix.get_ids(coord_dep, dep_domain)
-        data = mix.get_slice(data, ids_dep, ids_w)
-
-        # - limits, legend position -
-        curves\
-            .xlim([coord_dep[0], coord_dep[-1]])\
-            .ylim([w[0], w[-1]])\
-            .leg_pos('upper left')
-
-        # - numerical results -
-        curves.new().XS(coord_dep).YS(w).ZS(data)\
-            .lev(60).cmp(sel_cmp)
-
-        # theoretical and experimental curves:
-        oo_th = {'curves': curves, 'sel_norm': sel_norm,
-                 'r': coord_dep, 'col': 'white'}
-
-        if flag_aug20787:
-            curves = gam_exp.exp_AUG20787(dd, oo_th)
-        if flag_gao:
-            curves = gam_theory.get_gao(dd, oo_th)
-        if flag_gk_fit:
-            curves = gam_theory.get_gk_fit(dd, oo_th)
-
-        # - build 2d figure -
-        cpr.plot_curves_3d(curves)
-
-
 # NEW: calculation of the frequency and dynamic rate in a radial interval:
 def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
     # Calculate frequency (w) and damping/growth rate (g) at radial points in the some
@@ -2142,105 +2050,6 @@ def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
     cpr.plot_curves(curves)
 
     return
-
-
-# NEW: get FFT 2d
-def get_fft_2d(oo):
-    # oo.x_fft_domains = [domain1, domain2, ...]
-    # oo.w_domain = [w_start, w_end],
-    # oo.flag_f2 - one or two sided FFT
-    # oo.coord_fft - coordinate axis, along which FFT will be taken
-
-    # Domains (oo.x_fft_domains), where FFT will be found, are the same for all
-    # variables.
-
-    # choose variables and their averaging:
-    vvars = choose_vars(oo)
-    n_vars = len(vvars)
-
-    # coordinate axis, along which FFT will be taken
-    coord_fft = oo.get('coord_fft', None)
-
-    # domains, where the FFT will be calculated:
-    x_fft_domains = oo.get('x_fft_domains', None)
-    ndomains_fft = len(x_fft_domains)
-
-    # one or two-sided FFT
-    flag_f2 = oo.get('flag_f2', False)
-
-    vars_fft, ws, ys, legs_fft, names_y = [], [], [], [], []
-    for ivar in range(n_vars):
-        vvar = vvars[ivar]
-        data = vvar['data']
-        leg = vvar['legs'][0]
-        x    = vvar[coord_fft]
-        if coord_fft == vvar['x1']:
-            name_x = vvar['x1']
-            format_x = vvar['fx1']
-            y = vvar[vvar['x2']]
-            name_y = vvar['x2']
-        else:
-            name_x = vvar['x2']
-            format_x = vvar['fx2']
-            y = vvar[vvar['x1']]
-            name_y = vvar['x1']
-
-        # calculate domains, where FFT will be calculated:
-        xs_fft, ids_xs_fft, lines_x_fft = [], [], []
-        for idomain in range(ndomains_fft):
-            ids_x_fft, x_fft, line_x_fft = mix.get_ids(
-                x, x_fft_domains[idomain], format_x
-            )
-            xs_fft.append(x_fft)
-            ids_xs_fft.append(ids_x_fft)
-            lines_x_fft.append(line_x_fft)
-
-        for idomain in range(ndomains_fft):
-            x_fft = xs_fft[idomain]
-            ids_x_fft  = ids_xs_fft[idomain]
-            line_x_fft = lines_x_fft[idomain]
-
-            if coord_fft == vvar['x1']:
-                data = np.squeeze(data[ids_x_fft, :])
-                data = data.T
-            else:
-                data = np.squeeze(data[:, ids_x_fft])
-
-            # - frequency grid -
-            ffres = ymath.fft_y(x_fft)
-            if flag_f2:
-                w = ffres['w2']
-            else:
-                w = ffres['w']
-
-            # - FFT -
-            var_fft = ymath.fft_y(
-                x_fft, data, {'flag_f2_arranged': flag_f2, 'axis': 1}
-            )
-
-            # - result FFT -
-            if flag_f2:
-                var_fft = var_fft['f2_arranged']
-            else:
-                var_fft = var_fft['f']
-
-            leg_line = leg + ':\ ' + name_x + ' = ' + line_x_fft
-
-            # save
-            vars_fft.append(var_fft)
-            ws.append(w)
-            ys.append(y)
-            legs_fft.append(leg_line)
-            names_y.append(name_y)
-
-    res = {
-        'datas': vars_fft,  # datas_i[y, w]
-        'ws': ws,
-        'ys': ys,
-        'names_y': names_y,
-        'legs': legs_fft
-    }
-    return res
 
 
 # NEW: contribution of different Fourier components:

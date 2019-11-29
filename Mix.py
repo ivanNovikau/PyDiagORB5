@@ -87,28 +87,6 @@ def choose_wg_normalization(sel_norm, dd=None):
     return coef_norm_w, coef_norm_g, line_norm_w, line_norm_g
 
 
-# def w_normalization_after_fft(sel_norm, dd=None):
-#     coef_norm, line_norm = None,  ''
-#
-#     if sel_norm is None:
-#         sel_norm = 'wc'
-#
-#     if sel_norm.lower() == 'wc':
-#         line_norm = '\ [\omega_{ci}]'
-#         coef_norm = 2 * np.pi
-#     if sel_norm.lower() == 'vt':
-#         line_norm =  '\ [sqrt(2)*v_{th,i}/R_0]'
-#         if dd is not None:
-#             coef_norm =  2 * np.pi * \
-#                 dd['wc'] / (np.sqrt(2) * dd['vt'] / dd['R0'])
-#     if sel_norm.lower() == 'khz':
-#         line_norm = '\ [kHz]'
-#         if dd is not None:
-#             coef_norm = dd['wc'] / 1e3
-#
-#     return coef_norm, line_norm
-
-
 def get_attribute(ff, path):
     list_attrs = ff[path].attrs
     ids_attr = list(list_attrs)
@@ -271,6 +249,17 @@ def get_x_data_interval(x_domain, x, data):
     ids_x, _, _ = get_ids(x, x_domain)
     ids_x = range(ids_x[0], ids_x[-1] + 1)
     return  data[ids_x], x[ids_x]
+
+
+def get_data_interval_2d(data, x, x_domain, y, y_domain):
+    ids_x, _, _ = get_ids(x, x_domain)
+    ids_x = range(ids_x[0], ids_x[-1] + 1)
+    ids_y, _, _ = get_ids(y, y_domain)
+    ids_y = range(ids_y[0], ids_y[-1] + 1)
+    data_res = data[ids_x[0]:ids_x[-1] + 1, ids_y[0]:ids_y[-1] + 1]
+    x_res = x[ids_x]
+    y_res = y[ids_y]
+    return  data_res, x_res, y_res
 
 
 def get_data_at_x1(x1, x, data):

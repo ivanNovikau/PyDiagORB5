@@ -53,7 +53,7 @@ def phibar_interp(dd):
     if 'phibar_interp' in dd:
         return
 
-    rd.phibar(dd)
+    zf.phibar(dd)
     rd.potsc_grids(dd)
 
     t = dd['phibar']['t']
