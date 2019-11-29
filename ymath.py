@@ -811,6 +811,15 @@ def post_processing(data, x, oo_operations):
 
             data_temp, x_temp = coef * data_work, x_work
 
+        # * multiply by a value *
+        elif sel_operation == 'mult-x':
+            coef = oo_operation.get('coef', None)
+            if coef is None:
+                mix.error_mes('Postprocessing: You need not-None \'coef\' field '
+                              'for \'mult\' postprocessing')
+
+            data_temp, x_temp = data_work, coef * x_work
+
         # * filtering *
         elif sel_operation == 'filtering':
             oo_filters = oo_operation.get('oo_filters', [GLO.NONE_FILTER])

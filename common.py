@@ -224,6 +224,7 @@ def plot_vars_1d(oo):
     sel_norm_x = oo.get('sel_norm_x', None)
     sel_norm_ys = oo.get('sel_norm_ys', [None])
     oo_postprocessing = oo.get('oo_postprocessing', None)
+    flag_plot = oo.get('flag_plot', True)
 
     # normalization (first stage):
     line_x_norm = mix.normalization(sel_norm_x)['line_norm']
@@ -312,8 +313,37 @@ def plot_vars_1d(oo):
             curves.list_curves[-1].set_errorbar(True, ys=y_err, xs=x_err)
 
     # - plot the curves -
-    if len(curves.list_curves) is not 0:
+    if len(curves.list_curves) is not 0 and flag_plot:
         cpr.plot_curves(curves)
+
+    if not flag_plot:
+        return curves
+    else:
+        return None
+
+
+def plot_several_curves(oo):
+    list_curves = oo.get('list_curves', None)
+    if list_curves is None:
+        return
+
+    # combine all plots
+    curves_result = crv.Curves()
+    count_element = -1
+    curves_ref = None
+    for current_curves in list_curves:
+        count_element += 1
+        if count_element == 0:
+            curves_ref = current_curves
+        curves_result.load(current_curves)
+
+    # set styling:
+    ff = dict(oo.get('ff', curves_ref.ff))
+    curves_result.set_ff(ff)
+
+    # plot curves
+    if len(curves_result.list_curves) is not 0:
+        cpr.plot_curves(curves_result)
 
 
 def fft_in_time(oo):
@@ -465,6 +495,8 @@ def wg_in_time(oo):
     ff = dict(oo.get('ff', GLO.DEF_PLOT_FORMAT))
     signal = oo.get('signal', None)
     dd = signal['dd']
+    flag_plot_spectrogram = oo.get('flag_plot_spectrogram', True)
+    name_spectrogram = oo.get('name_spectrogram', 'spectrogram')
 
     # to calculate relative spetrogram: w/w0
     flag_rel_freq = oo.get('flag_rel_freq', False)
@@ -605,8 +637,6 @@ def wg_in_time(oo):
         ws[i_int] = res_wg[line_res]['w' + line_res_method]
 
     # --- PLOT SPECTROGRAM ---
-    nsignals = 1  # spectrogram
-
     data_w = ws if not flag_rel_freq else ws/ws[0]
     data_w_err = ws_err if not flag_rel_freq else ws_err/ws[0]
     line_w = '\omega'  + line_norm_w if not flag_rel_freq \
@@ -615,7 +645,7 @@ def wg_in_time(oo):
     # signals:
     ch_signals = GLO.create_signals_dds(
         GLO.def_arbitrary_1d,
-        [dd] * nsignals,
+        [dd],
         flag_arbitrary=True,
         xs=[t_centers],
         datas=[data_w],
@@ -625,7 +655,7 @@ def wg_in_time(oo):
     # styling:
     ff_x = dict(ff)
     ff_x.update({
-        'legends': ['original', 'treated', 'original - treated'],
+        'legends': [name_spectrogram],
         'title': dict_var['leg'],
         'styles': ['o:'],
         'xlabel': dict_var['labx'],
@@ -637,8 +667,10 @@ def wg_in_time(oo):
         'signals': ch_signals,
         'ff': ff_x,
         'sel_norm_x': oo.get('sel_norm_x', 'wc'),
+        'flag_plot': flag_plot_spectrogram,
     }
-    plot_vars_1d(oo_plot_x)
+    curve_spectrogram = plot_vars_1d(oo_plot_x)
+    return curve_spectrogram
 
 
 def calc_wg(oo, oo_wg):
