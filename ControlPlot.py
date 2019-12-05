@@ -19,27 +19,38 @@ def reload():
 
 
 def plot_curves(curves):
-    if curves.is_empty():
+    if curves.is_empty() and not curves.flag_subplots:
         return
 
     # Build plots
-    fig, ax = mpl.subplots(figsize=(GLO.FIG_SIZE_W, GLO.FIG_SIZE_H))
-    axes = mpl.gca()
+    fig, ax = mpl.subplots(ncols=curves.ncols, nrows=curves.nrows,
+                           figsize=(curves.ff['figure_width'],
+                                    curves.ff['figure_heigth'])
+                           )
 
     # set curves
-    set_curves(curves, ax)
-
-    # format the plot
-    format_plot(fig, ax, axes, curves)
+    if curves.flag_subplots:
+        for id_col, list_curves in enumerate(curves.lists_sub_curves):
+            for id_row, sub_curves in enumerate(list_curves):
+                if len(list_curves) == 1:  # single row
+                    ax_res = ax[id_col]
+                elif len(curves.lists_sub_curves) == 1:  # single column
+                    ax_res = ax[id_row]
+                else:
+                    ax_res = ax[id_col, id_row]
+                set_curves(sub_curves, ax_res)
+                format_plot(fig, ax_res, sub_curves)
+    else:
+        set_curves(curves, ax)
+        format_plot(fig, ax, curves)
 
 
 def plot_curves_3d(curves):
-    if curves.is_empty():
+    if curves.is_empty() and not curves.flag_subplots:
         return
 
     # initialization of the figure
-    fig, ax = mpl.subplots(figsize=(GLO.FIG_SIZE_W, GLO.FIG_SIZE_H))
-    axes = mpl.gca()
+    fig, ax = mpl.subplots(figsize=(curves.ff['figure_width'], curves.ff['figure_heigth']))
 
     # data from the first curve, that has to be 3d plot
     curve_one = curves.list_curves[0]
@@ -79,7 +90,7 @@ def plot_curves_3d(curves):
     set_curves(curves, ax, 1)
 
     # format the plot
-    format_plot(fig, ax, axes, curves, flag_2d=True)
+    format_plot(fig, ax, curves, flag_2d=True)
 
 
 def set_curves(curves, ax, id_curve_start=0):
@@ -149,36 +160,40 @@ def set_curves(curves, ax, id_curve_start=0):
                 ref_lines.set_label(res_legend)
 
 
-def format_plot(fig, ax, axes, curves, flag_2d=False):
+def format_plot(fig, ax, curves, flag_2d=False):
     ncurves = curves.n()
     ngeoms = curves.n_geoms
     ntexts = len(curves.list_text)
+
+    # set fixed limits
+    if curves.ff['flag_fixed_limits']:
+        curves.set_fixed_limits()
 
     # set labels:
     res_xlabel = mix.create_line_from_list(curves.ff['xlabel'])
     res_ylabel = mix.create_line_from_list(curves.ff['ylabel'])
     if res_xlabel is not None:
-        mpl.xlabel(
+        ax.set_xlabel(
             res_xlabel,
             fontsize=curves.ff['fontS'] * GLO.SCALE_LABELS
         )
     if res_ylabel is not None:
-        mpl.ylabel(
+        ax.set_ylabel(
             res_ylabel,
             fontsize=curves.ff['fontS'] * GLO.SCALE_LABELS
         )
 
     # axes ticks:
     if curves.ff['xticks_labels'] is np.nan:
-        mpl.xticks(curves.ff['xticks']) if curves.ff['xticks'] is not np.nan else 0
+        ax.xticks(curves.ff['xticks']) if curves.ff['xticks'] is not np.nan else 0
     else:
-        mpl.xticks(curves.ff['xticks'], curves.ff['xticks_labels']) \
+        ax.xticks(curves.ff['xticks'], curves.ff['xticks_labels']) \
             if curves.ff['xticks'] is not np.nan else 0
 
     if curves.ff['yticks_labels'] is np.nan:
-        mpl.yticks(curves.ff['yticks']) if curves.ff['yticks'] is not np.nan else 0
+        ax.yticks(curves.ff['yticks']) if curves.ff['yticks'] is not np.nan else 0
     else:
-        mpl.yticks(curves.ff['yticks'], curves.ff['yticks_labels']) \
+        ax.yticks(curves.ff['yticks'], curves.ff['yticks_labels']) \
             if curves.ff['yticks'] is not np.nan else 0
 
     # fontsize of axes ticks
@@ -197,12 +212,12 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
     register_offset(ax.yaxis, top_offset)
 
     # format of axis labels
-    mpl.ticklabel_format(axis='x', style=curves.ff['x_style'], scilimits=(-2, 2))
+    ax.ticklabel_format(axis='x', style=curves.ff['x_style'], scilimits=(-2, 2))
     if curves.ff['flag_maxlocator']:
         ax.xaxis.set_major_locator(mpl.MaxNLocator(curves.ff['maxlocator']))
 
     if curves.ff['flag_semilogy'] is False:
-        mpl.ticklabel_format(axis='y', style=curves.ff['y_style'], scilimits=(-2, 2))
+        ax.ticklabel_format(axis='y', style=curves.ff['y_style'], scilimits=(-2, 2))
 
     # set limits:
     if curves.ff['xlimits'] is not None:
@@ -211,7 +226,14 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
         ax.set_ylim(curves.ff['ylimits'][0], curves.ff['ylimits'][-1])
 
     # set legend
-    if ncurves > 1 and curves.ff['flag_legend']:
+    flag_legend_res = curves.ff['flag_legend']
+    legends = []
+    for one_curve in curves.list_curves:
+        legends.append(one_curve.ff['legend'])
+    if all(leg is None for leg in legends):
+        flag_legend_res = False
+
+    if ncurves > 1 and flag_legend_res:
         ax.legend(fontsize=GLO.FONT_SIZE * GLO.LEG_SCALE,
                   loc=curves.ff['legend_position'],
                   facecolor=curves.ff['legend_fcol'],
@@ -220,7 +242,7 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
     # set title
     res_title = mix.create_line_from_list(curves.ff['title'])
     if res_title is not None:
-        mpl.title(res_title,
+        ax.set_title(res_title,
                   fontsize=curves.ff['fontS'] * GLO.SCALE_TITLE,
                   pad='18',
                   usetex=True)
@@ -233,12 +255,12 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
     for igeom in range(ngeoms):
         one_geom = curves.list_geoms[igeom]
         if one_geom is not None:
-            one_geom.draw(mpl, ax, axes, {})
+            one_geom.draw(mpl, ax, {})
 
     # add text:
     for itext in range(ntexts):
         loc_text = curves.list_text[itext]
-        mpl.text(
+        ax.text(
             loc_text.x,
             loc_text.y,
             loc_text.line,
@@ -248,7 +270,7 @@ def format_plot(fig, ax, axes, curves, flag_2d=False):
 
     # set grid
     if not flag_2d:
-        mpl.grid(True)
+        ax.grid(True)
 
     if GLO.FLAG_LATEX:
         fig.tight_layout()

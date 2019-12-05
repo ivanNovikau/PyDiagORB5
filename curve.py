@@ -64,6 +64,14 @@ class Curves:
     n_geoms = 0
     ff = None  # format
 
+    # to plot curves in different subplots:
+    # every element - one object of class Curves
+    # 2D list: [id_col, id_row]
+    lists_sub_curves = None
+    ncols, id_col_set = 1, 0
+    nrows, id_row_set = 1, 0
+    flag_subplots = False
+
     def __init__(self):
         self.list_curves = []
         self.map_curves = {}
@@ -83,6 +91,29 @@ class Curves:
         self.map_curves[name_curve] = new_curve.name(name_curve)
 
         return new_curve
+
+    def create_sub(self, ncols=1, nrows=1):
+        self.flag_subplots = True
+        self.ncols = ncols
+        self.nrows = nrows
+        self.lists_sub_curves = [
+            [None for _ in range(self.nrows)]
+            for _ in range(self.ncols)
+        ]
+
+    def put_sub(self, curves_to_put, id_col=None, id_row=None):
+        id_col_res = id_col if id_col is not None else self.id_col_set
+        id_row_res = id_row if id_row is not None else self.id_row_set
+        self.lists_sub_curves[id_col_res][id_row_res] = curves_to_put
+
+        # define new identifiers for the sub_curves list:
+        id_col_loc = -1
+        for el in self.lists_sub_curves:
+            id_col_loc += 1
+            if None in el:
+                self.id_col_set = id_col_loc
+                self.id_row_set = el.index(None)
+                break
 
     def load(self, curves_to_load):
         if curves_to_load is None:

@@ -773,15 +773,16 @@ def signal_n_allm(d3, ff, n_mode_chosen, chi_point):
     return np.real(signal_ts)
 
 
-def choose_one_var_ts(ovar, dd):
-    opt_var = ovar[0]
+def choose_one_var_ts(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
     vvar, tit_var = None, ''
     s, t = None, None
     res = {}
 
     if opt_var == 'n1':
-        n_mode_chosen = ovar[1]
-        chi_point = ovar[2]
+        n_mode_chosen = one_signal['n1']
+        chi_point = one_signal.get('chi-point', 0.0)
 
         init(dd)
         ff = dd['3d']['fields']
@@ -791,11 +792,8 @@ def choose_one_var_ts(ovar, dd):
         vvar = signal_n_allm(dd['3d'], ff, n_mode_chosen, chi_point)
         tit_var = '3D:\ <\Phi' + '(n = {:d})'.format(n_mode_chosen) + '>_m'
     if opt_var == 'potsc':
-        chi_point = ovar[1]
-
-        phi_point = 0.0
-        if len(ovar) > 2:
-            phi_point = ovar[2]
+        chi_point = one_signal.get('chi-point', 0.0)
+        phi_point = one_signal.get('phi-point', 0.0)
 
         init(dd)
         ff = dd['3d']['fields']
@@ -807,10 +805,8 @@ def choose_one_var_ts(ovar, dd):
         line_phi = '\\varphi = {:0.1f}'.format(phi_point)
         tit_var = '3D:\ \Phi' + '_{' + line_chi + line_phi + '}'
     if opt_var == 'potsc-antenna':
-        chi_point = ovar[1]
-        phi_point = 0.0
-        if len(ovar) > 2:
-            phi_point = ovar[2]
+        chi_point = one_signal.get('chi-point', 0.0)
+        phi_point = one_signal.get('phi-point', 0.0)
 
         structure_name = 'antenna'
 
@@ -824,17 +820,12 @@ def choose_one_var_ts(ovar, dd):
         line_phi = '\\varphi = {:0.1f}'.format(phi_point)
         tit_var = '3D:\ Antenna:\ \Phi' + '_{' + line_chi + line_phi + '}'
     if opt_var == 'potsc-antenna-init':
-        chi_point = ovar[1]
-        file_name = ovar[2]
-        phi_point = 0.0
-        flag_orb_shape = False
-        if len(ovar) > 3:
-            phi_point = ovar[3]
-        if len(ovar) > 4:
-            flag_orb_shape = ovar[4]
+        chi_point = one_signal.get('chi-point', 0.0)
+        phi_point = one_signal.get('phi-point', 0.0)
+        file_name = one_signal('file_name', 'user_antenna.h5')
+        flag_orb_shape = one_signal('flag_orb_shape', False)
 
         structure_name = 'antenna-init'
-
         init_antenna(dd, name_antenna_file=file_name, structure_name=structure_name,
                      flag_orb_shape=flag_orb_shape)
         ff = dd['3d'][structure_name]
@@ -857,17 +848,16 @@ def choose_one_var_ts(ovar, dd):
     return res
 
 
-def choose_one_var_rz(ovar, dd):
-    opt_var   = ovar[0]
+def choose_one_var_rz(one_signal):
+    dd = one_signal['dd']
+    opt_var = one_signal['variable']
+
     vvar, s, chi, tit_var = None, None, None, ''
     res = {}
 
     if opt_var == 'potsc':
-        t_point = ovar[1]
-
-        phi_point = 0.0
-        if len(ovar) > 2:
-            phi_point = ovar[2]
+        t_point = one_signal['t-point']
+        phi_point = one_signal.get('phi-point', 0.0)
 
         init(dd)
         ff = dd['3d']['fields']
@@ -879,10 +869,8 @@ def choose_one_var_rz(ovar, dd):
         line_phi = '\\varphi = {:0.1f}'.format(phi_point)
         tit_var = '3D:\ \Phi' + '_{' + line_time + line_phi + '}'
     if opt_var == 'potsc-antenna':
-        t_point = ovar[1]
-        phi_point = 0.0
-        if len(ovar) > 2:
-            phi_point = ovar[2]
+        t_point = one_signal['t-point']
+        phi_point = one_signal.get('phi-point', 0.0)
 
         structure_name = 'antenna'
 
@@ -896,14 +884,10 @@ def choose_one_var_rz(ovar, dd):
         line_phi = '\\varphi = {:0.1f}'.format(phi_point)
         tit_var = '3D:\ Antenna:\ \Phi' + '_{' + line_time + line_phi + '}'
     if opt_var == 'potsc-antenna-init':
-        t_point = ovar[1]
-        file_name = ovar[2]
-        phi_point = 0.0
-        flag_orb_shape = False
-        if len(ovar) > 3:
-            phi_point = ovar[3]
-        if len(ovar) > 4:
-            flag_orb_shape = ovar[4]
+        t_point = one_signal['t-point']
+        phi_point = one_signal.get('phi-point', 0.0)
+        file_name = one_signal('file_name', 'user_antenna.h5')
+        flag_orb_shape = one_signal('flag_orb_shape', False)
 
         structure_name = 'antenna-init'
 

@@ -32,10 +32,19 @@ def choose_one_var_xy(one_signal):
 def choose_one_var_x(one_signal):
     data = None if one_signal['data'] is None \
         else np.array(one_signal['data'])
-    x_err = None if one_signal['x_err'] is None \
-        else np.array(one_signal['x_err'])
-    y_err = None if one_signal['y_err'] is None \
-        else np.array(one_signal['y_err'])
+
+    if 'x_err' in one_signal:
+        x_err = None if one_signal['x_err'] is None \
+            else np.array(one_signal['x_err'])
+    else:
+        x_err = None
+
+    if 'y_err' in one_signal:
+        y_err = None if one_signal['y_err'] is None \
+            else np.array(one_signal['y_err'])
+    else:
+        y_err = None
+
     res = {
         'data': data,  # 1d data
         'x': np.array(one_signal['x']),

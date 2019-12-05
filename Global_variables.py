@@ -14,6 +14,7 @@ CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval,
 
 # ---------------------------------------------------------------------------
 # --- DEFAULT POST-PROCESSING OPERATIONS ---
+NONE_FILTER = {'sel_filt': None}
 DEF_FILTER_SMOOTH = {
     'operation': 'filtering',
     'domain': None,
@@ -45,6 +46,7 @@ DEF_OPERATION_FFT_2D = {
 }
 
 # ---------------------------------------------------------------------------
+# --- FOR PLOTTING ---
 if 'Terminal' in get_ipython().__class__.__name__:
     FLAG_LATEX = True
 else:
@@ -60,6 +62,9 @@ DEF_ONE_STYLE = '-'
 DEF_COLORMAP = 'jet'
 DEF_COEF_WIDTH_GEOM = 0.5
 DEF_NORM_WG = 'wc'
+DEF_COLORS = ['b', 'r', 'g', 'black', 'm', 'c',
+              'y', 'k', 'cyan', 'Purple', 'gray', 'lightcoral']
+DEF_STYLES = ['-', ':', '-.', ':']
 if FLAG_LATEX:
     FLAG_LATEX = True
     FIG_SIZE_W = 15
@@ -84,13 +89,6 @@ else:
     SCALE_TITLE = 0.6
     LINE_WIDTH = 6
     MARKER_SIZE = 14
-
-# ---------------------------------------------------------------------------
-NONE_FILTER = {'sel_filt': None}
-DEF_COLORS = ['b', 'r', 'g', 'black', 'm', 'c',
-              'y', 'k', 'cyan', 'Purple', 'gray', 'lightcoral']
-DEF_STYLES = ['-', ':', '-.', ':']
-
 DEF_PLOT_FORMAT = {  # describe format of a plot
     'xlabel': None,
     'ylabel': None,
@@ -116,8 +114,10 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'y_style': 'sci',  # 'sci', 'plain'
     'flag_maxlocator': False,
     'maxlocator': DEF_MAXLOCATOR,
+    'flag_fixed_limits': False,
+    'figure_width': FIG_SIZE_W,
+    'figure_heigth': FIG_SIZE_H,
 }
-
 DEF_CURVE_FORMAT = {  # describe format of a curve
     'legend': None,
     'style': None,
@@ -163,6 +163,14 @@ def_erbar_ts = {
     'avr_operation':    'point-s',
     'avr_domain':       0.5,
 }
+def_potsc_chi1_t = {
+    'type': 'nonzonal',
+    'variable': 'potsc',
+    'plane': 'ts',
+    'chi-point': 0.0,
+    'avr_operation': 'point-s',
+    'avr_domain': 0.5,
+}
 def_safety_factor = {
     'type': 'equ-profile',
     'variable': 'q',
@@ -172,7 +180,7 @@ def_safety_factor = {
 }
 def_Teq_deuterium = {
     'type': 'equ-profile',
-    'variable': 'T-equ',
+    'variable': 'T-keV',
     'species': 'deuterium',
     'plane': 'ts',
     'avr_operation': 'point-t',

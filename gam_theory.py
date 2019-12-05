@@ -3,6 +3,8 @@ import read_data as rd
 import ControlPlot as cpr
 import ymath
 import curve as crv
+import equil_profiles
+import Global_variables as GLO
 import numpy as np
 
 
@@ -13,6 +15,8 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(ymath)
     mix.reload_module(crv)
+    mix.reload_module(equil_profiles)
+    mix.reload_module(GLO)
 
 
 def omegagamma_GAM(q, tau_e, khat, elong):
@@ -122,6 +126,7 @@ def GK_linear_fitting(elong, q_safety_factor, khat):
     return out
 
 
+# OLD
 def get_gk_fit(dd, oo):
     # curves, where to add the data
     curves = oo.get('curves', crv.Curves())
@@ -142,12 +147,12 @@ def get_gk_fit(dd, oo):
 
     if sel_r == 's':
         qr = dd['q']['s']
-        Tr = dd['pf'].nT_equil['s']
+        rT = dd['pf'].nT_equil['s']
     if sel_r == 'psi':
         qr = dd['q']['s']**2
-        Tr = dd['pf'].nT_equil['psi']
+        rT = dd['pf'].nT_equil['psi']
     qs  = np.interp(r, qr, dd['q']['data'])
-    T_J = np.interp(r, Tr, dd['pf'].nT_equil['T_J'])
+    T_J = np.interp(r, rT, dd['pf'].nT_equil['T_J'])
 
     # possible plasma elongation:
     rd.elongation(dd)
@@ -194,31 +199,40 @@ def get_gk_fit(dd, oo):
 
 
 def get_gao(dd, oo):
-    # curves, where to add the data
-    curves = oo.get('curves', crv.Curves())
-    sel_norm = oo.get('sel_norm', 'wc')  # -> 'wc', 'khz', 'csa', 'csr'
+    # iniitial parameters
+    sel_norm = oo.get('sel_norm', 'frequency-wc')
     sel_r = oo.get('sel_r', 's')  # -> 's', 'psi'
-    sel_res = oo.get('sel_res', 'w')  # -> 'w' (frequency), 'g' (damping rate)
-    col = oo.get('col', 'blue')
-
-    # radial grid:
-    r = oo.get('r', dd['pf'].nT_equil['s'])
-
-    # assumption on the GAM wave-number
+    r = oo.get('s', dd['pf'].nT_equil['s'])
     kr = oo.get('kr', 2 * np.pi / (0.1 * dd['a0']))
+
+    sel_res_prel, _ = sel_norm.split('-')
+    if sel_res_prel == 'frequency':
+        sel_res = 'w'
+        legend = '\omega'
+    elif sel_res_prel == 'gamma':
+        sel_res = 'g'
+        legend = '\gamma'
+    else:
+        sel_res, legend = None, None
+
+    # create curves:
+    curves = crv.Curves()
     line_k = 'k = {:0.3f}'.format(kr * dd['rhoL_speak'])
 
     # equilibrium profiles
-    rd.q(dd)
-
+    equil_profiles.read_q(dd)
     if sel_r == 's':
-        qr = dd['q']['s']
-        Tr = dd['pf'].nT_equil['s']
-    if sel_r == 'psi':
-        qr = dd['q']['s']**2
-        Tr = dd['pf'].nT_equil['psi']
-    qs  = np.interp(r, qr, dd['q']['data'])
-    T_J = np.interp(r, Tr, dd['pf'].nT_equil['T_J'])
+        rq = dd['q']['s']
+        rT = dd['pf'].nT_equil['s']
+        legend_end = '\(s)'
+    elif sel_r == 'psi':
+        rq = dd['q']['s']**2
+        rT = dd['pf'].nT_equil['psi']
+        legend_end = '\(\psi)'
+    else:
+        rq, rT, legend_end = None, None, None
+    qs  = np.interp(r, rq, dd['q']['data'])
+    T_J = np.interp(r, rT, dd['pf'].nT_equil['T_J'])
 
     # possible plasma elongation:
     rd.elongation(dd)
@@ -241,25 +255,20 @@ def get_gao(dd, oo):
         vti = np.sqrt(T_J[id_s1]/mf)
         norm_vti = np.sqrt(2) * vti / dd['R0']
 
-        res[id_s1] = th['Gao-' + sel_res] * norm_vti
+        res[id_s1] = th['Gao-' + sel_res] * norm_vti / dd['wc']
 
-    # chose normalization:
-    if sel_norm == 'khz':
-        coef_norm = 1 / 1.e3
-        if sel_res is 'w':
-            coef_norm = coef_norm / (2*np.pi)
-    if sel_norm == 'wc':
-        coef_norm = 1. / dd['wc']
-    if sel_norm == 'csa':
-        coef_norm = 1. / (dd['cs']/dd['a0'])
-    if sel_norm == 'csr':
-        coef_norm = 1. / (dd['cs']/dd['R0'])
+    # normalization
+    dict_norm = mix.normalization(sel_norm, dd)
+    coef_norm = dict_norm['coef_norm']
+    line_norm = dict_norm['line_norm']
     res = res * coef_norm
 
+    # styling:
+    ff = dict(GLO.DEF_CURVE_FORMAT)
+    ff.update({
+        'legend': legend + line_norm + legend_end
+    })
+
     # result curve
-    curves.new().XS(r).YS(res) \
-        .leg('Gao\ 2010\ ' + line_k) \
-        .sty('--').col(col)
-    # curves.new().XS(r).YS(res) \
-    #     .sty('--').col(col)
+    curves.new().XS(r).YS(res).set_ff(ff)
     return curves

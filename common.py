@@ -21,6 +21,7 @@ import scipy.signal
 from scipy.stats import norm as stat_norm
 import pywt
 from scipy import constants
+import h5py as h5
 
 
 def reload():
@@ -179,10 +180,13 @@ def plot_vars_2d(oo):
     # it must have a following structure: [{}, {}, ...]
     oo_postprocessing = oo.get('oo_postprocessing', None)
 
+    # additional curves to plot:
+    curves_to_add = oo.get('curves_to_add', None)
+
     # normalization
-    dict_norm = mix.normalization(sel_norm_x)
+    dict_norm = mix.normalization(sel_norm_x, dd)
     coef_x_norm, line_x_norm = dict_norm['coef_norm'], dict_norm['line_norm']
-    dict_norm = mix.normalization(sel_norm_y)
+    dict_norm = mix.normalization(sel_norm_y, dd)
     coef_y_norm, line_y_norm = dict_norm['coef_norm'], dict_norm['line_norm']
 
     # title
@@ -199,8 +203,8 @@ def plot_vars_2d(oo):
 
     # post-processing
     name_x1, name_x2 = vvar['x1'], vvar['x2']
-    data, x1, name_x1, x2, name_x2 = ymath.post_processing_2d(data, x1, x2,
-                                            name_x1, name_x2, oo_postprocessing)
+    data, x1, name_x1, x2, name_x2 = \
+        ymath.post_processing_2d(data, x1, x2, name_x1, name_x2, oo_postprocessing)
 
     # create curves:
     curves = crv.Curves().set_ff(ff)
@@ -223,6 +227,26 @@ def plot_vars_2d(oo):
 
     # plot
     curves.new().XS(x1 * coef_x_norm).YS(x2 * coef_y_norm).ZS(data)
+
+    curves.load(curves_to_add)
+
+    # styling
+    nan_list = [None] * len(curves.list_curves)
+    styles    = ff.get('styles', nan_list)
+    colors  = ff.get('colors', nan_list)
+    legends = ff.get('legends', nan_list)
+    id_curve = -1
+    for one_curve in curves.list_curves:
+        id_curve += 1
+        ff_curve = dict(GLO.DEF_CURVE_FORMAT)
+        ff_curve.update({
+            'legend': legends[id_curve],
+            'style': styles[id_curve],
+            'color': colors[id_curve],
+        })
+        one_curve.set_ff(ff_curve)
+
+    # plot curves
     cpr.plot_curves_3d(curves)
 
 
@@ -245,6 +269,8 @@ def plot_vars_1d(oo):
     line_x_norm = mix.normalization(sel_norm_x)['line_norm']
     line_y_norm = mix.normalization(sel_norm_ys[0])['line_norm'] \
         if len(sel_norm_ys) == 1 else ''
+    if len(sel_norm_ys) == 1:
+        sel_norm_ys = [sel_norm_ys[0]] * n_vars
 
     # XY labels
     if ff['xlabel'] is not None:
@@ -341,23 +367,43 @@ def plot_several_curves(oo):
     list_curves = oo.get('list_curves', None)
     if list_curves is None:
         return
+    flag_subplots = oo.get('flag_subplots', False)
 
     # combine all plots
     curves_result = crv.Curves()
-    count_element = -1
-    curves_ref = None
-    for current_curves in list_curves:
-        count_element += 1
-        if count_element == 0:
-            curves_ref = current_curves
-        curves_result.load(current_curves)
+    if not flag_subplots:
+        count_element = -1
+        curves_ref = None
+        for current_curves in list_curves:
+            count_element += 1
+            if count_element == 0:
+                curves_ref = current_curves
+            curves_result.load(current_curves)
 
-    # set styling:
-    ff = dict(oo.get('ff', curves_ref.ff))
-    curves_result.set_ff(ff)
+        # set styling:
+        ff = dict(oo.get('ff', curves_ref.ff))
+        curves_result.set_ff(ff)
 
-    # plot curves
-    if len(curves_result.list_curves) is not 0:
+        # plot curves
+        if len(curves_result.list_curves) is not 0:
+            cpr.plot_curves(curves_result)
+    else:
+        ncols = oo.get('ncols', 1)
+        nrows = oo.get('nrows', 1)
+        curves_result.create_sub(ncols, nrows)
+
+        # different Curves objects from the list_curves
+        # are put consequently to the subplots:
+        count_curves = -1
+        for id_col in range(ncols):
+            for id_row in range(nrows):
+                count_curves += 1
+                if count_curves < len(list_curves):
+                    curves_result.put_sub(
+                        list_curves[count_curves], id_col, id_row
+                    )
+                else:
+                    break
         cpr.plot_curves(curves_result)
 
 
@@ -826,6 +872,10 @@ def calc_wg(oo, oo_wg):
     flag_plot_print = ff.get('flag_plot_print', True)
     dd = signal['dd']
 
+    # seperate plots or subplots:
+    flag_subplots = oo.get('flag_subplots', False)
+    flag_plot_internal = not flag_subplots
+
     # - choose a variable -
     dict_var = choose_vars(oo)[0]
     leg_data = dict_var['leg']
@@ -894,9 +944,8 @@ def calc_wg(oo, oo_wg):
         ff_time_evol = dict(ff)
         ff_time_evol.update({
             'xlabel': 't[\omega_{ci}^{-1}]',
-            'title': dict_var['tit'],
-            'legends': [
-                leg_data, leg_data + ': globally\ filtered', leg_data + ':\ peaks'],
+            'title': leg_data,
+            'legends': ['original', 'globally\ filtered', 'peaks'],
             'styles': ['-', ':', 'o'],
         })
 
@@ -912,8 +961,9 @@ def calc_wg(oo, oo_wg):
             'signals': ch_signals_time_evol,
             'ff': ff_time_evol,
             'geoms': [area_work],
+            'flag_plot': flag_plot_internal,
         }
-        plot_vars_1d(oo_time_evolution)
+        curves_t = plot_vars_1d(oo_time_evolution)
         del ch_signals_time_evol, ff_time_evol, oo_time_evolution
 
         # - FAST FOURIER TRANSFORM -
@@ -938,11 +988,11 @@ def calc_wg(oo, oo_wg):
         ff_fft = dict(ff)
         ff_fft.update({
             'xlabel': '\omega[\omega_{ci}]',
-            'title': leg_data + ':\ FFT',
+            'title': 'FFT',
             'legends': [
                 'FFT:\ initial',
-                'FFT:\ globally\ filtered:\ whole\ time\ domain',
-                'FFT:\ globally\ filtered:\ work\ time\ domain'],
+                ['FFT:\ globally\ filtered:', 'whole\ time\ domain'],
+                ['FFT:\ globally\ filtered:', 'work\ time\ domain']],
             'styles': ['-', ':', ':'],
             'flag_semilogy': False,
         })
@@ -951,9 +1001,20 @@ def calc_wg(oo, oo_wg):
         oo_fft = {
             'signals': ch_signals_fft,
             'ff': ff_fft,
+            'flag_plot': flag_plot_internal,
         }
-        plot_vars_1d(oo_fft)
+        curves_fft = plot_vars_1d(oo_fft)
         del ch_signals_fft, ff_fft, oo_fft
+
+        # plot subplots if necessary:
+        if flag_subplots:
+            oo_sub = {
+                'ncols': 1,
+                'nrows': 2,
+                'list_curves': [curves_t, curves_fft],
+                'flag_subplots': flag_subplots,
+            }
+            plot_several_curves(oo_sub)
 
     # --- NAIVE CALCULATION ---
     if not flag_two_stages:
@@ -1068,7 +1129,7 @@ def calc_wg(oo, oo_wg):
             ff_current.update({
                 'xlabel': 't[\omega_{ci}^{-1}]',
                 'title': 'Gamma\ calculation:\ filtering',
-                'legends': [leg_data, leg_data + ':\ filtered'],
+                'legends': ['origianl', 'filtered'],
                 'styles': ['-', ':'],
             })
 
@@ -1076,8 +1137,9 @@ def calc_wg(oo, oo_wg):
             oo_current = {
                 'signals': ch_signals,
                 'ff': ff_current,
+                'flag_plot': flag_plot_internal,
             }
-            plot_vars_1d(oo_current)
+            curves_gt = plot_vars_1d(oo_current)
 
             # --- GAMMA: FFT ---
             # signal
@@ -1103,8 +1165,9 @@ def calc_wg(oo, oo_wg):
             oo_current = {
                 'signals': ch_signals,
                 'ff': ff_current,
+                'flag_plot': flag_plot_internal,
             }
-            plot_vars_1d(oo_current)
+            curves_gfft = plot_vars_1d(oo_current)
 
             # --- GAMMA: FITTING ---
             # signal
@@ -1135,7 +1198,7 @@ def calc_wg(oo, oo_wg):
                 'xlabel': 't[\omega_{ci}^{-1}]',
                 'title': 'Gamma\ calculation:\ fitting',
                 'legends': [
-                               leg_data + ':\ filtered',
+                               'filtered',
                                'peaks',
                                'LIN.\ REGRESSION'
                            ] + ['NL\ FITTING'] if flag_adv else [],
@@ -1148,8 +1211,19 @@ def calc_wg(oo, oo_wg):
             oo_current = {
                 'signals': ch_signals,
                 'ff': ff_current,
+                'flag_plot': flag_plot_internal,
             }
-            plot_vars_1d(oo_current)
+            curves_gfit = plot_vars_1d(oo_current)
+
+            # plot gamma plots
+            if flag_subplots:
+                oo_sub = {
+                    'ncols': 1,
+                    'nrows': 3,
+                    'list_curves': [curves_gt, curves_gfft, curves_gfit],
+                    'flag_subplots': flag_subplots,
+                }
+                plot_several_curves(oo_sub)
 
             # --- FREQUENCY: TIME EVOLUTION ---
             # signal
@@ -1166,7 +1240,7 @@ def calc_wg(oo, oo_wg):
             ff_current.update({
                 'xlabel': 't[\omega_{ci}^{-1}]',
                 'title': 'Freq.\ calculation:\ filtering',
-                'legends': [leg_data, leg_data + ':\ *\exp(-g*t),\ filtered'],
+                'legends': ['original', '*\exp(-g*t),\ filtered'],
                 'styles': ['-', ':'],
             })
 
@@ -1174,8 +1248,9 @@ def calc_wg(oo, oo_wg):
             oo_current = {
                 'signals': ch_signals,
                 'ff': ff_current,
+                'flag_plot': flag_plot_internal,
             }
-            plot_vars_1d(oo_current)
+            curves_wt = plot_vars_1d(oo_current)
 
             # --- FREQUENCY: FFT ---
             # signal
@@ -1201,8 +1276,9 @@ def calc_wg(oo, oo_wg):
             oo_current = {
                 'signals': ch_signals,
                 'ff': ff_current,
+                'flag_plot': flag_plot_internal,
             }
-            plot_vars_1d(oo_current)
+            curves_wfft = plot_vars_1d(oo_current)
 
             # --- FREQUENCY: FITTING ---
             # signal
@@ -1233,7 +1309,7 @@ def calc_wg(oo, oo_wg):
                 'xlabel': 't[\omega_{ci}^{-1}]',
                 'title': 'Freq.\ calc.:\ fitting',
                 'legends': [
-                               leg_data + ':\ filtered',
+                               'filtered',
                                'peaks',
                                'LIN.\ REGRESSION'
                            ] + ['NL\ FITTING'] if flag_adv else [],
@@ -1247,8 +1323,19 @@ def calc_wg(oo, oo_wg):
             oo_current = {
                 'signals': ch_signals,
                 'ff': ff_current,
+                'flag_plot': flag_plot_internal,
             }
-            plot_vars_1d(oo_current)
+            curves_wfit = plot_vars_1d(oo_current)
+
+            # plot frequency plots
+            if flag_subplots:
+                oo_sub = {
+                    'ncols': 1,
+                    'nrows': 3,
+                    'list_curves': [curves_wt, curves_wfft, curves_wfit],
+                    'flag_subplots': flag_subplots,
+                }
+                plot_several_curves(oo_sub)
 
             # - print results -
             line_res = '--- NAIVE CALCULATION ---\n'
@@ -1464,8 +1551,9 @@ def calc_wg(oo, oo_wg):
             oo_current = {
                 'signals': ch_signals,
                 'ff': ff_current,
+                'flag_plot': flag_plot_internal,
             }
-            plot_vars_1d(oo_current)
+            curves_whist = plot_vars_1d(oo_current)
 
             # --- GAMMA: Histogram ---
             # signal
@@ -1492,8 +1580,20 @@ def calc_wg(oo, oo_wg):
             oo_current = {
                 'signals': ch_signals,
                 'ff': ff_current,
+                'flag_plot': flag_plot_internal,
             }
-            plot_vars_1d(oo_current)
+            curves_ghist = plot_vars_1d(oo_current)
+
+            # plot histograms
+            if flag_subplots:
+                oo_sub = {
+                    'ncols': 2,
+                    'nrows': 1,
+                    'list_curves': [curves_whist, curves_ghist],
+                    'flag_subplots': flag_subplots,
+                }
+                plot_several_curves(oo_sub)
+                return
 
             # Print results
             line_stat = '--- STATISTICS ---\n'
@@ -1513,6 +1613,82 @@ def calc_wg(oo, oo_wg):
     out_res.update({'stat': stat_res})
 
     return out_res
+
+
+def B_equil(dd, flag_mult=True):
+    # for TCV: flag_mult must be false
+    # for NLED AUG312313: flag_mult must be true
+
+    # --- read name of the equilibrium .h5 file ---
+    path_to_file = dd['path'] + '/orb5_res.h5'
+    f = h5.File(path_to_file, 'r')
+
+    equ_file = f['/parameters/equil/fname'].attrs
+    ids_attr = list(equ_file)
+    equ_file = [equ_file[name].decode("utf-8")
+                           for name in ids_attr[0:len(ids_attr)]]
+    equ_file = equ_file[0]
+
+    f.close()
+
+    # --- read parameters from the equilibrium file ---
+    path_to_equ_file = dd['path'] + '/' + equ_file
+    ff = h5.File(path_to_equ_file, 'r')
+
+    chi = np.array(ff['/data/grid/CHI'])
+    psi = np.array(ff['/data/grid/PSI'])
+    B = np.array(ff['/data/var2d/B'])
+    R = np.array(ff['/data/var2d/R'])
+    Z = np.array(ff['/data/var2d/Z'])
+
+    ff.close()
+
+    # create grids and form the magnetic configuration
+    chi = np.append(chi, 2 * np.pi)
+
+    nChi = np.shape(B)[0]
+    nR = np.shape(B)[1]
+    B_new = np.zeros([np.size(chi), np.size(psi)])
+    Z_new = np.zeros([np.size(chi), np.size(psi)])
+    R_new = np.zeros([np.size(chi), np.size(psi)])
+    for i in range(nR):
+        B_new[:, i] = np.append(B[:, i], B[0, i])
+        Z_new[:, i] = np.append(Z[:, i], Z[0, i])
+        R_new[:, i] = np.append(R[:, i], R[0, i])
+
+    if flag_mult:
+        R_new *= dd['R0']
+        B_new *= dd['B0']
+
+    # check scales
+    scale_R = np.max(R_new) - np.min(R_new)
+    scale_Z = np.max(Z_new) - np.min(Z_new)
+
+    print('Rmax - Rmin = {:0.3f}'.format(scale_R))
+    print('Zmax - Zmin = {:0.3f}'.format(scale_Z))
+
+    # signal:
+    ch_signal = GLO.create_signals_dds(
+        GLO.def_arbitrary_2d, [dd],
+        flag_arbitrary=True,
+        xs=[R_new], ys=[Z_new], datas=[B_new.T]
+    )[0]
+
+    # styling:
+    ff = dict(GLO.DEF_PLOT_FORMAT)
+    ff.update({
+        'xlabel': 'R(m)',
+        'ylabel': 'Z(m)',
+        'title': '|B|(T)',
+        'figure_width': GLO.FIG_SIZE_H,
+    })
+
+    # plotting
+    oo = {
+        'signal': ch_signal,
+        'ff': ff,
+    }
+    plot_vars_2d(oo)
 
 
 # NEW: plot Continuous Wavelet transform

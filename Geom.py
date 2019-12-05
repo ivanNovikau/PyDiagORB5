@@ -19,7 +19,7 @@ class Geom:
     style = '-'
     width = GLO.LINE_WIDTH * GLO.DEF_COEF_WIDTH_GEOM
 
-    def draw(self, mpl, ax, axes, oo):
+    def draw(self, mpl, ax, oo):
         return
 
 
@@ -27,7 +27,7 @@ class HLine(Geom):
     geom_type = 'HLINE'
     ys = None
 
-    def draw(self, mpl, ax, axes, oo):
+    def draw(self, mpl, ax, oo):
         nys = len(self.ys)
         for i in range(nys):
             mpl.axhline(
@@ -42,7 +42,7 @@ class Line(Geom):
     geom_type = 'LINE'
     lines = []
 
-    def draw(self, mpl, ax, axes, oo):
+    def draw(self, mpl, ax, oo):
         n_lines = len(self.lines)
 
         xs = []
@@ -77,7 +77,7 @@ class Curve(Geom):
         self.xs.append(xs1)
         self.ys.append(ys1)
 
-    def draw(self, mpl, ax, axes, oo):
+    def draw(self, mpl, ax, oo):
         n_curves = len(self.ys)
 
         for i in range(n_curves):
@@ -98,9 +98,9 @@ class Fill(Geom):
     ys = None  # y-coords of nodes of a polygon (counterclockwise or clockwise)
     alpha = 0.2
 
-    def draw(self, mpl, ax, axes, oo):
-        xlims = axes.get_xlim()
-        ylims = axes.get_ylim()
+    def draw(self, mpl, ax, oo):
+        xlims = ax.get_xlim()
+        ylims = ax.get_ylim()
 
         xs_plot = np.zeros(np.size(self.xs))
         ys_plot = np.zeros(np.size(self.xs))
@@ -119,7 +119,7 @@ class Fill(Geom):
             else:
                 ys_plot[ix] = self.ys[ix]
 
-        mpl.fill(xs_plot, ys_plot, self.color, alpha=self.alpha)
+        ax.fill(xs_plot, ys_plot, self.color, alpha=self.alpha)
         ax.set_xlim(xlims)
         ax.set_ylim(ylims)
 
@@ -143,7 +143,7 @@ class Annotate(Geom):
         self.color = oo.get('color', 'black')
         self.width = oo.get('width', 2)
 
-    def draw(self, mpl, ax, axes, oo):
+    def draw(self, mpl, ax, oo):
         mpl.annotate(
             s=self.line,
             xy=(self.point_to[0], self.point_to[-1]),

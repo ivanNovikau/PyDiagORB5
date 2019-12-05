@@ -846,7 +846,7 @@ def post_processing(data, x, oo_operations):
 def post_processing_2d(data, x, y, name_x, name_y, oo_operations):
     # - check operations -
     if oo_operations is None:
-        return data, x, y
+        return data, x, name_x, y, name_y
 
     # names of variables:
     name_x_res, name_y_res = name_x, name_y
