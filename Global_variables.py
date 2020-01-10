@@ -171,6 +171,20 @@ def_potsc_chi1_t = {
     'avr_operation': 'point-s',
     'avr_domain': 0.5,
 }
+def_fields3d_n1 = {
+    'type': 'fields3d',
+    'variable': 'n1',
+    'plane': 'ts',
+    'n1': np.nan,
+    'chi-point': 0.0,
+}
+def_potsc_rz = {
+    'type': 'nonzonal',
+    'variable': 'potsc',
+    'plane': 'rz',
+    't-point': 0.0,
+    'phi-point': 0.0,
+}
 def_safety_factor = {
     'type': 'equ-profile',
     'variable': 'q',

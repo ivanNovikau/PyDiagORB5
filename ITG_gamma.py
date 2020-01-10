@@ -614,54 +614,64 @@ def choose_one_var_ts(one_signal):
 
     var_name, tit_var, line_chi = '', '', ''
     res = {}
+    type_potsc = 'potsc'
     if opt_var == 'phinz':
         chi_point = one_signal['chi-point']
         var_name = phinz_chi1(dd, chi_point)
         tit_var  = '\widetilde{\Phi}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{' + line_chi + '}'
-    if opt_var == 'potsc':
+    elif opt_var == 'potsc':
         chi_point = one_signal['chi-point']
         var_name = rd.potsc_chi1(dd, chi_point)
         tit_var  = '\Phi'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{' + line_chi + '}'
-    if opt_var == 'ernz_r':
+    elif opt_var == 'potsc-antenna':
+        type_potsc = 'potsc_ant'
+        chi_point = one_signal['chi-point']
+        var_name = rd.potsc_chi1(dd, chi_point, type=type_potsc)
+        tit_var  = '\Phi_{ant}'
+        line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
+        line_chi = '_{' + line_chi + '}'
+    elif opt_var == 'ernz_r':
         chi_point = one_signal['chi-point']
         var_name = ernz_r_chi1(dd, chi_point)
         tit_var  = '\widetilde{E}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{r,' + line_chi + '}'
-    if opt_var == 'er_r':  # full radial electric field along radial coordinate
+    elif opt_var == 'er_r':  # full radial electric field along radial coordinate
         chi_point = one_signal['chi-point']
         var_name = er_r_chi1(dd, chi_point)
         tit_var  = 'E'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{r, ' + line_chi + '}'
-    if opt_var == 'ernz_chi':
+    elif opt_var == 'ernz_chi':
         chi_point = one_signal['chi-point']
         var_name = ernz_chi_chi1(dd, chi_point)
         tit_var  = '\widetilde{E}'
         line_chi = '\chi = {:0.1f}'.format(dd[var_name]['chi_1'])
         line_chi = '_{\chi,' + line_chi + '}'
-    if opt_var == 'phinz-max-chi':
+    elif opt_var == 'phinz-max-chi':
         var_name = phinz_abs_max_along_chi(dd)
         tit_var  = 'max_{\chi}:\ \widetilde{\Phi}'
         line_chi = ''
         res.update({
             'chi_max': dd[var_name]['chi_max']
         })
-    if opt_var == 'ernz_r-max-chi':
+    elif opt_var == 'ernz_r-max-chi':
         var_name = ernz_r_abs_max_along_chi(dd)
         tit_var  = 'max_{\chi}:\ \widetilde{E}_r'
         line_chi = ''
         res.update({
             'chi_max': dd[var_name]['chi_max']
         })
+    else:
+        mix.error_mes('Wrong name of signal')
 
     vvar = dd[var_name]['data']
-    s    = dd['potsc_grids']['s']
-    t    = dd['potsc_grids']['t']
+    s    = dd[type_potsc + '_grids']['s']
+    t    = dd[type_potsc + '_grids']['t']
 
     tit_var += line_chi
 
@@ -681,24 +691,34 @@ def choose_one_var_rz(one_signal):
 
     var_name, tit_var, line_1 = '', '', ''
     res = {}
+    type_potsc = 'potsc'
     if opt_var == 'phinz':
         t_point = one_signal['t-point']
         var_name = phinz_t1(dd, t_point)
         tit_var  = '\widetilde{\Phi}'
         line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
         line_1 = '_{' + line_1 + '}'
-    if opt_var == 'potsc':
+    elif opt_var == 'potsc':
         t_point = one_signal['t-point']
         var_name = rd.potsc_t1(dd, t_point)
         tit_var = '\Phi'
         line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
         line_1 = '_{' + line_1 + '}'
+    elif opt_var == 'potsc-antenna':
+        type_potsc = 'potsc_ant'
+        t_point = one_signal['t-point']
+        var_name = rd.potsc_t1(dd, t_point, type=type_potsc)
+        tit_var = '\Phi'
+        line_1 = 't = {:0.3e}'.format(dd[var_name]['t1'])
+        line_1 = '_{' + line_1 + '}'
+    else:
+        mix.error_mes('Wrong name of a signal.')
 
     vvar = dd[var_name]['data']
-    R    = dd['potsc_grids']['r']
-    Z    = dd['potsc_grids']['z']
-    s    = dd['potsc_grids']['s']
-    chi  = dd['potsc_grids']['chi']
+    R    = dd[type_potsc + '_grids']['r']
+    Z    = dd[type_potsc + '_grids']['z']
+    s    = dd[type_potsc + '_grids']['s']
+    chi  = dd[type_potsc + '_grids']['chi']
 
     tit_var += line_1
 

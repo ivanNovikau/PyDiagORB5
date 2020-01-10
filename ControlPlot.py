@@ -49,6 +49,74 @@ def plot_curves_3d(curves):
     if curves.is_empty() and not curves.flag_subplots:
         return
 
+    # Build plots
+    fig, axs = mpl.subplots(ncols=curves.ncols, nrows=curves.nrows,
+                           figsize=(curves.ff['figure_width'],
+                                    curves.ff['figure_heigth'])
+                           )
+
+    # set curves
+    if curves.flag_subplots:
+        for id_col, list_curves in enumerate(curves.lists_sub_curves):
+            for id_row, sub_curves in enumerate(list_curves):
+                if len(list_curves) == 1:  # single row
+                    ax_res = axs[id_col]
+                elif len(curves.lists_sub_curves) == 1:  # single column
+                    ax_res = axs[id_row]
+                else:
+                    ax_res = axs[id_col, id_row]
+
+                plot_curves_3d_subplot(sub_curves, ax_res, fig)
+    else:
+        plot_curves_3d_subplot(curves, axs, fig)
+
+
+def plot_curves_3d_subplot(curves, ax, fig):
+    # data from the first curve, that has to be 3d plot
+    curve_one = curves.list_curves[0]
+    ZZ = curve_one.zs
+    if curve_one.xs.ndim < 2:
+        XX, YY = np.meshgrid(curve_one.xs, curve_one.ys)
+    else:
+        XX = curve_one.xs
+        YY = curve_one.ys
+
+    # check colormap:
+    res_colormap = GLO.DEF_COLORMAP
+    if curve_one.ff['colormap'] is not None:
+        res_colormap = curve_one.ff['colormap']
+
+    # --- contour plot ---
+    divnorm = None
+    if curve_one.ff['colormap_center'] is not None:
+        divnorm = matplotlib.colors.DivergingNorm(vcenter=curve_one.ff['colormap_center'])
+    cs = ax.contourf(XX, YY, ZZ.T,
+                     levels=curve_one.ff['levels'],
+                     cmap=res_colormap,
+                     norm=divnorm)
+
+    # color bar
+    if curves.ff['flag_colorbar']:
+        cb = fig.colorbar(cs, shrink=0.8, extend='both', ax=ax)
+        cb.formatter.set_scientific(True)
+        cb.formatter.set_powerlimits((0, 0))
+        cb.ax.tick_params(labelsize=curves.ff['fontS'] * GLO.SCALE_TICKS)
+        cb.ax.yaxis.get_offset_text().set_fontsize(curves.ff['fontS'] * GLO.SCALE_ORDER)
+
+        register_offset(cb.ax.yaxis, bottom_offset)
+        cb.update_ticks()
+
+    # set 1d curves
+    set_curves(curves, ax, 1)
+
+    # format the plot
+    format_plot(fig, ax, curves, flag_2d=True)
+
+
+def plot_curves_3d_prev(curves):
+    if curves.is_empty() and not curves.flag_subplots:
+        return
+
     # initialization of the figure
     fig, ax = mpl.subplots(figsize=(curves.ff['figure_width'], curves.ff['figure_heigth']))
 

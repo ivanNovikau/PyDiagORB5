@@ -37,8 +37,26 @@ def read_signal(path_to_read, var_path):
     return vvar
 
 
-def potsc_grids(dd):
-    var_name = 'potsc_grids'
+def read_array(path_to_read, var_path):
+    # so far, works only for dataset and one-stage group
+
+    f = h5.File(path_to_read, 'r')
+    if var_path in f:
+        vvar = f[var_path]
+        if isinstance(vvar, h5.Dataset):
+            vvar = np.array(vvar)
+        if isinstance(vvar, h5.Group):
+            vvar = dict(vvar)
+            for one_key in vvar.keys():
+                vvar[one_key] = np.array(vvar[one_key])
+    else:
+        return None
+    f.close()
+    return np.array(vvar)
+
+
+def potsc_grids(dd, type='potsc'):
+    var_name = type + '_grids'
     if var_name in dd:
         return
 
@@ -48,15 +66,15 @@ def potsc_grids(dd):
 
         # read data from orb5 output file
         f = h5.File(dd['path_orb'], 'r')
-        data['t']   = np.array(f['/data/var2d/generic/potsc/time'])
-        data['chi'] = np.array(f['/data/var2d/generic/potsc/coord2'])
-        data['s']   = np.array(f['/data/var2d/generic/potsc/coord1'])
+        data['t']   = np.array(f['/data/var2d/generic/' + type + '/time'])
+        data['chi'] = np.array(f['/data/var2d/generic/' + type + '/coord2'])
+        data['s']   = np.array(f['/data/var2d/generic/' + type + '/coord1'])
         data['r']   = np.array(f['/data/var2d/generic/potsc/rsc'])
         data['z']   = np.array(f['/data/var2d/generic/potsc/zsc'])
         f.close()
 
         # save data to an external file
-        desc = 'potsc grids'
+        desc = type + ' grids'
         wr.save_data_adv(dd['path_ext'], data, {'name': var_name, 'desc': desc})
 
     # save data to the structure
@@ -97,9 +115,9 @@ def potsc_chi(dd, oo):
 
 
 # NEW: full potential at chi1
-def potsc_chi1(dd, chi_point):
-    potsc_grids(dd)
-    var_name = 'potsc-chi-' + '{:0.3f}'.format(chi_point)
+def potsc_chi1(dd, chi_point, type='potsc'):
+    potsc_grids(dd, type)
+    var_name = type + '-chi-' + '{:0.3f}'.format(chi_point)
     if var_name in dd:
         return var_name
 
@@ -110,9 +128,9 @@ def potsc_chi1(dd, chi_point):
         # read data from orb5 output file
         f = h5.File(dd['path_orb'], 'r')
         data['id_chi_1'], data['chi_1'] = \
-            mix.find(dd['potsc_grids']['chi'], chi_point)
+            mix.find(dd[type + '_grids']['chi'], chi_point)
         data['data'] = np.array(
-            f['/data/var2d/generic/potsc/data'][:, data['id_chi_1'], :])  # [t,s]
+            f['/data/var2d/generic/' + type + '/data'][:, data['id_chi_1'], :])  # [t,s]
         f.close()
 
         # save data to an external file
@@ -152,9 +170,9 @@ def potsc_s1(dd, s_point):
 
 
 # NEW: full potential at t1
-def potsc_t1(dd, t_point):
-    potsc_grids(dd)
-    var_name = 'potsc-t-' + '{:0.3e}'.format(t_point)
+def potsc_t1(dd, t_point, type='potsc'):
+    potsc_grids(dd, type)
+    var_name = type + '-t-' + '{:0.3e}'.format(t_point)
     if var_name in dd:
         return var_name
 
@@ -164,10 +182,9 @@ def potsc_t1(dd, t_point):
 
         # read data from orb5 output file
         f = h5.File(dd['path_orb'], 'r')
-        # data['id_t1'], data['t1'] = mix.find(dd['potsc_grids']['t'], t_point)
-        data['id_t1'], data['t1'], _ = mix.get_ids(dd['potsc_grids']['t'], t_point)
+        data['id_t1'], data['t1'], _ = mix.get_ids(dd[type + '_grids']['t'], t_point)
         data['data'] = np.array(
-            f['/data/var2d/generic/potsc/data'][data['id_t1'], :, :])  # [t1, chi, s]
+            f['/data/var2d/generic/' + type + '/data'][data['id_t1'], :, :])  # [t1, chi, s]
         f.close()
 
         # save data to an external file
@@ -325,6 +342,7 @@ def init(dd):
     # number of starts:
     input_files = f['/run_info/input']
     dd['n_starts'] = len(list(input_files))
+    dd['n_starts_string'] = str(dd['n_starts'])
 
     # initialization of the species:
     species(dd, f)

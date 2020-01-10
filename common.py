@@ -179,6 +179,7 @@ def plot_vars_2d(oo):
     # postprocessing must be defined for only one signal,
     # it must have a following structure: [{}, {}, ...]
     oo_postprocessing = oo.get('oo_postprocessing', None)
+    flag_plot = oo.get('flag_plot', True)
 
     # additional curves to plot:
     curves_to_add = oo.get('curves_to_add', None)
@@ -199,23 +200,48 @@ def plot_vars_2d(oo):
         ff['ylabel'] += line_y_norm
 
     # get grids and a variable
-    data, x1, x2 = vvar['data'], vvar[vvar['x1']], vvar[vvar['x2']]
+    name_x1, name_x2 = vvar['x1'], vvar['x2']
+    if name_x1.lower() == 'r' and name_x2.lower() == 'z':
+        name_x1, name_x2 = 's', 'chi'
+    data, x1, x2 = vvar['data'], vvar[name_x1], vvar[name_x2]
 
     # post-processing
-    name_x1, name_x2 = vvar['x1'], vvar['x2']
     data, x1, name_x1, x2, name_x2 = \
-        ymath.post_processing_2d(data, x1, x2, name_x1, name_x2, oo_postprocessing)
+        ymath.post_processing_2d(data, x1, x2,
+                                 name_x1, name_x2, oo_postprocessing)
 
     # create curves:
     curves = crv.Curves().set_ff(ff)
 
     # original or cartesian 2d grid:
-    if name_x1 is 'r' and name_x2 is 'z':
-        _, ids_s   = mix.get_array_oo(oo, x1,   's')
-        _, ids_chi = mix.get_array_oo(oo, x2, 'chi')
-        x1 = mix.get_slice(vvar['r'], ids_chi, ids_s)
-        x2 = mix.get_slice(vvar['z'], ids_chi, ids_s)
-        data = mix.get_slice(data, ids_s, ids_chi)
+    if vvar['x1'].lower() == 'r' and vvar['x2'].lower() == 'z':
+        _, ids_s = mix.get_array_oo(oo, x1, 's')
+
+        chi_start = oo.get('chi_start', 0)
+        if chi_start >= 0:
+            _, ids_chi = mix.get_array_oo(oo, x2, 'chi')
+            x1 = mix.get_slice(vvar['r'], ids_chi, ids_s)
+            x2 = mix.get_slice(vvar['z'], ids_chi, ids_s)
+            data = mix.get_slice(data, ids_s, ids_chi)
+        else:
+            # chi_end ahs to be positive:
+            chi_end = oo.get('chi_end', 2*np.pi)
+
+            _, ids_chi_part1 = mix.get_array(x2, 2*np.pi + chi_start, 2*np.pi)
+            _, ids_chi_part2 = mix.get_array(x2, 0, chi_end)
+
+            x1_part1 = mix.get_slice(vvar['r'], ids_chi_part1, ids_s)
+            x2_part1 = mix.get_slice(vvar['z'], ids_chi_part1, ids_s)
+
+            x1_part2 = mix.get_slice(vvar['r'], ids_chi_part2, ids_s)
+            x2_part2 = mix.get_slice(vvar['z'], ids_chi_part2, ids_s)
+
+            x1 = np.concatenate((x1_part1, x1_part2), axis=0)
+            x2 = np.concatenate((x2_part1, x2_part2), axis=0)
+
+            data_part1 = mix.get_slice(data, ids_s, ids_chi_part1)
+            data_part2 = mix.get_slice(data, ids_s, ids_chi_part2)
+            data = np.concatenate((data_part1, data_part2), axis=1)
     else:
         x1, ids_x1 = mix.get_array_oo(oo, x1, name_x1)
         x2, ids_x2 = mix.get_array_oo(oo, x2, name_x2)
@@ -246,8 +272,14 @@ def plot_vars_2d(oo):
         })
         one_curve.set_ff(ff_curve)
 
-    # plot curves
-    cpr.plot_curves_3d(curves)
+    # plot curve
+    if flag_plot:
+        cpr.plot_curves_3d(curves)
+
+    if not flag_plot:
+        return curves
+    else:
+        return None
 
 
 def plot_vars_1d(oo):
@@ -368,6 +400,7 @@ def plot_several_curves(oo):
     if list_curves is None:
         return
     flag_subplots = oo.get('flag_subplots', False)
+    flag_3d       = oo.get('flag_3d', False)
 
     # combine all plots
     curves_result = crv.Curves()
@@ -386,7 +419,10 @@ def plot_several_curves(oo):
 
         # plot curves
         if len(curves_result.list_curves) is not 0:
-            cpr.plot_curves(curves_result)
+            if not flag_3d:
+                cpr.plot_curves(curves_result)
+            else:
+                cpr.plot_curves_3d(curves_result)
     else:
         ncols = oo.get('ncols', 1)
         nrows = oo.get('nrows', 1)
@@ -404,7 +440,10 @@ def plot_several_curves(oo):
                     )
                 else:
                     break
-        cpr.plot_curves(curves_result)
+        if not flag_3d:
+            cpr.plot_curves(curves_result)
+        else:
+            cpr.plot_curves_3d(curves_result)
 
 
 def fft_in_time(oo):
