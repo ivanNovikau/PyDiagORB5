@@ -31,28 +31,50 @@ def reload():
 
 # read 3D data from orb5_res_parallel
 def init(dd, nn=None):
-    # nn - n-modes to read, if None, read all n-modes
-
-    if 'fields' in dd['3d']:
-        return
+    # nn - [...], n-modes to read, if None, read all n-modes
 
     # --- read necessary additional parameters ---
     read_add(dd)
 
     # --- create 3d.fields field ---
     d3 = dd['3d']
-    d3['fields'] = {}
+    if 'fields' not in d3:
+        d3['fields'] = {}
     ff = dd['3d']['fields']
+    ff['structure_name'] = ff.get('structure_name', 'fields')
 
-    ff['structure_name'] = 'fields'
+    # --- n-modes to read ---
+    if nn is None:
+        nn_res = np.array(d3['n_all_possible'])
+    else:
+        nn_res = np.array(nn)
+    nn_res = np.array([
+        one_n_mode
+        for one_n_mode in nn_res
+        if d3['nfilt1'] <= one_n_mode <= d3['nfilt2']
+    ])
+
+    if len(nn_res)==0:
+        mix.error_mes('--- Wrong n mode. ---')
+
+    ids_nn_res = list(nn_res - d3['nfilt1'])
+
+    ff['n'] = nn_res
 
     # --- read 3d-field data ---
     path_to_file = dd['path'] + '/orb5_res_parallel.h5'
     f = h5.File(path_to_file, 'r')
 
-    ff['t']       = np.array(f['/data/var3d/generic/pot3d/time'])
-    ff['m_mins']  = np.array(f['/data/var3d/generic/pot3d/mmin'])  # [n, s]
-    coef_bspl_dft = np.array(f['/data/var3d/generic/pot3d/data'])  # [t, n, s, m]
+    ff['t'] = ff.get(
+        't',
+        np.array(f['/data/var3d/generic/pot3d/time'])
+    )
+    ff['m_mins']  = np.array(
+        f['/data/var3d/generic/pot3d/mmin'][ids_nn_res, :]
+    )  # [n, s]
+    coef_bspl_dft = np.array(
+        f['/data/var3d/generic/pot3d/data'][:, ids_nn_res, :, :]
+    )  # [t, n, s, m]
 
     ff['coef_bspl_dft'] = coef_bspl_dft[:]['real'] + 1j * coef_bspl_dft[:]['imaginary']
 
@@ -64,7 +86,7 @@ def init(dd, nn=None):
 
 # read coordinate grids, read filter parameters
 def read_add(dd):
-    if 'n_sim_flux' in dd['3d']:
+    if 'n_all_possible_flux' in dd['3d']:
         return
 
     path_to_file = dd['path'] + '/orb5_res.h5'
@@ -124,8 +146,8 @@ def read_add(dd):
         'sfmin': sfmin, 'sfmax': sfmax,
         's': s, 'chi': chi, 'phi': phi_grid,
         'r': r, 'z': z,
-        'n_sim': n_modes,
-        'n_sim_flux': n_modes_flux,
+        'n_all_possible': n_modes,
+        'n_all_possible_flux': n_modes_flux,
     })
 
 
@@ -152,10 +174,7 @@ def form_fields_nm(d3, ff, sel_opt_bspl_s='opt2'):
 
     # --- get toroidal mode numbers ---
     # here, len(n) must be equal to n_nmodes
-    n_mask = None
-    if ff['structure_name'] == 'antenna-init' or ff['structure_name'] == 'antenna':
-        n_mask = ff['n_saved']
-    n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_mask)
+    n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'])
 
     # --- Take into account difference in field3d structures ---
     if ff['structure_name'] == 'antenna-init':
@@ -271,7 +290,7 @@ def save_rhsf(dd, n_save, freqs_ant_wc, gamma_ant_wc, A_scaling=None,
         return coef_bspl_dft
 
     # --- read 3d-field data ---
-    init(dd)
+    init(dd, nn=n_save)
     d3 = dd['3d']
     ff = d3['fields']
     t = ff['t']
@@ -281,8 +300,8 @@ def save_rhsf(dd, n_save, freqs_ant_wc, gamma_ant_wc, A_scaling=None,
     nm = 2 * d3['deltam'] + 1
 
     # antenna toroidal modes to save: take into account that not every n-mode in
-    # n_save array might be present in the considered simulation (in the array d3['n_sim'])
-    n_save_res, ids_n_ant_global, ids_n_ant = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_save)
+    # n_save array might be present in the considered simulation (in the array ff['n'])
+    n_save_res, ids_n_ant_global, ids_n_ant = get_n_modes(ff['n'], d3['n_all_possible_flux'], n_save)
 
     # time moments when to save 3d structure:
     if t_moment is not None:
@@ -437,9 +456,6 @@ def init_antenna(dd, name_antenna_file='', structure_name='antenna', flag_orb_sh
         orb_shape_bspl = orb_shape_bspl[:]['real'] + 1j * orb_shape_bspl[:]['imaginary']
         ffa['coef_bspl_dft'][id_t, :, :, :] = orb_shape_bspl.reshape((nn, ns, nm))
 
-    if structure_name in dd['3d']:
-        return
-
     # --- read necessary additional parameters ---
     read_add(dd)
 
@@ -518,7 +534,7 @@ def init_antenna(dd, name_antenna_file='', structure_name='antenna', flag_orb_sh
 
             path_parameter = '/parameters/n_saved'
             if path_parameter in finit:
-                ffa['n_saved'] = np.array(finit[path_parameter])
+                ffa['n'] = np.array(finit[path_parameter])
         except:
             finit.close()
             sys.exit(-1)
@@ -573,10 +589,7 @@ def signal_chi1_phi1(d3, ff, chi_point, phi_point=0.0):
     m_modes  = ff['m']  # [n, s, m_width]
 
     # field toroidal modes
-    n_mask = None
-    if ff['structure_name'] == 'antenna-init' or ff['structure_name'] == 'antenna':
-        n_mask = ff['n_saved']
-    n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_mask)
+    n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'])
 
     # --- Take into account difference in fields3d structures ---
     ids_n_res = range(len(n)) \
@@ -605,10 +618,7 @@ def signal_t1_phi1(d3, ff, t_point, phi_point=0.0):
     id_t1, t1, _ = mix.get_ids(t, t_point)
 
     # field toroidal modes
-    n_mask = None
-    if ff['structure_name'] == 'antenna-init' or ff['structure_name'] == 'antenna':
-        n_mask = ff['n_saved']
-    n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_mask)
+    n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'])
 
     # --- Take into account difference in field3d structures ---
     ids_n_res = range(len(n)) \
@@ -634,26 +644,37 @@ def signal_n_allm_ts(d3, ff, n_mode_chosen, chi_point):
     m_modes = ff['m']       # [n, s, m_width]
 
     # field toroidal modes
-    n_mask = None
-    if ff['structure_name'] == 'antenna-init' or ff['structure_name'] == 'antenna':
-        n_mask = ff['n_saved']
-    n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_mask)
-
-    # --- Take into account difference in field3d structures ---
-    ids_n_res = range(len(n)) \
-        if ff['structure_name'] == 'antenna-init' \
-        else np.array(ids_n)
-
-    id_n_chosen = np.argwhere(n == n_mode_chosen)[0][0]
-    id_n_global = ids_n_res[id_n_chosen]
+    n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'], [n_mode_chosen])
+    if len(n) == 0:
+        mix.error_mes('--- Wrong n mode in a signal constrution. ---')
+    id_n_res = ids_n[0]
 
     # Get a signal in real poloidal and toroidal coordinates:
     signal_ts = np.zeros([np.size(t), np.size(s)], dtype=np.complex64)
     for id_s1, s1 in enumerate(s):
-        for id_m, m_mode in enumerate(m_modes[id_n_global, id_s1, :]):
-            signal_ts[:, id_s1] += data_ft[:, id_n_global, id_s1, id_m] \
-                        * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi_point)
+        for id_m, m_mode in enumerate(m_modes[id_n_res, id_s1, :]):
+            signal_ts[:, id_s1] += data_ft[:, id_n_res, id_s1, id_m] \
+                                   * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi_point)
     return np.real(signal_ts)
+
+    # # field toroidal modes
+    # n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'])
+    #
+    # # --- Take into account difference in field3d structures ---
+    # ids_n_res = range(len(n)) \
+    #     if ff['structure_name'] == 'antenna-init' \
+    #     else np.array(ids_n)
+    #
+    # id_n_chosen = np.argwhere(n == n_mode_chosen)[0][0]
+    # id_n_global = ids_n_res[id_n_chosen]
+
+    # # Get a signal in real poloidal and toroidal coordinates:
+    # signal_ts = np.zeros([np.size(t), np.size(s)], dtype=np.complex64)
+    # for id_s1, s1 in enumerate(s):
+    #     for id_m, m_mode in enumerate(m_modes[id_n_global, id_s1, :]):
+    #         signal_ts[:, id_s1] += data_ft[:, id_n_global, id_s1, id_m] \
+    #                     * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi_point)
+    # return np.real(signal_ts)
 
 
 def signal_n_allm_t1(d3, ff, n_mode_chosen, t_point):
@@ -667,26 +688,39 @@ def signal_n_allm_t1(d3, ff, n_mode_chosen, t_point):
     id_t1, t1, _ = mix.get_ids(t, t_point)
 
     # field toroidal modes
-    n_mask = None
-    if ff['structure_name'] == 'antenna-init' or ff['structure_name'] == 'antenna':
-        n_mask = ff['n_saved']
-    n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_mask)
-
-    # --- Take into account difference in field3d structures ---
-    ids_n_res = range(len(n)) \
-        if ff['structure_name'] == 'antenna-init' \
-        else np.array(ids_n)
-
-    id_n_chosen = np.argwhere(n == n_mode_chosen)[0][0]
-    id_n_global = ids_n_res[id_n_chosen]
+    n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'], [n_mode_chosen])
+    if len(n) == 0:
+        mix.error_mes('--- Wrong n mode in a signal constrution. ---')
+    id_n_res = ids_n[0]
 
     # Get a signal in real poloidal and toroidal coordinates:
     signal_chis = np.zeros([np.size(chi), np.size(s)], dtype=np.complex64)
     for id_s1, s1 in enumerate(s):
-        for id_m, m_mode in enumerate(m_modes[id_n_global, id_s1, :]):
-            signal_chis[:, id_s1] += data_ft[id_t1, id_n_global, id_s1, id_m] \
-                        * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi)
+        for id_m, m_mode in enumerate(m_modes[id_n_res, id_s1, :]):
+            signal_chis[:, id_s1] += data_ft[id_t1, id_n_res, id_s1, id_m] \
+                                     * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi)
     return np.real(signal_chis), t1
+
+    # # field toroidal modes
+    # n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'])
+    # if len(n) == 0:
+    #     mix.error_mes('--- Wrong n mode in a signal constrution. ---')
+    #
+    # # --- Take into account difference in field3d structures ---
+    # ids_n_res = range(len(n)) \
+    #     if ff['structure_name'] == 'antenna-init' \
+    #     else np.array(ids_n)
+    #
+    # id_n_chosen = np.argwhere(n == n_mode_chosen)[0][0]
+    # id_n_global = ids_n_res[id_n_chosen]
+    #
+    # # Get a signal in real poloidal and toroidal coordinates:
+    # signal_chis = np.zeros([np.size(chi), np.size(s)], dtype=np.complex64)
+    # for id_s1, s1 in enumerate(s):
+    #     for id_m, m_mode in enumerate(m_modes[id_n_global, id_s1, :]):
+    #         signal_chis[:, id_s1] += data_ft[id_t1, id_n_global, id_s1, id_m] \
+    #                     * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi)
+    # return np.real(signal_chis), t1
 
 
 def choose_one_var_ts(one_signal):
@@ -700,7 +734,7 @@ def choose_one_var_ts(one_signal):
         n_mode_chosen = one_signal['n1']
         chi_point = one_signal.get('chi-point', 0.0)
 
-        init(dd)
+        init(dd, nn=[n_mode_chosen])
         ff = dd['3d']['fields']
         s = ff['s']
         t = ff['t']
@@ -790,7 +824,7 @@ def choose_one_var_rz(one_signal):
         n_mode_chosen = one_signal['n1']
         t_point = one_signal['t-point']
 
-        init(dd)
+        init(dd, nn=[n_mode_chosen])
         ff = dd['3d']['fields']
         s = ff['s']
         chi = ff['chi']
