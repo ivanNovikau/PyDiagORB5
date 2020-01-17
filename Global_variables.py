@@ -36,13 +36,13 @@ DEF_OPERATION_FFT_1D = {
     'operation': 'fft-1d',
     'oo_fft': DEF_FFT,
 }
+DEF_OPERATION_FFT_2D = {
+    'operation': 'fft-2d',
+    'oo_fft': DEF_FFT,
+}
 DEF_FFT_2D = {
     'flag_f2': False,
     'name_coord_fft': 't',
-}
-DEF_OPERATION_FFT_2D = {
-    'operation': 'fft-2d',
-    'oo_fft': DEF_FFT_2D,
 }
 
 # ---------------------------------------------------------------------------
@@ -65,6 +65,7 @@ DEF_NORM_WG = 'wc'
 DEF_COLORS = ['b', 'r', 'g', 'black', 'm', 'c',
               'y', 'k', 'cyan', 'Purple', 'gray', 'lightcoral']
 DEF_STYLES = ['-', ':', '-.', ':']
+DEF_SIGN_M = 1
 if FLAG_LATEX:
     FLAG_LATEX = True
     FIG_SIZE_W = 15
@@ -298,3 +299,20 @@ def get_field(id_field, fields, default_field):
     return fields[id_field] \
         if id_field < len(fields) \
         else default_field
+
+
+# set values_field to fields with names names_field
+#  to a dictionary or array of dictionaries struc
+def set_fields(struc, names_field, values_field):
+    # for every dictionary in list struc_list
+    # set one value from values_field
+    # to one field from names_field
+    if isinstance(struc, list):
+        struc_list = list(struc)
+    else:
+        struc_list = [struc]
+
+    for id_dict, one_dict in enumerate(struc_list):
+        one_dict[names_field[id_dict]] = values_field[id_dict]
+
+

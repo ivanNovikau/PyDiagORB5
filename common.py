@@ -1057,7 +1057,7 @@ def calc_wg(oo, oo_wg):
 
     # --- NAIVE CALCULATION ---
     if not flag_two_stages:
-        dict_wg = find_wg(t_work, data_work, sel_wg=sel_wg)
+        dict_wg = find_wg(t_work, data_work, sel_wg=sel_wg, flag_print=flag_print)
 
         # - results -
         w_est, line_w_est = give_res(dict_wg, 'est', 'w', coef_norm_global_w)
@@ -1123,7 +1123,7 @@ def calc_wg(oo, oo_wg):
         dict_gamma_filt = one_stage_filtering(t_work, data_work, oo_filt_gamma)
         data_gamma = dict_gamma_filt['filt']
         t_gamma    = dict_gamma_filt['x']
-        dict_gamma = find_wg(t_gamma, data_gamma, sel_wg)
+        dict_gamma = find_wg(t_gamma, data_gamma, sel_wg, flag_print=flag_print)
 
         w_est_prel, line_w_est_prel = give_res(dict_gamma, 'est', 'w', coef_norm_global_w)
         g_est, line_g_est           = give_res(dict_gamma, 'est', 'g', coef_norm_global_g)
@@ -1143,7 +1143,7 @@ def calc_wg(oo, oo_wg):
         )
         data_freq = dict_freq_filt['filt']
         t_freq    = dict_freq_filt['x']
-        dict_freq = find_wg(t_freq, data_freq, sel_wg)
+        dict_freq = find_wg(t_freq, data_freq, sel_wg, flag_print=flag_print)
 
         w_est, line_w_est           = give_res(dict_freq, 'est', 'w', coef_norm_global_w)
         g_est_zero, line_g_est_zero = give_res(dict_freq, 'est', 'g', coef_norm_global_g)
@@ -1632,7 +1632,6 @@ def calc_wg(oo, oo_wg):
                     'flag_subplots': flag_subplots,
                 }
                 plot_several_curves(oo_sub)
-                return
 
             # Print results
             line_stat = '--- STATISTICS ---\n'
@@ -1728,6 +1727,205 @@ def B_equil(dd, flag_mult=True):
         'ff': ff,
     }
     plot_vars_2d(oo)
+
+
+def calc_wg_s(oo, oo_wg, oo_s):
+    # Calculate frequency (w) and damping/growth rate (g) at radial points in the some
+    #   radial interval;
+    # oo_s - dict. to describe radial domain where (w,g) will be calculated.
+    #  'cond_res_w' - function:
+    #    defines conditions to which result w has to satisfy
+    #  'cond_res_g' - function:
+    #    defines conditions to which result g has to satisfy
+    s  = oo_s.get('s_array', None)
+    cond_res_w = oo_s.get('cond_res_w', None)
+    cond_res_g = oo_s.get('cond_res_g', None)
+    cond_res_w_err = oo_s.get('cond_res_w_err', None)
+    cond_res_g_err = oo_s.get('cond_res_g_err', None)
+    flag_chose_one = oo_s.get('flag_chose_one', False)
+    flag_plots = oo_s.get('flag_plots', True)
+
+    # a chosen signal to investigate
+    try:
+        ch_signal = dict(oo['signal'])
+    except:
+        mix.error_mes('Error: there is not an obligatory field signal')
+    dd = ch_signal['dd']
+
+    # do not plot figures at every s-point
+    ff = oo.get('ff', dict(GLO.DEF_PLOT_FORMAT))
+    ff.update({
+        'flag_plot_print': False
+    })
+    oo.update({
+        'ff': ff,
+    })
+
+    # calculation of (w,g) at every s-point in s
+    s_res, w_est, g_est, w_adv, g_adv = [], [], [], [], []
+    s_res_stat, w_stat, w_stat_err, g_stat, g_stat_err = [], [], [], [], []
+    for s1 in s:
+        # print('--- s = {:0.3f} ---'.format(s1))
+        oo_point_s = dict(oo)
+
+        ch_signal.update({
+            'plane': 'ts',
+            'avr_operation': 'point-s',
+            'avr_domain': s1,
+        })
+        oo_point_s.update({
+            'signal': ch_signal,
+        })
+
+        try:
+            out_res = calc_wg(oo_point_s, oo_wg)
+        except:
+            # print('No results')
+            # print('---')
+            continue
+
+        # Naive results
+        w1_est = out_res['naive']['w_est']
+        g1_est = out_res['naive']['g_est']
+        w1_adv = out_res['naive']['w_adv']
+        g1_adv = out_res['naive']['g_adv']
+
+        flag_check = True
+        if w1_est is None or g1_est is None or \
+                w1_adv is None or g1_adv is None:
+            flag_check = False
+        if cond_res_w is not None:
+            if not cond_res_w(w1_est) or not cond_res_w(w1_adv):
+                flag_check = False
+        if cond_res_g is not None:
+            if not cond_res_g(g1_est) or not cond_res_g(g1_adv):
+                flag_check = False
+
+        if flag_check:
+            s_res.append(s1)
+            w_est.append(w1_est)
+            g_est.append(g1_est)
+            w_adv.append(w1_adv)
+            g_adv.append(g1_adv)
+        else:
+            dummy = 0
+            # print('No results for naive calculation')
+
+        # Statistical results
+        w1 = out_res['stat']['w']
+        w1_err = out_res['stat']['err_w']
+        g1 = out_res['stat']['g']
+        g1_err = out_res['stat']['err_g']
+
+        flag_check = True
+        if w1 is None or g1 is None:
+            flag_check = False
+        if cond_res_w is not None:
+            if not cond_res_w(w1):
+                flag_check = False
+        if cond_res_w_err is not None:
+            if not cond_res_w_err(w1_err):
+                flag_check = False
+        if cond_res_g is not None:
+            if not cond_res_g(g1):
+                flag_check = False
+        if cond_res_g_err is not None:
+            if not cond_res_g_err(g1_err):
+                flag_check = False
+
+        if flag_check:
+            s_res_stat.append(s1)
+            w_stat.append(w1)
+            g_stat.append(g1)
+            w_stat_err.append(w1_err)
+            g_stat_err.append(g1_err)
+        else:
+            dummy = 0
+            # print('No results for statistical calculation')
+        # print('---')
+
+    # --- PLOTTING ---
+    if flag_plots:
+        _, _, line_norm_w, line_norm_g = mix.choose_wg_normalization(
+            oo_wg.get('sel_norm_wg', GLO.DEF_NORM_WG), dd
+        )
+
+        ff_curve_typical = dict(GLO.DEF_CURVE_FORMAT)
+        ff_curve_typical.update({
+            'style': 'o--'
+        })
+        ff_plot_w = dict(GLO.DEF_PLOT_FORMAT)
+        ff_plot_w.update({
+            'xlabel': 's',
+            'ylabel': '\omega' + line_norm_w,
+        })
+        ff_plot_g = dict(GLO.DEF_PLOT_FORMAT)
+        ff_plot_g.update({
+            'xlabel': 's',
+            'ylabel': '\gamma' + line_norm_g,
+        })
+
+        # plotting frequency
+        ff_plot_w.update({'title': 'Frequency'})
+        curves = crv.Curves().set_ff(ff_plot_w)
+
+        ff_curve_typical.update({'legend': 'est.',  'style': 'o--', 'color': 'blue'})
+        curves.new().XS(s_res).YS(w_est).set_ff(ff_curve_typical)
+
+        ff_curve_typical.update({'legend': 'stat.', 'style': 's--', 'color': 'red'})
+        curves.new().XS(s_res_stat).YS(w_stat).set_ff(ff_curve_typical) \
+            .set_errorbar(True, ys=w_stat_err)
+
+        cpr.plot_curves(curves)
+
+        # plotting gamma
+        ff_plot_w.update({'title': 'Gamma'})
+        curves = crv.Curves().set_ff(ff_plot_g)
+
+        ff_curve_typical.update({'legend': 'est.', 'style': 'o--', 'color': 'blue'})
+        curves.new().XS(s_res).YS(g_est).set_ff(ff_curve_typical)
+
+        ff_curve_typical.update({'legend': 'stat.', 'style': 's--', 'color': 'red'})
+        curves.new().XS(s_res_stat).YS(g_stat).set_ff(ff_curve_typical) \
+            .set_errorbar(True, ys=g_stat_err)
+
+        cpr.plot_curves(curves)
+
+        # --- PRINT data as a table ---
+        print('{:>6s} {:>10s} {:>10s} {:>10s} {:>10s}'
+              .format('s', 'w', 'w_err', 'g', 'g_err'))
+        for id_s1, s1_point in enumerate(s_res_stat):
+            print('{:6.3f} {:10.3e} {:10.3e} {:10.3e} {:10.3e}'
+                  .format(s1_point,
+                          w_stat[id_s1], w_stat_err[id_s1],
+                          g_stat[id_s1], g_stat_err[id_s1]
+                          )
+                  )
+
+    # Chose one s-point with smallest error of both w_err and g_err:
+    if flag_chose_one:
+        w_stat = np.array(w_stat)
+        w_stat_err = np.array(w_stat_err)
+        g_stat = np.array(g_stat)
+        g_stat_err = np.array(g_stat_err)
+
+        ids_w_sort = np.argsort(w_stat_err)
+        ids_g_sort = np.argsort(g_stat_err)
+
+        w_stat_err_av = np.average(w_stat_err)
+        id_id_equal = 0
+        while w_stat_err[ids_w_sort[id_id_equal]] > w_stat_err_av:
+            id_id_equal += 1
+        id_equal = ids_g_sort[id_id_equal]
+
+        res_data = {
+            's': s_res_stat[id_equal],
+            'w': w_stat[id_equal], 'w_err': w_stat_err[id_equal],
+            'g': g_stat[id_equal], 'g_err': g_stat_err[id_equal],
+        }
+        return res_data
+
+    return {}
 
 
 # NEW: plot Continuous Wavelet transform
@@ -2159,112 +2357,6 @@ def get_value_signal(oo):
     for id_res in range(len(props)):
         print(desc[id_res] + ':\ ' + '{:0.3e} +- {:0.3e}'
               .format(props[id_res], vars_res[id_res]))
-
-
-# NEW: calculation of the frequency and dynamic rate in a radial interval:
-def calc_wg_s(oo_s, oo_var, oo_wg, oo_plot):
-    # Calculate frequency (w) and damping/growth rate (g) at radial points in the some
-    #   radial interval;
-    # oo_s - dict. to describe radial domain where (w,g) will be calculated.
-    #  'cond_res_w' - function:
-    #    defines conditions to which result w has to satisfy
-    #  'cond_res_g' - function:
-    #    defines conditions to which result g has to satisfy
-    smax = oo_s.get('smax', 0.0)
-    smin = oo_s.get('smin', 1.0)
-    ds = oo_s.get('ds', None)
-    s  = oo_s.get('s_array', None)
-
-    cond_res_w = oo_s.get('cond_res_w', None)
-    cond_res_g = oo_s.get('cond_res_g', None)
-
-    ns = int((smax - smin) / ds + 1)
-    if s is None:
-        s = np.linspace(smin, smax, ns)
-
-    oo_plot.update({
-        'flag_plot_print': False
-    })
-
-    s_res, w_est, g_est, w_adv, g_adv = [], [], [], [], []
-    s_res_stat, w_stat, w_stat_err, g_stat, g_stat_err = [], [], [], [], []
-    for s1 in s:
-        print('--- s = {:0.3f} ---'.format(s1))
-
-        oo_var.update({
-            'avrs': [['ts', 'point-s', [s1]]],
-        })
-        try:
-            out_res = calc_wg(oo_var, oo_wg, oo_plot)
-        except:
-            print('No results')
-            print('---')
-            continue
-
-        # Naive results
-        w1_est = out_res['naive']['w_est']
-        g1_est = out_res['naive']['g_est']
-        w1_adv = out_res['naive']['w_adv']
-        g1_adv = out_res['naive']['g_adv']
-
-        flag_check = True
-        if w1_est is None or g1_est is None or \
-                w1_adv is None or g1_adv is None:
-            flag_check = False
-        if cond_res_w is not None:
-            if not cond_res_w(w1_est) or not cond_res_w(w1_adv):
-                flag_check = False
-        if cond_res_g is not None:
-            if not cond_res_g(g1_est) or not cond_res_g(g1_adv):
-                flag_check = False
-
-        if flag_check:
-            s_res.append(s1)
-            w_est.append(w1_est)
-            g_est.append(g1_est)
-            w_adv.append(w1_adv)
-            g_adv.append(g1_adv)
-        else:
-            print('No results for naive calculation')
-
-        # Statistical results
-        w1 = out_res['stat']['w']
-        w1_err = out_res['stat']['err_w']
-        g1 = out_res['stat']['g']
-        g1_err = out_res['stat']['err_g']
-
-        flag_check = True
-        if w1 is None or g1 is None:
-            flag_check = False
-        if cond_res_w is not None:
-            if not cond_res_w(w1):
-                flag_check = False
-        if cond_res_g is not None:
-            if not cond_res_g(g1):
-                flag_check = False
-
-        if flag_check:
-            s_res_stat.append(s1)
-            w_stat.append(w1)
-            g_stat.append(g1)
-            w_stat_err.append(w1_err)
-            g_stat_err.append(g1_err)
-        else:
-            print('No results for statistical calculation')
-        print('---')
-
-    curves = crv.Curves().xlab('s').ylab('\omega[\omega_{ci}]')\
-        .tit('Naive\ frequency')
-    curves.new().XS(s_res).YS(w_est).sty('o--')
-    cpr.plot_curves(curves)
-
-    curves = crv.Curves().xlab('s').ylab('\omega[\omega_{ci}]') \
-        .tit('Statistical\ frequency')
-    curves.new().XS(s_res_stat).YS(w_stat).sty('o--')\
-        .set_errorbar(True, ys=w_stat_err)
-    cpr.plot_curves(curves)
-
-    return
 
 
 # NEW: contribution of different Fourier components:

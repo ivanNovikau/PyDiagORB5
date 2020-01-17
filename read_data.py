@@ -143,9 +143,9 @@ def potsc_chi1(dd, chi_point, type='potsc'):
 
 
 # NEW: full potential at s1
-def potsc_s1(dd, s_point):
-    potsc_grids(dd)
-    var_name = 'potsc-s-' + '{:0.3f}'.format(s_point)
+def potsc_s1(dd, s_point, type='potsc'):
+    potsc_grids(dd, type)
+    var_name = type + '-s-' + '{:0.3f}'.format(s_point)
     if var_name in dd:
         return var_name
 
@@ -155,9 +155,9 @@ def potsc_s1(dd, s_point):
 
         # read data from orb5 output file
         f = h5.File(dd['path_orb'], 'r')
-        data['id_s1'], data['s1'] = mix.find(dd['potsc_grids']['s'], s_point)
+        data['id_s1'], data['s1'] = mix.find(dd[type + '_grids']['s'], s_point)
         data['data'] = np.array(
-            f['/data/var2d/generic/potsc/data'][:, :, data['id_s1']])  # [t,chi]
+            f['/data/var2d/generic/' + type + '/data'][:, :, data['id_s1']])  # [t,chi]
         f.close()
 
         # save data to an external file

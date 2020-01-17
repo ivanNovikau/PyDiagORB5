@@ -833,6 +833,14 @@ def post_processing(data, x, oo_operations):
             data_fft, x_fft = get_fft_1d(x_work, data_work, oo_fft)
             data_temp, x_temp = data_fft, x_fft
 
+        # * Shift along the x *
+        elif sel_operation == 'shift-x':
+            x_shift_start = oo_operation.get('x-shift-start', None)
+            id_x_shift_start, x_shift_start, _ = \
+                mix.get_ids(x_work, x_shift_start)
+            x_temp = x_work[id_x_shift_start:-1] - x_shift_start
+            data_temp = data_work[id_x_shift_start:-1]
+
         # * wrong operation name *
         else:
             mix.error_mes('Wrong operation name')

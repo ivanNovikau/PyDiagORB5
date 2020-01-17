@@ -7,6 +7,7 @@ import zf_gam as zf
 import write_data as wr
 import transport
 import write_data
+import Global_variables as GLO
 import numpy as np
 import h5py as h5
 from scipy.interpolate import BSpline
@@ -25,10 +26,13 @@ def reload():
     mix.reload_module(wr)
     mix.reload_module(transport)
     mix.reload_module(write_data)
+    mix.reload_module(GLO)
 
 
 # read 3D data from orb5_res_parallel
-def init(dd):
+def init(dd, nn=None):
+    # nn - n-modes to read, if None, read all n-modes
+
     if 'fields' in dd['3d']:
         return
 
@@ -165,8 +169,10 @@ def form_fields_nm(d3, ff, sel_opt_bspl_s='opt2'):
     for count_n, ntor in enumerate(n):
         m_modes_n1 = m_modes[ids_n_res[count_n], :, :]  # [s, m_width]
         s_bspl_ft[:, ids_n_res[count_n], :, :] *= \
-            ( np.sinc(ntor/d3['nphi']) * np.sinc(m_modes_n1/d3['nchi']) )**(d3['nidbas']+1) * \
-                np.exp(1j * np.pi * (d3['nidbas'] - 1) * (m_modes_n1 / d3['nchi'] + ntor / d3['nphi']))
+            ( np.sinc(ntor/d3['nphi']) *
+              np.sinc(GLO.DEF_SIGN_M * m_modes_n1/d3['nchi']) )**(d3['nidbas']+1) * \
+                np.exp(1j * np.pi * (d3['nidbas'] - 1) *
+                       (GLO.DEF_SIGN_M * m_modes_n1 / d3['nchi'] + ntor / d3['nphi']))
 
     # Include negative n-modes:
     for count_n, ntor in enumerate(n):
@@ -240,24 +246,35 @@ def sum_rad_bspline(sel_opt_bspl_s, d3, ff, s_bspl_ft):
 
 
 # Save antenna structure into a .h5 file
-def save_rhsf(dd, n_save, freqs_ant_wc, A_scaling=None, name_file_antenna='user_antenna.h5'):
+def save_rhsf(dd, n_save, freqs_ant_wc, gamma_ant_wc, A_scaling=None,
+              name_file_antenna='user_antenna.h5', t_moment=None
+              ):
     # n_save - array of toroidal modes to save.
     # freqs_ant_wc - array of frequencies of toroidal modes n_save.
+    # gamma_ant_wc - array of damping (growth) rates of toroidal modes n_save.
     # A_scaling - array of scalings of the result structures.
     # name_file_antenna - name of a file where one is going to save
     #                       the antenna's radial structure
+    # t_moment - when to save 3d structure, if None, when save it at the end of the simulation
 
-    def save_coef_bspl_dft(ids_t):
+    def save_coef_bspl_dft(ids_t, ids_n_ant_global_local, gammas=None, T_periods=None):
+        if gammas is None:
+            gammas = np.zeros(len(n_save_res))
+            T_periods = np.zeros(len(n_save_res))
+
         coef_bspl_dft = np.zeros([len(n_save_res), ns_bspl, nm], dtype=np.complex128)  # [n, s, m]
         for id_n_mode in range(len(n_save_res)):
             coef_bspl_dft[id_n_mode, :, :] = \
-                ff['coef_bspl_dft'][ids_t[id_n_mode], id_n_mode, :, :] * A_scaling_res[id_n_mode]
+                ff['coef_bspl_dft'][ids_t[id_n_mode], ids_n_ant_global_local[id_n_mode], :, :] * \
+                A_scaling_res[id_n_mode] \
+                * np.exp(gammas[id_n_mode] * coef_quarter * T_periods[id_n_mode])
         return coef_bspl_dft
 
     # --- read 3d-field data ---
     init(dd)
     d3 = dd['3d']
     ff = d3['fields']
+    t = ff['t']
 
     mmins   = ff['m_mins']  # [n, s]
     ns_bspl = np.shape(mmins)[1]
@@ -267,23 +284,36 @@ def save_rhsf(dd, n_save, freqs_ant_wc, A_scaling=None, name_file_antenna='user_
     # n_save array might be present in the considered simulation (in the array d3['n_sim'])
     n_save_res, ids_n_ant_global, ids_n_ant = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_save)
 
+    # time moments when to save 3d structure:
+    if t_moment is not None:
+        id_t_antenna, t_moment_res, _ = mix.get_ids(t, t_moment)
+    else:
+        id_t_antenna = -1
+        t_moment_res = t[id_t_antenna]
+    print('Save antenna structure at t = {:0.1e}'.format(t_moment_res))
+
     # --- minimum poloidal modes ---
     mmins_res = np.zeros( [len(n_save_res), np.shape(mmins)[1]] )
-    for id_n1_ant, n1_ant in enumerate(n_save_res):
-        # mmins_res[id_n1_ant, :] = mmins_res[ids_n_ant_global[id_n1_ant], :]
+    for id_n1_ant, _ in enumerate(n_save_res):
         mmins_res[id_n1_ant, :] = mmins[ids_n_ant_global[id_n1_ant], :]
 
-    # --- result antenna frequencies and periods ---
+    # --- result antenna frequencies and periods, and damping/growth rates ---
     freqs_ant_res = np.zeros(len(n_save_res))
+    gamma_ant_res = np.zeros(len(n_save_res))
     for counter_loc, id_ant in enumerate(ids_n_ant):
         freqs_ant_res[counter_loc] = freqs_ant_wc[id_ant]
+        gamma_ant_res[counter_loc] = gamma_ant_wc[id_ant]
     T_periods_res = 2 * np.pi / freqs_ant_res
 
+    # where we need an additional signal:
+    coef_quarter = 0.25  # a signal at (1 - coef_quarter) * T
+
     # time points of the quarter of antenna toroidal mode's periods:
-    ids_t_quarters, ts_quarters = np.zeros(len(n_save_res), dtype=np.int), np.zeros(len(n_save_res))
+    ids_t_quarters, ts_quarters = \
+        np.zeros(len(n_save_res), dtype=np.int), np.zeros(len(n_save_res))
     for counter_loc, T_period in enumerate(T_periods_res):
         ids_t_quarters[counter_loc], ts_quarters[counter_loc], _ = \
-            mix.get_ids(ff['t'], ff['t'][-1] - 0.75 * T_period)
+            mix.get_ids(t, t_moment_res - coef_quarter * T_period)
 
     # antenna scaling
     A_scaling_res = np.zeros(len(n_save_res))
@@ -294,10 +324,11 @@ def save_rhsf(dd, n_save, freqs_ant_wc, A_scaling=None, name_file_antenna='user_
             A_scaling_res[counter_loc] = A_scaling[id_ant]
 
     # radial structure at last time point
-    coef_bspl_dft_BEGIN = save_coef_bspl_dft([-1] * len(n_save_res))
+    coef_bspl_dft_BEGIN = save_coef_bspl_dft([id_t_antenna] * len(n_save_res), ids_n_ant_global)
 
     # radial structure at a quarter of the n1 mode's period
-    coef_bspl_dft_QUARTER = save_coef_bspl_dft(ids_t_quarters)
+    coef_bspl_dft_QUARTER = save_coef_bspl_dft(ids_t_quarters, ids_n_ant_global,
+                                               gamma_ant_res, T_periods_res)
 
     # --- SAVE ANTENNA'S STRUCTURE ---
     path_to_file = dd['path'] + '/' + name_file_antenna
@@ -318,26 +349,27 @@ def save_rhsf(dd, n_save, freqs_ant_wc, A_scaling=None, name_file_antenna='user_
         # save radial structure and time moments
         grp = ffile.create_group("data/var3d/generic/phi_antenna/run.1")
 
-        ddata = grp.create_dataset('t0', data=[ff['t'][-1]] * len(n_save_res))
-        ddata.attrs[u'descr'] = 'Time moments, where initial antenna structures for different n-modes are saved.'
+        ddata = grp.create_dataset('t0', data=[t_moment_res] * len(n_save_res))
+        ddata.attrs[u'descr'] = \
+            'Time moments, where initial antenna structures for different n-modes are saved.'
 
         ddata = grp.create_dataset('tq', data=ts_quarters)
-        ddata.attrs[u'descr'] = 'Actual time moments at a quarter of n-mode periods, ' \
+        ddata.attrs[u'descr'] = 'Actual time moments at three quarters of n-mode periods, ' \
                                 'where antenna structures for different n-modes are saved.'
 
-        tq_theory = ff['t'][-1] - 0.75 * T_periods_res
+        tq_theory = t_moment_res - coef_quarter * T_periods_res
         ddata = grp.create_dataset('tq-theory', data=tq_theory)
-        ddata.attrs[u'descr'] = 'Theoretical time moments at a quarter of n-mode periods, ' \
+        ddata.attrs[u'descr'] = 'Theoretical time moments at three quarters of n-mode periods, ' \
                                 'where antenna structures for different n-modes are saved.'
 
         ddata = grp.create_dataset('mmin', data=mmins_res)
         ddata.attrs[u'descr'] = 'Minimal poloidal mode numbers.'
 
         ddata = grp.create_dataset('bspl_dft_t0', data=coef_bspl_dft_BEGIN)
-        ddata.attrs[u'descr'] = 'Discrete Fourier Transform of Bspline coefficients: t = 0.'
+        ddata.attrs[u'descr'] = 'Discrete Fourier Transform of Bspline coefficients at t0'
 
         ddata = grp.create_dataset('bspl_dft_tquarter', data=coef_bspl_dft_QUARTER)
-        ddata.attrs[u'descr'] = 'Discrete Fourier Transform of Bspline coefficients: t = 0.25 T.'
+        ddata.attrs[u'descr'] = 'Discrete Fourier Transform of Bspline coefficients at tq'
 
         # change the shape:
         nn_bspl = np.shape(coef_bspl_dft_BEGIN)[0]
@@ -370,11 +402,11 @@ def save_rhsf(dd, n_save, freqs_ant_wc, A_scaling=None, name_file_antenna='user_
                 )
 
         ddata = grp.create_dataset('orb_bspl_dft_t0', data=temp_t0)
-        ddata.attrs[u'descr'] = 'Discrete Fourier Transform of Bspline coefficients: t = 0. ' \
+        ddata.attrs[u'descr'] = 'Discrete Fourier Transform of Bspline coefficients at t0' \
                                 'Shape is [(ns+nidbas)*width_m, number_of_n_modes]'
 
         ddata = grp.create_dataset('orb_bspl_dft_tquarter', data=temp_tq)
-        ddata.attrs[u'descr'] = 'Discrete Fourier Transform of Bspline coefficients: t = 0.25 T.' \
+        ddata.attrs[u'descr'] = 'Discrete Fourier Transform of Bspline coefficients at tq' \
                                 'Shape is [(ns+nidbas)*width_m, number_of_n_modes]'
     except:
         ffile.close()
@@ -405,8 +437,8 @@ def init_antenna(dd, name_antenna_file='', structure_name='antenna', flag_orb_sh
         orb_shape_bspl = orb_shape_bspl[:]['real'] + 1j * orb_shape_bspl[:]['imaginary']
         ffa['coef_bspl_dft'][id_t, :, :, :] = orb_shape_bspl.reshape((nn, ns, nm))
 
-    # if structure_name in dd['3d']:
-    #     return
+    if structure_name in dd['3d']:
+        return
 
     # --- read necessary additional parameters ---
     read_add(dd)
@@ -475,7 +507,7 @@ def init_antenna(dd, name_antenna_file='', structure_name='antenna', flag_orb_sh
 
     # --- read initial antenna structure ---
 
-    # read antenna parameters (from user_antenna.h5)
+    # read antenna parameters (from a file dedicated to initial antenna)
     if ffa['nsel_profile'] == 'rhsf':
         path_to_file = dd['path'] + '/' + ffa['file_name_rhsf']
         finit = h5.File(path_to_file, 'r')
@@ -496,8 +528,12 @@ def init_antenna(dd, name_antenna_file='', structure_name='antenna', flag_orb_sh
     path_to_file = dd['path'] + '/' + name_antenna_file
     f = h5.File(path_to_file, 'r')
     try:
+        line_id_start = dd['n_starts_string']
+        if structure_name == 'antenna-init':
+            line_id_start = '1'
+
         path_antenna  = '/data/var3d/generic/' + ffa['nsel_type'] + \
-                        '_antenna/run.' + dd['n_starts_string'] + '/'
+                        '_antenna/run.' + line_id_start + '/'
         if path_antenna in f:
             ffa['m_mins'] = np.array(f[path_antenna + 'mmin'])  # [n, s]
 
@@ -543,11 +579,9 @@ def signal_chi1_phi1(d3, ff, chi_point, phi_point=0.0):
     n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_mask)
 
     # --- Take into account difference in fields3d structures ---
-    if ff['structure_name'] == 'antenna-init':
-        # for antenna-init, only antenna toroidal modes are saved
-        ids_n_res = range(len(n))
-    else:
-        ids_n_res = np.array(ids_n)
+    ids_n_res = range(len(n)) \
+        if ff['structure_name'] == 'antenna-init' \
+        else np.array(ids_n)
 
     # Get a signal in real poloidal and toroidal coordinates:
     signal_ts = np.zeros([np.size(t), np.size(s)], dtype=np.complex64)
@@ -556,7 +590,7 @@ def signal_chi1_phi1(d3, ff, chi_point, phi_point=0.0):
             id_n = ids_n_res[count_n]
             for id_m, m_mode in enumerate(m_modes[id_n, id_s1, :]):
                 signal_ts[:, id_s1] += data_ft[:, id_n, id_s1, id_m] \
-                            * np.exp(1j * m_mode * chi_point + 1j * ntor * phi_point)
+                            * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi_point + 1j * ntor * phi_point)
     return np.real(signal_ts)
 
 
@@ -588,7 +622,7 @@ def signal_t1_phi1(d3, ff, t_point, phi_point=0.0):
             id_n = ids_n_res[count_n]
             for id_m, m_mode in enumerate(m_modes[id_n, id_s1, :]):
                 signal_chis[:, id_s1] += data_ft[id_t1, id_n, id_s1, id_m] \
-                        * np.exp(1j * m_mode * chi) * np.exp(1j * ntor * phi_point)
+                        * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi) * np.exp(1j * ntor * phi_point)
     return np.real(signal_chis), t1
 
 
@@ -600,18 +634,59 @@ def signal_n_allm_ts(d3, ff, n_mode_chosen, chi_point):
     m_modes = ff['m']       # [n, s, m_width]
 
     # field toroidal modes
-    n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'])
+    n_mask = None
+    if ff['structure_name'] == 'antenna-init' or ff['structure_name'] == 'antenna':
+        n_mask = ff['n_saved']
+    n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_mask)
+
+    # --- Take into account difference in field3d structures ---
+    ids_n_res = range(len(n)) \
+        if ff['structure_name'] == 'antenna-init' \
+        else np.array(ids_n)
 
     id_n_chosen = np.argwhere(n == n_mode_chosen)[0][0]
-    id_n_global = ids_n[id_n_chosen]
+    id_n_global = ids_n_res[id_n_chosen]
 
     # Get a signal in real poloidal and toroidal coordinates:
     signal_ts = np.zeros([np.size(t), np.size(s)], dtype=np.complex64)
     for id_s1, s1 in enumerate(s):
         for id_m, m_mode in enumerate(m_modes[id_n_global, id_s1, :]):
             signal_ts[:, id_s1] += data_ft[:, id_n_global, id_s1, id_m] \
-                        * np.exp(1j * m_mode * chi_point)
+                        * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi_point)
     return np.real(signal_ts)
+
+
+def signal_n_allm_t1(d3, ff, n_mode_chosen, t_point):
+    data_ft = ff['data_ft']  # [t, n, s, m]
+
+    s = ff['s']
+    t = ff['t']
+    chi = ff['chi']
+    m_modes = ff['m']  # [n, s, m_width]
+
+    id_t1, t1, _ = mix.get_ids(t, t_point)
+
+    # field toroidal modes
+    n_mask = None
+    if ff['structure_name'] == 'antenna-init' or ff['structure_name'] == 'antenna':
+        n_mask = ff['n_saved']
+    n, ids_n, _ = get_n_modes(d3['n_sim'], d3['n_sim_flux'], n_mask)
+
+    # --- Take into account difference in field3d structures ---
+    ids_n_res = range(len(n)) \
+        if ff['structure_name'] == 'antenna-init' \
+        else np.array(ids_n)
+
+    id_n_chosen = np.argwhere(n == n_mode_chosen)[0][0]
+    id_n_global = ids_n_res[id_n_chosen]
+
+    # Get a signal in real poloidal and toroidal coordinates:
+    signal_chis = np.zeros([np.size(chi), np.size(s)], dtype=np.complex64)
+    for id_s1, s1 in enumerate(s):
+        for id_m, m_mode in enumerate(m_modes[id_n_global, id_s1, :]):
+            signal_chis[:, id_s1] += data_ft[id_t1, id_n_global, id_s1, id_m] \
+                        * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi)
+    return np.real(signal_chis), t1
 
 
 def choose_one_var_ts(one_signal):
@@ -632,6 +707,21 @@ def choose_one_var_ts(one_signal):
 
         vvar = signal_n_allm_ts(dd['3d'], ff, n_mode_chosen, chi_point)
         tit_var = '3D:\ <\Phi' + '(n = {:d})'.format(n_mode_chosen) + '>_m'
+    if opt_var == 'n1-antenna-init':
+        n_mode_chosen = one_signal['n1']
+        chi_point = one_signal.get('chi-point', 0.0)
+        file_name = one_signal.get('file_name', 'user_antenna.h5')
+        flag_orb_shape = one_signal.get('flag_orb_shape', False)
+
+        structure_name = 'antenna-init'
+        init_antenna(dd, name_antenna_file=file_name, structure_name=structure_name,
+                     flag_orb_shape=flag_orb_shape)
+        ff = dd['3d'][structure_name]
+        s = ff['s']
+        t = ff['t']
+
+        vvar = signal_n_allm_ts(dd['3d'], ff, n_mode_chosen, chi_point)
+        tit_var = '3D:\ Init.\ Antenna\ :\ <\Phi' + '(n = {:d})'.format(n_mode_chosen) + '>_m'
     if opt_var == 'potsc':
         chi_point = one_signal.get('chi-point', 0.0)
         phi_point = one_signal.get('phi-point', 0.0)
@@ -657,9 +747,9 @@ def choose_one_var_ts(one_signal):
         t = ff['t']
 
         vvar = signal_chi1_phi1(dd['3d'], ff, chi_point, phi_point)
-        line_chi = '\chi = {:0.1f},\ '.format(chi_point)
+        line_chi = '\\chi = {:0.1f},\ '.format(chi_point)
         line_phi = '\\varphi = {:0.1f}'.format(phi_point)
-        tit_var = '3D:\ Antenna:\ \Phi' + '_{' + line_chi + line_phi + '}'
+        tit_var = '3D:\ Antenna:\ \\Phi' + '_{' + line_chi + line_phi + '}'
     if opt_var == 'potsc-antenna-init':
         chi_point = one_signal.get('chi-point', 0.0)
         phi_point = one_signal.get('phi-point', 0.0)
@@ -696,6 +786,37 @@ def choose_one_var_rz(one_signal):
     vvar, s, chi, tit_var = None, None, None, ''
     res = {}
 
+    if opt_var == 'n1':
+        n_mode_chosen = one_signal['n1']
+        t_point = one_signal['t-point']
+
+        init(dd)
+        ff = dd['3d']['fields']
+        s = ff['s']
+        chi = ff['chi']
+
+        vvar, t1 = signal_n_allm_t1(dd['3d'], ff, n_mode_chosen, t_point)
+        tit_var = '3D:\ <\Phi' + \
+                  '(n = {:d}, t = {:0.3e})'.format(n_mode_chosen, t1) \
+                   + '>_m'
+    if opt_var == 'n1-antenna-init':
+        n_mode_chosen = one_signal['n1']
+        t_point = one_signal['t-point']
+        file_name = one_signal.get('file_name', 'user_antenna.h5')
+        flag_orb_shape = one_signal.get('flag_orb_shape', False)
+
+        structure_name = 'antenna-init'
+
+        init_antenna(dd, name_antenna_file=file_name, structure_name=structure_name,
+                     flag_orb_shape=flag_orb_shape)
+        ff = dd['3d'][structure_name]
+        s = ff['s']
+        chi = ff['chi']
+
+        vvar, t1 = signal_n_allm_t1(dd['3d'], ff, n_mode_chosen, t_point)
+        tit_var = '3D:\ Init.\ Antenna:\ <\Phi' + \
+                  '(n = {:d}, t = {:0.3e})'.format(n_mode_chosen, t1) \
+                  + '>_m'
     if opt_var == 'potsc':
         t_point = one_signal['t-point']
         phi_point = one_signal.get('phi-point', 0.0)
