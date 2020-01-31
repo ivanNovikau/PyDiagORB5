@@ -12,7 +12,7 @@ def reload():
     mix.reload_module(ymath)
     mix.reload_module(crv)
 
-
+# checked
 def read_profiles(path_to_read, file_names):
     # open initial files
     ff = []
@@ -51,26 +51,6 @@ def read_profiles(path_to_read, file_names):
     return res
 
 
-def save_profiles_from_project(dd, path_to_write):
-    file_names = []
-    profs = {}
-    for sp_name in dd['species_names']:
-        file_names.append(sp_name + '_profiles.dat')
-        psi = dd[sp_name].nT_equil['s']**2
-        ns = np.size(psi)
-        T = dd[sp_name].nT_equil['T']
-        n = dd[sp_name].nT_equil['n']
-        vp = dd[sp_name].nT_equil['vp']
-        profs[file_names[-1]] = {
-            'ns': ns,
-            'psi': psi,
-            'T': T,
-            'n': n,
-            'vp': vp
-        }
-    write_profiles(path_to_write, file_names, profs)
-
-
 def write_profiles(path_to_write, file_names, profs):
     # open/create files to write data to
     ff = []
@@ -95,6 +75,26 @@ def write_profiles(path_to_write, file_names, profs):
     # close files
     for one_ff in ff:
         one_ff.close()
+
+
+def save_profiles_from_project(dd, path_to_write):
+    file_names = []
+    profs = {}
+    for sp_name in dd['species_names']:
+        file_names.append(sp_name + '_profiles.dat')
+        psi = dd[sp_name].nT_equil['s']**2
+        ns = np.size(psi)
+        T = dd[sp_name].nT_equil['T']
+        n = dd[sp_name].nT_equil['n']
+        vp = dd[sp_name].nT_equil['vp']
+        profs[file_names[-1]] = {
+            'ns': ns,
+            'psi': psi,
+            'T': T,
+            'n': n,
+            'vp': vp
+        }
+    write_profiles(path_to_write, file_names, profs)
 
 
 def plot_profiles(path_to_read, file_names):

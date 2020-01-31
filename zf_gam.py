@@ -63,7 +63,11 @@ def vorbar(dd):
         data = data / s
     else:
         data[:, 1:-1] = data[:, 1:-1] / s[1:-1]
-        f = interpolate.interp2d(s[1:-1], t, data[:, 1:-1], kind='cubic')
+        sel_method = 'cubic'
+        if len(t) < 3:
+            sel_method = 'linear'
+        f = interpolate.interp2d(s[1:-1], t, data[:, 1:-1], kind=sel_method)
+
         data = f(s, t)
 
     dd['vorbar'] = {

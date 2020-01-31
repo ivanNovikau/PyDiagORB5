@@ -1,3 +1,4 @@
+import Global_variables as GLO
 import Mix as mix
 import read_data as rd
 import ControlPlot as cpr
@@ -13,14 +14,22 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(ymath)
     mix.reload_module(crv)
+    mix.reload_module(GLO)
 
 
 def exp_AUG20787(dd, oo):
+    # Some experimental data from AUG shot #20787,
+    # described in [Conway 2008 Plasma Physics and Controlled Fusion]
+    # https://iopscience.iop.org/article/10.1088/0741-3335/50/5/055009/pdf
+    # ------------------------------------------------------------------------------------------
+    # CONWAY, G.D. et al., “Frequency scaling and localization of geodesic acoustic modes in
+    # ASDEX Upgrade”, Plasma Phys. Control. Fusion 50 (2008) 055009.
+    # ------------------------------------------------------------------------------------------
+
     # curves, where to add the data
     curves = oo.get('curves', crv.Curves())
-    sel_norm = oo.get('sel_norm', 'wci')  # -> 'wci', 'khz', 'csa', 'csr'
+    sel_norm = oo.get('sel_norm', 'wc')  # -> 'wci', 'khz', 'csa', 'csr'
     sel_r = oo.get('sel_r', 's')  # -> 's', 'psi'
-    col = oo.get('col', 'blue')
 
     # experimental GAM frequency:
     rho_fr = np.array([0.863, 0.879, 0.891, 0.902, 0.912, 0.912,
@@ -30,7 +39,7 @@ def exp_AUG20787(dd, oo):
     fr_GAM_kHz = np.array([20.2, 20.1, 18.9, 18.9, 17.7, 15.5, 16.5,
                   14.0, 14.5, 13.4, 14.0, 13.4, 13.2, 12.2,
                   12.2, 12.5])  # kHz
-    fr_err = 0.4 * np.ones(np.size(rho_fr))
+    fr_err_kHz = 0.4 * np.ones(np.size(rho_fr))
 
     # experimental profiles:
     rho_T_AUG = np.array([0.863, 0.879, 0.891, 0.902, 0.912,
@@ -43,32 +52,47 @@ def exp_AUG20787(dd, oo):
               122,   105,    85,    70,    57,
                50,    38,    30])  # eV
 
-    # choose normalization:
-    coef_norm = None
-    if sel_norm == 'khz':
-        coef_norm = 1
-    if sel_norm == 'wc':
-        coef_norm = 1.e3 * 2 * np.pi / dd['wc']
-    if sel_norm == 'csa':
-        coef_norm = 1.e3 * 2 * np.pi / (dd['cs']/dd['a0'])
-    if sel_norm == 'csr':
-        coef_norm = 1.e3 * 2 * np.pi / (dd['cs']/dd['R0'])
-    fr_res     = fr_GAM_kHz * coef_norm
-    fr_err_res = fr_err     * coef_norm
+    # to wc normalization:
+    norm_to_wc = 1.e3 * 2 * np.pi / dd['wc']
+    fr_wc     = fr_GAM_kHz * norm_to_wc
+    fr_err_wc = fr_err_kHz * norm_to_wc
 
-    r, r_err = [], []
+    # choose a radial grid
+    r, r_err, desc_r = [], [], None
     if sel_r == 's':
         r = np.sqrt(rho_fr)
         r_err = np.zeros([2, np.size(rho_fr)])
         r_err[0] = np.sqrt(rho_fr) - np.sqrt(rho_fr - rho_err)
         r_err[1] = np.sqrt(rho_fr + rho_err) - np.sqrt(rho_fr)
-    if sel_r == 'psi':
+        desc_r = '(s)'
+    elif sel_r == 'psi':
         r = rho_fr
         r_err = rho_err
+        desc_r = '(psi)'
+    else:
+        mix.error_mes('Wrong selector of the radial grid normalization.')
 
-    curves.new('aug20787').XS(r).YS(fr_res)\
-        .XS_ERR(r_err).YS_ERR(fr_err_res).leg('EXP.\ AUG20787')\
-        .sty('o').col(col).ms(1)
+    # normalization
+    dict_norm = mix.normalization('frequency-' + sel_norm, dd)
+    coef_norm = dict_norm['coef_norm']
+    desc_norm = dict_norm['line_norm']
+
+    fr_res     = fr_wc * coef_norm
+    fr_err_res = fr_err_wc * coef_norm
+
+    # description of the data
+    print('Exp. AUG20787: w' + desc_r + desc_norm)
+
+    # styling:
+    ff = dict(GLO.DEF_CURVE_FORMAT)
+    ff.update({
+        'legend': 'Experiment:\ [Conway08\ PPCF]',
+    })
+
+    # curve format
+    curves.new().XS(r).YS(fr_res)\
+        .set_ff(ff)\
+        .set_errorbar(True, ys=fr_err_res, xs=r_err)
 
     return curves
 

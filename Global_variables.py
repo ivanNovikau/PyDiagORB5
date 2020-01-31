@@ -66,6 +66,7 @@ DEF_COLORS = ['b', 'r', 'g', 'black', 'm', 'c',
               'y', 'k', 'cyan', 'Purple', 'gray', 'lightcoral']
 DEF_STYLES = ['-', ':', '-.', ':']
 DEF_SIGN_M = 1
+DEF_TITLE_PAD = 18
 if FLAG_LATEX:
     FLAG_LATEX = True
     FIG_SIZE_W = 15
@@ -108,7 +109,7 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'xticks_labels': np.nan,
     'yticks_labels': np.nan,
     'flag_legend': True,
-    'legend_position': 'best',  # 'upper right', 'center left'
+    'legend_position': 'best',  # 'upper right', 'center left', 'lower left'
     'legend_fcol': 'lightgray',
     'flag_diff_styles': False,
     'x_style': 'sci',  # 'sci', 'plain'
@@ -118,12 +119,13 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'flag_fixed_limits': False,
     'figure_width': FIG_SIZE_W,
     'figure_heigth': FIG_SIZE_H,
+    'pad_title': DEF_TITLE_PAD,
 }
 DEF_CURVE_FORMAT = {  # describe format of a curve
     'legend': None,
     'style': None,
     'width': LINE_WIDTH,
-    'color': DEF_ONE_COLOR,
+    'color': None,
     'markersize': MARKER_SIZE,
     'markerfacecolor': "None",
     'colormap': DEF_COLORMAP,  # hot, jet, pink, hot_r, jet_r etc.
@@ -133,6 +135,7 @@ DEF_CURVE_FORMAT = {  # describe format of a curve
     'flag_errorbar': False,
     'flag_hist': False,
     'norm_to': None,
+    'dashed_format': DASHES_FORMAT,
 }
 
 
@@ -176,6 +179,13 @@ def_fields3d_n1 = {
     'type': 'fields3d',
     'variable': 'n1',
     'plane': 'ts',
+    'n1': np.nan,
+    'chi-point': 0.0,
+}
+def_fields3d_n1_schi = {
+    'type': 'fields3d',
+    'variable': 'n1',
+    'plane': 'schi',
     'n1': np.nan,
     'chi-point': 0.0,
 }

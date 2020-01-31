@@ -70,6 +70,8 @@ class Species:
 
         self.nbar = np.array(f['/equil/scalars/' + self.name + '/nbar'])[0]
 
+        T_ref_keV = dd['electrons'].T_speak(dd) * self.tau / \
+                    (1e3 * constants.elementary_charge)
         T_J   = T * dd['electrons'].T_speak(dd) * self.tau
         T_keV = T_J / (1e3 * constants.elementary_charge)
 
@@ -84,6 +86,7 @@ class Species:
             's': s,
             'psi': psi,
             'rho': rho,
+            'T_ref_keV': T_ref_keV,
             'T': T, 'T_J': T_J, 'T_keV': T_keV,
             'gradT': gradT, 'gradToT': gradToT, 'grad_logT': grad_logT,
             'n': n,

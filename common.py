@@ -257,19 +257,15 @@ def plot_vars_2d(oo):
     curves.load(curves_to_add)
 
     # styling
-    nan_list = [None] * len(curves.list_curves)
-    styles    = ff.get('styles', nan_list)
-    colors  = ff.get('colors', nan_list)
-    legends = ff.get('legends', nan_list)
-    id_curve = -1
-    for one_curve in curves.list_curves:
-        id_curve += 1
+    for id_curve, one_curve in enumerate(curves.list_curves):
         ff_curve = dict(GLO.DEF_CURVE_FORMAT)
-        ff_curve.update({
-            'legend': legends[id_curve],
-            'style': styles[id_curve],
-            'color': colors[id_curve],
-        })
+        for field_curve in ff_curve.keys():
+            temp = ff.get(field_curve+'s', [])
+            if len(temp) > id_curve:
+                ff_curve[field_curve] = temp[id_curve]
+            else:
+                if one_curve.ff[field_curve] != ff_curve[field_curve]:
+                    ff_curve[field_curve] = one_curve.ff[field_curve]
         one_curve.set_ff(ff_curve)
 
     # plot curve
@@ -426,10 +422,16 @@ def plot_several_curves(oo):
     else:
         ncols = oo.get('ncols', 1)
         nrows = oo.get('nrows', 1)
-        curves_result.create_sub(ncols, nrows)
+        sel_colorbar_subplots = oo.get('sel_colorbar_subplots', 'none')
+        id_ref_subplot = oo.get('id_ref_subplot', 0)
+        curves_result.create_sub(
+            ncols, nrows,
+            selector_colorbar_subplots=sel_colorbar_subplots,
+            id_reference_subplot=id_ref_subplot
+        )
 
         # different Curves objects from the list_curves
-        # are put consequently to the subplots:
+        # are put consequently to the subplot matrix COLUMN by COLUMN:
         count_curves = -1
         for id_col in range(ncols):
             for id_row in range(nrows):
@@ -3462,7 +3464,402 @@ def test_cwt():
     cpr.plot_curves_3d(curves)
 
 
+def check_init_antenna_radial_structure(dd_current, n_chosen_mode, name_file_antenna):
+    t0_antenna = rd.read_array(
+        dd_current['path'] + '/' + name_file_antenna,
+        'data/var3d/generic/phi_antenna/run.1/t0'
+    )[0]  # time moment, where initial antenna structure is written
+    tq_antenna = rd.read_array(
+        dd_current['path'] + '/' + name_file_antenna,
+        'data/var3d/generic/phi_antenna/run.1/tq'
+    )[0]  # time moment, where antenna at 3/4 of a mode period is written
+
+    # signal t0
+    ch_signals = GLO.create_signals_dds(
+        GLO.def_potsc_chi1_t,
+        [dd_current, dd_current],
+        types=['fields3d'] * 2,
+        variables=['n1', 'n1-antenna-init'],
+        operations=['point-t'] * 2,
+        domains=[t0_antenna, 0],
+    )
+    ch_signals[0]['n1'] = n_chosen_mode
+    ch_signals[1]['n1'] = n_chosen_mode
+    ch_signals[1]['file_name'] = name_file_antenna
+
+    # styling
+    ff = dict(GLO.DEF_PLOT_FORMAT)
+    ff.update({
+        'xlabel': 's',
+        'ylabel': '\Phi',
+        'flag_semilogy': False,
+        'styles': ['-', ':'],
+        'legends': ['t = 0', 't = 0.75 T_{mode}'],
+        'flag_legend': True,
+    })
+
+    # create curves
+    oo = {
+        'signals': ch_signals,
+        'ff': ff,
+        'flag_plot': False,
+    }
+    curves_t0 = plot_vars_1d(oo)
+
+    # signal at 3/4 of a mode period
+    ch_signals[0]['avr_domain'] = tq_antenna
+    ch_signals[1]['avr_domain'] = 1
+
+    ff['ylabel'] = None
+
+    oo['signals'] = ch_signals
+    oo['ff'] = ff
+    curves_tq = plot_vars_1d(oo)
+
+    # plotting:
+    print('Radial structure of a field and init. antenna in ' + dd_current['project_name'])
+    oo = {
+        'ncols': 2, 'nrows': 1,
+        'list_curves': [curves_t0, curves_tq],
+        'flag_subplots': True,
+    }
+    plot_several_curves(oo)
 
 
+def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_antenna):
+    t0_antenna = rd.read_array(
+        dd_current['path'] + '/' + name_file_antenna,
+        'data/var3d/generic/phi_antenna/run.1/t0'
+    )[0]  # time moment, where initial antenna structure is written
+    tq_antenna = rd.read_array(
+        dd_current['path'] + '/' + name_file_antenna,
+        'data/var3d/generic/phi_antenna/run.1/tq'
+    )[0]  # time moment, where antenna at 3/4 of a mode period is written
+
+    # reference signal
+    ch_signal_ref = GLO.create_signals_dds(
+        GLO.def_fields3d_n1_schi,
+        [dd_current],
+        operations=['point-t'],
+    )[0]
+    ch_signal_ref['n1'] = n_chosen_mode
+
+    # plasma signals
+    field_t0 = dict(ch_signal_ref)
+    field_t0.update({
+        'variable': 'n1',
+        't-point': t0_antenna,
+    })
+
+    field_tq = dict(field_t0)
+    field_tq.update({
+        't-point': tq_antenna,
+    })
+
+    # antenna signals
+    antenna_t0 = dict(ch_signal_ref)
+    antenna_t0.update({
+        'variable': 'n1-antenna-init',
+        't-point': 0,
+        'file_name': name_file_antenna,
+    })
+
+    antenna_tq = dict(antenna_t0)
+    antenna_tq.update({
+        't-point': 1,
+    })
+
+    # --- create curves ---
+    ff_ref = dict(GLO.DEF_PLOT_FORMAT)
+    ff_ref.update({
+        'fontS': GLO.FONT_SIZE/2,
+        'pad_title': GLO.DEF_TITLE_PAD/3,
+    })
+    oo = {'flag_plot': False}
+
+    # plasma curves
+    ff = dict(ff_ref)
+    ff.update({
+        'xlabel': None,
+        'ylabel': '\chi',
+        'title': 'field, t0',
+        'xticks_labels': [],
+    })
+    oo.update({
+        'signal': field_t0,
+        'ff': ff
+    })
+    curves_field_t0 = plot_vars_2d(oo)
+
+    ff = dict(ff_ref)
+    ff.update({
+        'xlabel': 's',
+        'ylabel': '\chi',
+        'title': 'field, t-quarter',
+    })
+    oo.update({
+        'signal': field_tq,
+        'ff': ff
+    })
+    curves_field_tq = plot_vars_2d(oo)
+
+    # antenna curves
+    ff = dict(ff_ref)
+    ff.update({
+        'xlabel': None,
+        'ylabel': None,
+        'xticks_labels': [],
+        'yticks_labels': [],
+        'title': 'antenna, t0'
+    })
+    oo.update({
+        'signal': antenna_t0,
+        'ff': ff
+    })
+    curves_antenna_t0 = plot_vars_2d(oo)
+
+    ff = dict(ff_ref)
+    ff.update({
+        'xlabel': 's',
+        'ylabel': None,
+        'yticks_labels': [],
+        'title': 'antenna, t-quarter'
+    })
+    oo.update({
+        'signal': antenna_tq,
+        'ff': ff
+    })
+    curves_antenna_tq = plot_vars_2d(oo)
+
+    # plotting:
+    oo = {
+        'ncols': 2, 'nrows': 2,
+        'list_curves': [curves_field_t0, curves_field_tq, curves_antenna_t0, curves_antenna_tq],
+        'flag_subplots': True,
+        'flag_3d': True,
+    }
+    plot_several_curves(oo)
+
+
+def check_antenna_potsc_t0(dd_field, dd_ant, n_chosen_mode, name_file_antenna_ref,
+                           t_field=None, t_ant=None):
+    t0_antenna = rd.read_array(
+        dd_field['path'] + '/' + name_file_antenna_ref,
+        'data/var3d/generic/phi_antenna/run.1/t0'
+    )[0]  # time moment, where initial antenna structure is written
+
+    # reference signal
+    ch_signal_ref = GLO.create_signals_dds(
+        GLO.def_potsc_rz,
+        dds=[dd_field],
+        planes=['schi'],
+    )[0]
+    ch_signal_ref['n1'] = n_chosen_mode
+
+    # plasma signal
+    field_signal = dict(ch_signal_ref)
+    field_signal.update({
+        'dd': dd_field,
+        'variable': 'potsc',
+        't-point': t_field if t_field is not None else t0_antenna,
+    })
+
+    # antenna signal
+    antenna_signal = dict(ch_signal_ref)
+    antenna_signal.update({
+        'dd': dd_ant,
+        'variable': 'potsc-antenna',
+        't-point': t_ant if t_ant is not None else t0_antenna,
+    })
+
+    # --- create curves ---
+    ff_ref = dict(GLO.DEF_PLOT_FORMAT)
+    ff_ref.update({
+        'fontS': GLO.FONT_SIZE/2,
+        'pad_title': GLO.DEF_TITLE_PAD/3,
+    })
+    oo = {'flag_plot': False}
+
+    # plasma curves
+    ff = dict(ff_ref)
+    ff.update({
+        'xlabel': 's',
+        'ylabel': '\chi',
+        'title': 'field,\ ref.\ time',
+    })
+    oo.update({
+        'signal': field_signal,
+        'ff': ff
+    })
+    curves_field = plot_vars_2d(oo)
+
+    # antenna curves
+    ff = dict(ff_ref)
+    ff.update({
+        'xlabel': 's',
+        'ylabel': None,
+        'yticks_labels': [],
+        'title': 'antenna,\ at\ the\ beginning\ of\ next\ simulation'
+    })
+    oo.update({
+        'signal': antenna_signal,
+        'ff': ff
+    })
+    curves_antenna = plot_vars_2d(oo)
+
+    # plotting:
+    oo = {
+        'ncols': 2, 'nrows': 1,
+        'list_curves': [curves_field, curves_antenna],
+        'flag_subplots': True,
+        'flag_3d': True,
+    }
+    plot_several_curves(oo)
+
+
+def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_antenna_ref, step_t,
+                           t_field_0=None, t_ant_0=None, oo_format={}):
+    t0_antenna = rd.read_array(
+        dd_ant['path'] + '/' + name_file_antenna_ref,
+        'data/var3d/generic/phi_antenna/run.1/t0'
+    )[0]  # time moment, where initial antenna structure is written
+
+    t_field_0_res = t_field_0 if t_field_0 is not None else t0_antenna
+    t_ant_0_res   = t_ant_0   if t_ant_0   is not None else t0_antenna
+
+    # reference signal
+    ch_signal_ref = GLO.create_signals_dds(
+        GLO.def_potsc_rz,
+        dds=[dd_field],
+        planes=['schi'],
+    )[0]
+    ch_signal_ref['n1'] = n_chosen_mode
+
+    # plasma signals
+    field_signal_0 = dict(ch_signal_ref)
+    field_signal_0.update({
+        'dd': dd_field,
+        'variable': 'potsc',
+        't-point': t_field_0_res,
+    })
+
+    field_signal_1 = dict(field_signal_0)
+    field_signal_1.update({'t-point': field_signal_0['t-point'] + step_t})
+
+    field_signal_2 = dict(field_signal_1)
+    field_signal_2.update({'t-point': field_signal_1['t-point'] + step_t})
+
+    # antenna signals
+    antenna_signal_0 = dict(ch_signal_ref)
+    antenna_signal_0.update({
+        'dd': dd_ant,
+        'variable': 'potsc-antenna',
+        't-point': t_ant_0_res,
+    })
+
+    antenna_signal_1 = dict(antenna_signal_0)
+    antenna_signal_1.update({'t-point': antenna_signal_0['t-point'] + step_t})
+
+    antenna_signal_2 = dict(antenna_signal_1)
+    antenna_signal_2.update({'t-point': antenna_signal_1['t-point'] + step_t})
+
+    # --- create curves ---
+    ff_ref = dict(GLO.DEF_PLOT_FORMAT)
+    ff_ref.update({
+        'fontS': GLO.FONT_SIZE/4,
+        'pad_title': GLO.DEF_TITLE_PAD/6,
+    })
+    oo = dict(oo_format)
+    oo.update({'flag_plot': False})
+
+    # plasma curves
+    dd_current = field_signal_0
+    ff = dict(ff_ref)
+    ff.update({
+        'xticks_labels': [],
+        'ylabel': '\chi',
+        'title': 'field: t={:0.2e}'.format(dd_current['t-point']),
+    })
+    oo.update({
+        'signal': dd_current,
+        'ff': ff
+    })
+    curves_field_0 = plot_vars_2d(oo)
+
+    dd_current = field_signal_1
+    ff = dict(ff_ref)
+    ff.update({
+        'xticks_labels': [],
+        'ylabel': '\chi',
+        'title': 'field: t={:0.2e}'.format(dd_current['t-point']),
+    })
+    oo.update({
+        'signal': dd_current,
+        'ff': ff
+    })
+    curves_field_1 = plot_vars_2d(oo)
+
+    dd_current = field_signal_2
+    ff = dict(ff_ref)
+    ff.update({
+        'xlabel': 's',
+        'ylabel': '\chi',
+        'title': 'field: t={:0.2e}'.format(dd_current['t-point']),
+    })
+    oo.update({
+        'signal': dd_current,
+        'ff': ff
+    })
+    curves_field_2 = plot_vars_2d(oo)
+
+    # antenna curves
+    dd_current = antenna_signal_0
+    ff = dict(ff_ref)
+    ff.update({
+        'xticks_labels': [],
+        'yticks_labels': [],
+        'title': 'antenna: t={:0.2e}'.format(dd_current['t-point']),
+    })
+    oo.update({
+        'signal': dd_current,
+        'ff': ff
+    })
+    curves_antenna_0 = plot_vars_2d(oo)
+
+    dd_current = antenna_signal_1
+    ff = dict(ff_ref)
+    ff.update({
+        'xticks_labels': [],
+        'yticks_labels': [],
+        'title': 'antenna: t={:0.2e}'.format(dd_current['t-point']),
+    })
+    oo.update({
+        'signal': dd_current,
+        'ff': ff
+    })
+    curves_antenna_1 = plot_vars_2d(oo)
+
+    dd_current = antenna_signal_2
+    ff = dict(ff_ref)
+    ff.update({
+        'xlabel': 's',
+        'yticks_labels': [],
+        'title': 'antenna: t={:0.2e}'.format(dd_current['t-point']),
+    })
+    oo.update({
+        'signal': dd_current,
+        'ff': ff
+    })
+    curves_antenna_2 = plot_vars_2d(oo)
+
+    # plotting:
+    oo = {
+        'ncols': 2, 'nrows': 3,
+        'list_curves': [curves_field_0, curves_field_1, curves_field_2,
+                        curves_antenna_0, curves_antenna_1, curves_antenna_2],
+        'flag_subplots': True,
+        'flag_3d': True,
+    }
+    plot_several_curves(oo)
 
 

@@ -46,6 +46,21 @@ def plot_curves(curves):
 
 
 def plot_curves_3d(curves):
+    # def set_colobar(curves, cs_ref, axs):
+    #     if curves.ff['flag_colorbar']:
+    #         cb = fig.colorbar(cs_ref, shrink=0.8, extend='both', ax=axs)
+    #         cb.formatter.set_scientific(True)
+    #         cb.formatter.set_powerlimits((0, 0))
+    #         cb.ax.tick_params(
+    #             labelsize=curves.ff['fontS'] * GLO.SCALE_TICKS
+    #         )
+    #         cb.ax.yaxis.get_offset_text().set_fontsize(
+    #             curves.ff['fontS'] * GLO.SCALE_ORDER
+    #         )
+    #
+    #         register_offset(cb.ax.yaxis, bottom_offset)
+    #         cb.update_ticks()
+
     if curves.is_empty() and not curves.flag_subplots:
         return
 
@@ -57,6 +72,11 @@ def plot_curves_3d(curves):
 
     # set curves
     if curves.flag_subplots:
+        css_res = [None for _ in range(curves.nrows * curves.ncols)]
+        # axs_res = [None for _ in range(curves.nrows * curves.ncols)]
+        # curves_res = [None for _ in range(curves.nrows * curves.ncols)]
+        count_subplot = -1
+
         for id_col, list_curves in enumerate(curves.lists_sub_curves):
             for id_row, sub_curves in enumerate(list_curves):
                 if len(list_curves) == 1:  # single row
@@ -64,11 +84,47 @@ def plot_curves_3d(curves):
                 elif len(curves.lists_sub_curves) == 1:  # single column
                     ax_res = axs[id_row]
                 else:
-                    ax_res = axs[id_col, id_row]
+                    ax_res = axs[id_row, id_col]
 
-                plot_curves_3d_subplot(sub_curves, ax_res, fig)
+                count_subplot = count_subplot + 1
+                # axs_res[count_subplot]    = ax_res
+                # curves_res[count_subplot] = sub_curves
+                css_res[count_subplot] = plot_curves_3d_subplot(sub_curves, ax_res, fig)
     else:
-        plot_curves_3d_subplot(curves, axs, fig)
+        css_res = plot_curves_3d_subplot(curves, axs, fig)
+        # css_res = [css_res]
+        # axs_res = [axs]
+        # curves_res = [curves]
+
+    # N_ROWS = int(len(curves_res) / N_COLUMNS)
+    #
+    # # set a colorbar for every subplot
+    # if curves.sel_colorbar_subplots == 'none':
+    #     for id_cs, cs_one in enumerate(css_res):
+    #         set_colobar(curves_res[id_cs], cs_one, axs_res[id_cs])
+    #
+    # elif curves.sel_colorbar_subplots == 'all':
+    #     cs_ref = css_res[curves.id_ref_subplot]
+    #     set_colobar(curves_res[curves.id_ref_subplot], cs_ref, axs_res)
+    #
+    # elif curves.sel_colorbar_subplots == 'row':
+    #     axs_row = [None] * N_COLUMNS
+    #     for id_row in range(N_ROWS):
+    #         for id_col in range(N_COLUMNS):
+    #             axs_row[id_col] = axs_res[id_row + N_ROWS*id_col]
+    #         set_colobar(
+    #             curves_res[id_row + N_ROWS*curves.id_ref_subplot],
+    #             css_res[id_row + N_ROWS*curves.id_ref_subplot],
+    #             axs_row
+    #         )
+    #
+    # else:
+    #     mix.error_mes('Wrong selector for subplot colorbar arrangement')
+    #
+    # # format the plot
+    # for id_ax, ax in enumerate(axs_res):
+    #     set_curves(curves_res[id_ax], ax, 1)
+    #     format_plot(fig, ax, curves_res[id_ax], flag_2d=True)
 
 
 def plot_curves_3d_subplot(curves, ax, fig):
@@ -111,6 +167,8 @@ def plot_curves_3d_subplot(curves, ax, fig):
 
     # format the plot
     format_plot(fig, ax, curves, flag_2d=True)
+
+    return cs
 
 
 def plot_curves_3d_prev(curves):
@@ -215,7 +273,7 @@ def set_curves(curves, ax, id_curve_start=0):
 
             # set line and marker sizes
             if res_style == ':':
-                ref_line_format.set_dashes(GLO.DASHES_FORMAT)
+                ref_line_format.set_dashes(curve.ff['dashed_format'])
             mpl.setp(ref_line_format,
                      linewidth=curve.ff['width'],
                      color=res_color,
@@ -252,17 +310,24 @@ def format_plot(fig, ax, curves, flag_2d=False):
         )
 
     # axes ticks:
-    if curves.ff['xticks_labels'] is np.nan:
-        ax.xticks(curves.ff['xticks']) if curves.ff['xticks'] is not np.nan else 0
-    else:
-        ax.xticks(curves.ff['xticks'], curves.ff['xticks_labels']) \
-            if curves.ff['xticks'] is not np.nan else 0
+    mpl.sca(ax)
 
-    if curves.ff['yticks_labels'] is np.nan:
-        ax.yticks(curves.ff['yticks']) if curves.ff['yticks'] is not np.nan else 0
+    if not np.isnan(curves.ff['xticks']):
+        ax.set_xticks(curves.ff['xticks'])
+    if not np.isnan(curves.ff['xticks_labels']):
+        ax.set_xticklabels(curves.ff['xticks_labels'])
     else:
-        ax.yticks(curves.ff['yticks'], curves.ff['yticks_labels']) \
-            if curves.ff['yticks'] is not np.nan else 0
+        ax.ticklabel_format(axis='x', style=curves.ff['x_style'], scilimits=(-2, 2))
+        if curves.ff['flag_maxlocator']:
+            ax.xaxis.set_major_locator(mpl.MaxNLocator(curves.ff['maxlocator']))
+
+    if not np.isnan(curves.ff['yticks']):
+        ax.set_yticks(curves.ff['yticks'])
+    if not np.isnan(curves.ff['yticks_labels']):
+        ax.set_yticklabels(curves.ff['yticks_labels'])
+    else:
+        if not curves.ff['flag_semilogy']:
+            ax.ticklabel_format(axis='y', style=curves.ff['y_style'], scilimits=(-2, 2))
 
     # fontsize of axes ticks
     ax.xaxis.set_tick_params(
@@ -278,14 +343,6 @@ def format_plot(fig, ax, curves, flag_2d=False):
         curves.ff['fontS'] * GLO.SCALE_ORDER
     )
     register_offset(ax.yaxis, top_offset)
-
-    # format of axis labels
-    ax.ticklabel_format(axis='x', style=curves.ff['x_style'], scilimits=(-2, 2))
-    if curves.ff['flag_maxlocator']:
-        ax.xaxis.set_major_locator(mpl.MaxNLocator(curves.ff['maxlocator']))
-
-    if curves.ff['flag_semilogy'] is False:
-        ax.ticklabel_format(axis='y', style=curves.ff['y_style'], scilimits=(-2, 2))
 
     # set limits:
     if curves.ff['xlimits'] is not None:
@@ -312,7 +369,7 @@ def format_plot(fig, ax, curves, flag_2d=False):
     if res_title is not None:
         ax.set_title(res_title,
                   fontsize=curves.ff['fontS'] * GLO.SCALE_TITLE,
-                  pad='18',
+                  pad=curves.ff['pad_title'],
                   usetex=True)
     if GLO.FLAG_LATEX:
         mpl.rc('text', usetex=True)

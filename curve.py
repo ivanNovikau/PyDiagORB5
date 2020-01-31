@@ -71,6 +71,10 @@ class Curves:
     ncols, id_col_set = 1, 0
     nrows, id_row_set = 1, 0
     flag_subplots = False
+    sel_colorbar_subplots = 'none'  # 'row', 'column', 'all'
+    id_ref_subplot = 0  # if 'all' - subplot with id_ref_subplot will define a common colobar
+                     # if 'row' - in every row, subplot with id_ref_subplot will define a common colobar
+                     # if 'column' - in every column, subplot with id_ref_subplot will define a common colobar
 
     def __init__(self):
         self.list_curves = []
@@ -92,7 +96,8 @@ class Curves:
 
         return new_curve
 
-    def create_sub(self, ncols=1, nrows=1):
+    def create_sub(self, ncols=1, nrows=1,
+                   selector_colorbar_subplots='none', id_reference_subplot=0):
         self.flag_subplots = True
         self.ncols = ncols
         self.nrows = nrows
@@ -100,6 +105,8 @@ class Curves:
             [None for _ in range(self.nrows)]
             for _ in range(self.ncols)
         ]
+        self.sel_colorbar_subplots = selector_colorbar_subplots
+        self.id_ref_subplot = id_reference_subplot
 
     def put_sub(self, curves_to_put, id_col=None, id_row=None):
         id_col_res = id_col if id_col is not None else self.id_col_set
