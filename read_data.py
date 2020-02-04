@@ -355,6 +355,8 @@ def init(dd):
     dd['beta'] = f['/parameters/equil/beta'][0]
     dd['sfmin'] = f['/parameters/fields/sfmin'][0]
     dd['sfmax'] = f['/parameters/fields/sfmax'][0]
+    dd['d_norm'] = f['/equil/scalars/generic/d_norm'][0]
+    dd['b_norm'] = f['/equil/scalars/generic/b_norm'][0]
 
     # calculate basic variables:
     mass_pf = dd['pf'].mass

@@ -120,6 +120,8 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'figure_width': FIG_SIZE_W,
     'figure_heigth': FIG_SIZE_H,
     'pad_title': DEF_TITLE_PAD,
+    'vmin': None,
+    'vmax': None,
 }
 DEF_CURVE_FORMAT = {  # describe format of a curve
     'legend': None,
@@ -174,6 +176,10 @@ def_potsc_chi1_t = {
     'chi-point': 0.0,
     'avr_operation': 'point-s',
     'avr_domain': 0.5,
+}
+def_fields3d_ts = {
+    'type': 'fields3d',
+    'plane': 'ts',
 }
 def_fields3d_n1 = {
     'type': 'fields3d',

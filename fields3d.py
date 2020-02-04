@@ -54,7 +54,7 @@ def init(dd, nn=None):
         if d3['nfilt1'] <= one_n_mode <= d3['nfilt2']
     ])
 
-    if len(nn_res)==0:
+    if len(nn_res) == 0:
         mix.error_mes('--- Wrong n mode. ---')
 
     ids_nn_res = list(nn_res - d3['nfilt1'])
@@ -76,6 +76,56 @@ def init(dd, nn=None):
         f['/data/var3d/generic/pot3d/data'][:, ids_nn_res, :, :]
     )  # [t, n, s, m]
 
+    ff['coef_bspl_dft'] = coef_bspl_dft[:]['real'] + 1j * coef_bspl_dft[:]['imaginary']
+
+    f.close()
+
+    # --- create poloidal and toroidal Fourier transform of the field ---
+    form_fields_nm(d3, ff)
+
+
+# read 3D density data from orb5_res_parallel
+def init_den(dd, name_species, nn=None):
+    # nn - [...], n-modes to read, if None, read all n-modes
+
+    # --- read necessary additional parameters ---
+    read_add(dd)
+
+    # --- create 3d.fields field ---
+    d3 = dd['3d']
+    name_structure = 'density-' + name_species
+    if name_structure not in d3:
+        d3[name_structure] = {}
+    ff = dd['3d'][name_structure]
+    ff['structure_name'] = ff.get('structure_name', name_structure)
+
+    # --- n-modes to read ---
+    if nn is None:
+        nn_res = np.array(d3['n_all_possible'])
+    else:
+        nn_res = np.array(nn)
+    nn_res = np.array([
+        one_n_mode
+        for one_n_mode in nn_res
+        if d3['nfilt1'] <= one_n_mode <= d3['nfilt2']
+    ])
+
+    if len(nn_res) == 0:
+        mix.error_mes('--- Wrong n mode. ---')
+
+    ids_nn_res = list(nn_res - d3['nfilt1'])
+
+    ff['n'] = nn_res
+
+    # --- read 3d-field data ---
+    path_to_file = dd['path'] + '/orb5_res_parallel.h5'
+    f = h5.File(path_to_file, 'r')
+
+    root_path = '/data/var3d/' + name_species + '/rho/'
+
+    ff['t'] = ff.get('t', np.array(f[root_path + 'time']))
+    ff['m_mins']  = np.array(f[root_path + 'mmin'][ids_nn_res, :])  # [n, s]
+    coef_bspl_dft = np.array(f[root_path + 'data'][:, ids_nn_res, :, :])  # [t, n, s, m]
     ff['coef_bspl_dft'] = coef_bspl_dft[:]['real'] + 1j * coef_bspl_dft[:]['imaginary']
 
     f.close()
@@ -677,6 +727,54 @@ def signal_n_allm_ts(d3, ff, n_mode_chosen, chi_point):
     # return np.real(signal_ts)
 
 
+def signal_n1_m1_ts(d3, ff, n_mode_chosen, m_mode_chosen):
+    data_ft = ff['data_ft']  # [t, n, s, m]
+
+    s = ff['s']
+    t = ff['t']
+    m_modes = ff['m']       # [n, s, m_width]
+
+    # field toroidal modes
+    n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'], [n_mode_chosen])
+    if len(n) == 0:
+        mix.error_mes('--- Wrong n mode in a signal construction. ---')
+    id_n_res = ids_n[0]
+
+    # Get a signal in real poloidal and toroidal coordinates:
+    signal_ts = np.zeros([np.size(t), np.size(s)], dtype=np.complex64)
+    for id_s1, s1 in enumerate(s):
+        current_m_modes = m_modes[id_n_res, id_s1, :]
+        id_m, m_current, _ = mix.get_ids(current_m_modes, m_mode_chosen)
+        signal_ts[:, id_s1] += data_ft[:, id_n_res, id_s1, id_m]
+    return np.real(signal_ts)
+
+
+def signal_n1_m1_t1(d3, ff, n_mode_chosen, m_mode_chosen, t_point):
+    data_ft = ff['data_ft']  # [t, n, s, m]
+
+    s = ff['s']
+    t = ff['t']
+    chi = ff['chi']
+    m_modes = ff['m']  # [n, s, m_width]
+
+    id_t1, t1, _ = mix.get_ids(t, t_point)
+
+    # field toroidal modes
+    n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'], [n_mode_chosen])
+    if len(n) == 0:
+        mix.error_mes('--- Wrong n mode in a signal constrution. ---')
+    id_n_res = ids_n[0]
+
+    # Get a signal in real poloidal and toroidal coordinates:
+    signal_chis = np.zeros([np.size(chi), np.size(s)], dtype=np.complex64)
+    for id_s1, s1 in enumerate(s):
+        current_m_modes = m_modes[id_n_res, id_s1, :]
+        id_m, m_current, _ = mix.get_ids(current_m_modes, m_mode_chosen)
+        signal_chis[:, id_s1] += data_ft[id_t1, id_n_res, id_s1, id_m] \
+                                     * np.exp(GLO.DEF_SIGN_M * 1j * m_mode_chosen * chi)
+    return np.real(signal_chis), t1
+
+
 def signal_n_allm_t1(d3, ff, n_mode_chosen, t_point):
     data_ft = ff['data_ft']  # [t, n, s, m]
 
@@ -730,6 +828,10 @@ def choose_one_var_ts(one_signal):
     s, t = None, None
     res = {}
 
+    name_field = one_signal.get('name_field', 'fields')
+    name_species = one_signal.get('name_species', None)
+    flag_er = one_signal.get('flag_er', False)
+
     if opt_var == 'n1':
         n_mode_chosen = one_signal['n1']
         chi_point = one_signal.get('chi-point', 0.0)
@@ -741,6 +843,34 @@ def choose_one_var_ts(one_signal):
 
         vvar = signal_n_allm_ts(dd['3d'], ff, n_mode_chosen, chi_point)
         tit_var = '3D:\ <\Phi' + '(n = {:d})'.format(n_mode_chosen) + '>_m'
+    if opt_var == 'n1-m1':
+        n_mode_chosen = one_signal['n1']
+        m_mode_chosen = one_signal['m1']
+
+        ff, name_var = None, None
+        if name_field == 'fields':
+            init(dd, nn=[n_mode_chosen])
+            ff = dd['3d']['fields']
+            name_var = '\Phi'
+        elif name_field == 'density':
+            init_den(dd, name_species, nn=[n_mode_chosen])
+            ff = dd['3d']['density-' + name_species]
+            name_var = 'n({:s})'.format(name_species)
+        else:
+            mix.error_mes('Wrong structure name.')
+
+        s = ff['s']
+        t = ff['t']
+
+        vvar = signal_n1_m1_ts(dd['3d'], ff, n_mode_chosen, m_mode_chosen)
+
+        if flag_er and name_field == 'fields':
+            vvar = - np.gradient(vvar, s, axis=1)
+            name_var = 'E_r'
+
+        tit_var = '3D:\ ' + name_var + \
+            '(n = {:d},'.format(n_mode_chosen) + \
+            'm = {:d})'.format(m_mode_chosen)
     if opt_var == 'n1-antenna-init':
         n_mode_chosen = one_signal['n1']
         chi_point = one_signal.get('chi-point', 0.0)
@@ -820,6 +950,10 @@ def choose_one_var_rz(one_signal):
     vvar, s, chi, tit_var = None, None, None, ''
     res = {}
 
+    name_field = one_signal.get('name_field', 'fields')
+    name_species = one_signal.get('name_species', None)
+    flag_er = one_signal.get('flag_er', False)
+
     if opt_var == 'n1':
         n_mode_chosen = one_signal['n1']
         t_point = one_signal['t-point']
@@ -833,6 +967,36 @@ def choose_one_var_rz(one_signal):
         tit_var = '3D:\ <\Phi' + \
                   '(n = {:d}, t = {:0.3e})'.format(n_mode_chosen, t1) \
                    + '>_m'
+    if opt_var == 'n1-m1':
+        n_mode_chosen = one_signal['n1']
+        m_mode_chosen = one_signal['m1']
+        t_point = one_signal['t-point']
+
+        ff, name_var = None, None
+        if name_field == 'fields':
+            init(dd, nn=[n_mode_chosen])
+            ff = dd['3d']['fields']
+            name_var = '\Phi'
+        elif name_field == 'density':
+            init_den(dd, name_species, nn=[n_mode_chosen])
+            ff = dd['3d']['density-' + name_species]
+            name_var = 'n({:s})'.format(name_species)
+        else:
+            mix.error_mes('Wrong structure name.')
+
+        s = ff['s']
+        chi = ff['chi']
+
+        vvar, t1 = signal_n1_m1_t1(dd['3d'], ff, n_mode_chosen, m_mode_chosen, t_point)
+
+        if flag_er and name_field == 'fields':
+            vvar = - np.gradient(vvar, s, axis=1)
+            name_var = 'E_r'
+
+        tit_var = '3D:\ ' + name_var + \
+            '(n = {:d}, m = {:d}, t = {:0.3e})'.format(
+                n_mode_chosen, m_mode_chosen, t_point
+            )
     if opt_var == 'n1-antenna-init':
         n_mode_chosen = one_signal['n1']
         t_point = one_signal['t-point']

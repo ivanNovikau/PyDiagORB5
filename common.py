@@ -191,7 +191,8 @@ def plot_vars_2d(oo):
     coef_y_norm, line_y_norm = dict_norm['coef_norm'], dict_norm['line_norm']
 
     # title
-    ff['title'] = ff['title'] if ff['title'] is not None else vvar['leg']
+    if ff['title'] is not None:
+        ff['title'] = ff['title'] if len(ff['title']) != 0 else vvar['leg']
 
     # xlabel and ylabel
     if ff['xlabel'] is not None:
@@ -242,6 +243,9 @@ def plot_vars_2d(oo):
             data_part1 = mix.get_slice(data, ids_s, ids_chi_part1)
             data_part2 = mix.get_slice(data, ids_s, ids_chi_part2)
             data = np.concatenate((data_part1, data_part2), axis=1)
+
+        x1 = x1/dd['d_norm']
+        x2 = x2/dd['d_norm']
     else:
         x1, ids_x1 = mix.get_array_oo(oo, x1, name_x1)
         x2, ids_x2 = mix.get_array_oo(oo, x2, name_x2)
@@ -424,6 +428,10 @@ def plot_several_curves(oo):
         nrows = oo.get('nrows', 1)
         sel_colorbar_subplots = oo.get('sel_colorbar_subplots', 'none')
         id_ref_subplot = oo.get('id_ref_subplot', 0)
+
+        ff_global = oo.get('ff', dict(GLO.DEF_PLOT_FORMAT))
+        curves_result.set_ff(ff_global)
+
         curves_result.create_sub(
             ncols, nrows,
             selector_colorbar_subplots=sel_colorbar_subplots,
@@ -3863,3 +3871,26 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
     plot_several_curves(oo)
 
 
+def test_circle(dd):
+    rd.potsc_grids(dd)
+
+    r = dd['potsc_grids']['r']
+    z = dd['potsc_grids']['z']
+    s = dd['potsc_grids']['s']
+    chi = dd['potsc_grids']['chi']
+
+    ids_chi = range(len(chi))
+    id_s1, s1, _ = mix.get_ids(s, 0.4)
+
+    # x1 = mix.get_slice(r, list(ids_chi), id_s1)
+    # x2 = mix.get_slice(z, list(ids_chi), id_s1)
+
+    x1 = r[ids_chi, id_s1]
+    x2 = z[ids_chi, id_s1]
+
+    geo_curve = geom.Curve()
+    geo_curve.add_curve(x1, x2)
+    geo_curve.style = ':'
+    geo_curve.color = 'white'
+
+    geoms = [geo_curve]
