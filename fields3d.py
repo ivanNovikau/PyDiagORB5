@@ -727,12 +727,13 @@ def signal_n_allm_ts(d3, ff, n_mode_chosen, chi_point):
     # return np.real(signal_ts)
 
 
-def signal_n1_m1_ts(d3, ff, n_mode_chosen, m_mode_chosen):
+def signal_n1_m1_ts(d3, ff, n_mode_chosen, m_mode_chosen, sel_e='none', chi_point=0):
     data_ft = ff['data_ft']  # [t, n, s, m]
 
     s = ff['s']
     t = ff['t']
     m_modes = ff['m']       # [n, s, m_width]
+    chi = ff['chi']
 
     # field toroidal modes
     n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'], [n_mode_chosen])
@@ -745,7 +746,17 @@ def signal_n1_m1_ts(d3, ff, n_mode_chosen, m_mode_chosen):
     for id_s1, s1 in enumerate(s):
         current_m_modes = m_modes[id_n_res, id_s1, :]
         id_m, m_current, _ = mix.get_ids(current_m_modes, m_mode_chosen)
-        signal_ts[:, id_s1] += data_ft[:, id_n_res, id_s1, id_m]
+
+        if sel_e == 'echi':
+            id_chi, chi_current, _ = mix.get_ids(chi, chi_point)
+
+            temp = data_ft[:, id_n_res, id_s1, id_m]
+            temp = temp[:, None] * np.exp(GLO.DEF_SIGN_M * 1j * m_current * chi[None, :])
+            temp = - np.gradient(temp, chi, axis=1) / s1
+
+            signal_ts[:, id_s1] += temp[:, id_chi]
+        else:
+            signal_ts[:, id_s1] += data_ft[:, id_n_res, id_s1, id_m]
     return np.real(signal_ts)
 
 
@@ -830,7 +841,7 @@ def choose_one_var_ts(one_signal):
 
     name_field = one_signal.get('name_field', 'fields')
     name_species = one_signal.get('name_species', None)
-    flag_er = one_signal.get('flag_er', False)
+    sel_e = one_signal.get('sel_e', 'none')
 
     if opt_var == 'n1':
         n_mode_chosen = one_signal['n1']
@@ -846,6 +857,7 @@ def choose_one_var_ts(one_signal):
     if opt_var == 'n1-m1':
         n_mode_chosen = one_signal['n1']
         m_mode_chosen = one_signal['m1']
+        chi_point = one_signal.get('chi-point', 0.0)
 
         ff, name_var = None, None
         if name_field == 'fields':
@@ -862,11 +874,17 @@ def choose_one_var_ts(one_signal):
         s = ff['s']
         t = ff['t']
 
-        vvar = signal_n1_m1_ts(dd['3d'], ff, n_mode_chosen, m_mode_chosen)
+        vvar = signal_n1_m1_ts(dd['3d'], ff, n_mode_chosen, m_mode_chosen,
+                               sel_e=sel_e, chi_point=chi_point)
 
-        if flag_er and name_field == 'fields':
-            vvar = - np.gradient(vvar, s, axis=1)
-            name_var = 'E_r'
+        if name_field == 'fields':
+            if sel_e == 'none':
+                name_var = '\Phi'
+            if sel_e == 'er':
+                vvar = - np.gradient(vvar, s, axis=1)
+                name_var = 'E_r'
+            if sel_e == 'echi':
+                name_var = 'E_\chi' + '(\chi = {:0.3f})'.format(chi_point)
 
         tit_var = '3D:\ ' + name_var + \
             '(n = {:d},'.format(n_mode_chosen) + \

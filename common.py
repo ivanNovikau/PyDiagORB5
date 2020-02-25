@@ -21,7 +21,11 @@ import scipy.signal
 from scipy.stats import norm as stat_norm
 import pywt
 from scipy import constants
+from scipy import interpolate
 import h5py as h5
+from matplotlib import animation
+import matplotlib.pyplot as mpl
+from IPython.display import HTML
 
 
 def reload():
@@ -156,7 +160,7 @@ def choose_vars(oo):
     return vvars
 
 
-def plot_vars_2d(oo):
+def plot_vars_2d(oo, fig=None, axs=None):
     oo_use = dict(oo)
 
     # correct averaging parameter
@@ -246,6 +250,9 @@ def plot_vars_2d(oo):
 
         x1 = x1/dd['d_norm']
         x2 = x2/dd['d_norm']
+    elif 'x' in vvar:
+            if np.ndim(vvar['x']) > 1:
+                dummy = 0
     else:
         x1, ids_x1 = mix.get_array_oo(oo, x1, name_x1)
         x2, ids_x2 = mix.get_array_oo(oo, x2, name_x2)
@@ -273,13 +280,51 @@ def plot_vars_2d(oo):
         one_curve.set_ff(ff_curve)
 
     # plot curve
-    if flag_plot:
-        cpr.plot_curves_3d(curves)
-
     if not flag_plot:
         return curves
-    else:
+
+    if flag_plot:
+        fig, axs, css = cpr.plot_curves_3d(curves, fig, axs)
+        # return fig, axs, css
         return None
+
+    return None
+
+
+# def animation_2d(oo_anim, oo):
+#     def update_frame(num, fig, axs, css):
+#         signal_current = dict(signal_ref)
+#
+#         # +1 since the first time moment has been already considered
+#         signal_current['t-point'] = ts[num+1]
+#
+#         oo_current = dict(oo)
+#         oo_current['signal'] = signal_current
+#         fig, axs, css = plot_vars_2d(oo_current, fig, axs)
+#
+#         return css[0],
+#
+#     # array and initila signal description
+#     ts = oo_anim['t']
+#     signal_ref = oo['signal']
+#
+#     # create an initial figure:
+#     signal_current = dict(signal_ref)
+#     signal_current['t-point'] = ts[0]
+#
+#     oo_current = dict(oo)
+#     oo_current['signal'] = signal_current
+#     fig, axs, css = plot_vars_2d(oo_current)
+#
+#     anim = animation.FuncAnimation(
+#         fig, func=update_frame, fargs=(fig, axs, css),
+#         frames=len(ts)-1,
+#         interval=50, blit=False,
+#         repeat=False
+#     )
+#
+#     fig.show()
+#     HTML(anim.to_html5_video())
 
 
 def plot_vars_1d(oo):
@@ -401,6 +446,7 @@ def plot_several_curves(oo):
         return
     flag_subplots = oo.get('flag_subplots', False)
     flag_3d       = oo.get('flag_3d', False)
+    flag_mix      = oo.get('flag_mix', False)
 
     # combine all plots
     curves_result = crv.Curves()
@@ -416,6 +462,18 @@ def plot_several_curves(oo):
         # set styling:
         ff = dict(oo.get('ff', curves_ref.ff))
         curves_result.set_ff(ff)
+
+        # styling
+        for id_curve, one_curve in enumerate(curves_result.list_curves):
+            ff_curve = dict(GLO.DEF_CURVE_FORMAT)
+            for field_curve in ff_curve.keys():
+                temp = ff.get(field_curve + 's', [])
+                if len(temp) > id_curve:
+                    ff_curve[field_curve] = temp[id_curve]
+                else:
+                    if one_curve.ff[field_curve] != ff_curve[field_curve]:
+                        ff_curve[field_curve] = one_curve.ff[field_curve]
+            one_curve.set_ff(ff_curve)
 
         # plot curves
         if len(curves_result.list_curves) is not 0:
@@ -450,10 +508,14 @@ def plot_several_curves(oo):
                     )
                 else:
                     break
-        if not flag_3d:
-            cpr.plot_curves(curves_result)
+
+        if flag_mix:
+            cpr.plot_curves_mix(curves_result)
         else:
-            cpr.plot_curves_3d(curves_result)
+            if not flag_3d:
+                cpr.plot_curves(curves_result)
+            else:
+                cpr.plot_curves_3d(curves_result)
 
 
 def fft_in_time(oo):
@@ -767,7 +829,7 @@ def wg_in_time(oo):
     ff_x.update({
         'legends': [name_spectrogram],
         'title': dict_var['leg'],
-        'styles': ['o:'],
+        'styles': ff.get('styles', ['o:']),
         'xlabel': dict_var['labx'],
         'ylabel': line_w,
     })
@@ -1664,23 +1726,13 @@ def calc_wg(oo, oo_wg):
 
 
 def B_equil(dd, flag_mult=True):
+    # plot B(R,Z) if there is an equil file from CHEASE
+
     # for TCV: flag_mult must be false
     # for NLED AUG312313: flag_mult must be true
 
-    # --- read name of the equilibrium .h5 file ---
-    path_to_file = dd['path'] + '/orb5_res.h5'
-    f = h5.File(path_to_file, 'r')
-
-    equ_file = f['/parameters/equil/fname'].attrs
-    ids_attr = list(equ_file)
-    equ_file = [equ_file[name].decode("utf-8")
-                           for name in ids_attr[0:len(ids_attr)]]
-    equ_file = equ_file[0]
-
-    f.close()
-
     # --- read parameters from the equilibrium file ---
-    path_to_equ_file = dd['path'] + '/' + equ_file
+    path_to_equ_file = dd['path'] + '/' + dd['equil_file_name']
     ff = h5.File(path_to_equ_file, 'r')
 
     chi = np.array(ff['/data/grid/CHI'])
@@ -1737,6 +1789,172 @@ def B_equil(dd, flag_mult=True):
         'ff': ff,
     }
     plot_vars_2d(oo)
+
+
+def Bq_equil(dd, oo_format={}):
+    # plot q(R) and B(R,Z) figures of the same size
+    #   if there is an equil file from CHEASE
+
+    # for TCV: flag_mult must be false
+    # for NLED AUG312313: flag_mult must be true
+
+    # --- additional data ---
+    s_domain = oo_format.get('s_domain', [0.0, 1.0])
+    flag_mult = oo_format.get('flag_mult', True)
+    flag_subplots = oo_format.get('flag_subplots', False)
+    q_fluxes = oo_format.get('q_fluxes', None)
+
+    font_size = GLO.FONT_SIZE
+    font_size_q = font_size / 1.2
+    if flag_subplots:
+        font_size = GLO.FONT_SIZE / 1.4
+        font_size_q = font_size
+
+    figure_width = GLO.FIG_SIZE_W*1.2
+    text_shift_rel = 0.2
+
+    # --- coefficients of normalization
+    coef_R, coef_Z, coef_B = 1., 1., 1.
+    if flag_mult:
+        coef_R = dd['R0-axis']
+        # coef_Z = coef_R
+        coef_B = dd['B0']
+
+    # --- READ GRIDS ---
+    path_to_equ_file = dd['path'] + '/' + dd['equil_file_name']
+    ff = h5.File(path_to_equ_file, 'r')
+
+    chi_equil = np.array(ff['/data/grid/CHI'])
+    psi_equil = np.array(ff['/data/grid/PSI'])
+    B = np.array(ff['/data/var2d/B'])       * coef_B
+
+    ff.close()
+
+    if 'potsc_grids' not in dd:
+        rd.potsc_grids(dd)
+    R_calc = dd['potsc_grids']['r'] / dd['d_norm'] * coef_R
+    Z_calc = dd['potsc_grids']['z'] / dd['d_norm'] * coef_Z
+    s_calc   = dd['potsc_grids']['s']
+    chi_calc = dd['potsc_grids']['chi']
+
+    # --- Plot safety factor ---
+    q_signal = GLO.create_signal(GLO.def_safety_factor, dd)
+    oo_q = {'signals': [q_signal]}
+    data_q = choose_vars(oo_q)[0]
+    q = data_q['data']
+    s = data_q['x']
+
+    ids_s_work, s_work, _ = mix.get_ids(s_calc, s_domain)
+    R_work = R_calc[:, ids_s_work]
+    Z_work = Z_calc[:, ids_s_work]
+
+    r_meter = R_work[0, :]
+    q_work = np.interp(s_work, s, q)
+
+    q_signal_res = GLO.create_signals_dds(
+        GLO.def_arbitrary_1d,
+        dds=[dd],
+        flag_arbitrary=True,
+        xs=[r_meter],
+        # xs=[s_new],
+        datas=[q_work]
+    )
+    ff = dict(GLO.DEF_PLOT_FORMAT)
+    ff.update({
+        'xlabel': 'R\ (m)',
+        'ylabel': 'q',
+        'fontS': font_size_q,
+        'figure_width': GLO.FIG_SIZE_H,
+    })
+    oo_plot = {
+        'signals': q_signal_res,
+        'ff': ff,
+        'flag_plot': not flag_subplots,
+    }
+    curve_q = plot_vars_1d(oo_plot)
+
+    # --- MAGNETIC CONFIGURATION ---
+    s_equil = np.sqrt(psi_equil/psi_equil[-1])
+    f_B_interp = interpolate.interp2d(s_equil, chi_equil, B)
+    B_res = f_B_interp(s_work, chi_calc)
+
+    scale_R = np.max(R_work) - np.min(R_work)
+    scale_Z = np.max(Z_work) - np.min(Z_work)
+    print('Rmax - Rmin = {:0.3f}'.format(scale_R))
+    print('Zmax - Zmin = {:0.3f}'.format(scale_Z))
+
+    # create B signal
+    ch_signal = GLO.create_signals_dds(
+        GLO.def_arbitrary_2d, [dd],
+        flag_arbitrary=True,
+        xs=[R_work], ys=[Z_work], datas=[B_res.T]
+    )[0]
+
+    # add some geometry:
+    geoms = None
+    oo_text = [{
+        'line': '|B|\ (T)',
+        'x': np.min(R_work) + 0.05 * np.min(R_work),
+        'y': np.max(Z_work) - 0.05 * np.max(Z_work),
+        'color': 'black'
+    }]
+    if q_fluxes is not None:
+        geo_curve = geom.Curve()
+        geo_curve.style = ':'
+        geo_curve.color = 'black'
+        geoms = [geo_curve]
+        for id_flux, q_one in enumerate(q_fluxes):
+            ids_temp = np.argwhere(q_work >= q_one)
+            q_res = q_work[ids_temp[:, 0]]
+            id_min = np.argmin(np.abs(q_res))
+            id_q_work = ids_temp[id_min][0]
+
+            q_one = q_work[id_q_work]
+            x1_s1 = R_work[:, id_q_work]
+            x2_s1 = Z_work[:, id_q_work]
+
+            geo_curve.add_curve(x1_s1, x2_s1)
+
+            x1_test = x1_s1[int( 25 / 40. * len(x1_s1) )]
+            x2_test = x2_s1[int( 25 / 40. * len(x2_s1) )]
+            x2_test = x2_test - text_shift_rel * scale_Z * np.max(x2_s1) / np.max(Z_work)
+            oo_text.append(
+                {'line': 'q = {:0.2f}'.format(q_one),
+                 'x': x1_test, 'y': x2_test,
+                 'color': 'black'
+                 }
+            )
+
+    ff = dict(GLO.DEF_PLOT_FORMAT)
+    ff.update({
+        'xlabel': 'R(m)',
+        'ylabel': 'Z(m)',
+        'fontS': font_size,
+        'figure_width': GLO.FIG_SIZE_H,
+    })
+    oo = {
+        'signal': ch_signal,
+        'ff': ff,
+        'geoms': geoms,
+        'text': oo_text,
+        'flag_plot': not flag_subplots,
+    }
+    curve_B = plot_vars_2d(oo)
+
+    # plotting subplots
+    if flag_subplots:
+        ff = dict(GLO.DEF_PLOT_FORMAT)
+        ff.update({
+            'figure_width': figure_width,
+        })
+        oo = {
+            'ncols': 2, 'nrows': 1,
+            'list_curves': [curve_B, curve_q],
+            'flag_subplots': True,
+            'flag_mix': True,
+            'ff': ff,
+        }
+        plot_several_curves(oo)
 
 
 def calc_wg_s(oo, oo_wg, oo_s):
@@ -3482,7 +3700,7 @@ def check_init_antenna_radial_structure(dd_current, n_chosen_mode, name_file_ant
         'data/var3d/generic/phi_antenna/run.1/tq'
     )[0]  # time moment, where antenna at 3/4 of a mode period is written
 
-    # signal t0
+    # signals (field and antenna) at t0
     ch_signals = GLO.create_signals_dds(
         GLO.def_potsc_chi1_t,
         [dd_current, dd_current],
@@ -3502,8 +3720,11 @@ def check_init_antenna_radial_structure(dd_current, n_chosen_mode, name_file_ant
         'ylabel': '\Phi',
         'flag_semilogy': False,
         'styles': ['-', ':'],
-        'legends': ['t = 0', 't = 0.75 T_{mode}'],
+        'legends': ['\Phi', '\Phi_a'],
         'flag_legend': True,
+        'title': 't_0[\omega_{ci}^{-1}] = ' + '{:0.3e}'.format(t0_antenna),
+        'fontS': GLO.FONT_SIZE / 1.5,
+        'pad_title': GLO.DEF_TITLE_PAD / 3,
     })
 
     # create curves
@@ -3519,6 +3740,7 @@ def check_init_antenna_radial_structure(dd_current, n_chosen_mode, name_file_ant
     ch_signals[1]['avr_domain'] = 1
 
     ff['ylabel'] = None
+    ff['title'] = 't_q[\omega_{ci}^{-1}] = ' + '{:0.3e}'.format(tq_antenna)
 
     oo['signals'] = ch_signals
     oo['ff'] = ff
@@ -3534,7 +3756,7 @@ def check_init_antenna_radial_structure(dd_current, n_chosen_mode, name_file_ant
     plot_several_curves(oo)
 
 
-def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_antenna):
+def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_antenna, oo_init={}):
     t0_antenna = rd.read_array(
         dd_current['path'] + '/' + name_file_antenna,
         'data/var3d/generic/phi_antenna/run.1/t0'
@@ -3543,6 +3765,8 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         dd_current['path'] + '/' + name_file_antenna,
         'data/var3d/generic/phi_antenna/run.1/tq'
     )[0]  # time moment, where antenna at 3/4 of a mode period is written
+
+    oo = dict(oo_init)
 
     # reference signal
     ch_signal_ref = GLO.create_signals_dds(
@@ -3583,14 +3807,16 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         'fontS': GLO.FONT_SIZE/2,
         'pad_title': GLO.DEF_TITLE_PAD/3,
     })
-    oo = {'flag_plot': False}
+    oo.update({
+        'flag_plot': False
+    })
 
     # plasma curves
     ff = dict(ff_ref)
     ff.update({
         'xlabel': None,
         'ylabel': '\chi',
-        'title': 'field, t0',
+        'title': '\Phi(t_0)',
         'xticks_labels': [],
     })
     oo.update({
@@ -3603,7 +3829,7 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
     ff.update({
         'xlabel': 's',
         'ylabel': '\chi',
-        'title': 'field, t-quarter',
+        'title': '\Phi(t_q)',
     })
     oo.update({
         'signal': field_tq,
@@ -3618,7 +3844,7 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         'ylabel': None,
         'xticks_labels': [],
         'yticks_labels': [],
-        'title': 'antenna, t0'
+        'title': '\Phi_a(t_0)'
     })
     oo.update({
         'signal': antenna_t0,
@@ -3631,7 +3857,7 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         'xlabel': 's',
         'ylabel': None,
         'yticks_labels': [],
-        'title': 'antenna, t-quarter'
+        'title': '\Phi_a(t_q)'
     })
     oo.update({
         'signal': antenna_tq,
@@ -3668,7 +3894,8 @@ def check_antenna_potsc_t0(dd_field, dd_ant, n_chosen_mode, name_file_antenna_re
     field_signal = dict(ch_signal_ref)
     field_signal.update({
         'dd': dd_field,
-        'variable': 'potsc',
+        'type': 'fields3d',
+        'variable': 'n1',
         't-point': t_field if t_field is not None else t0_antenna,
     })
 
@@ -3774,7 +4001,7 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
     # --- create curves ---
     ff_ref = dict(GLO.DEF_PLOT_FORMAT)
     ff_ref.update({
-        'fontS': GLO.FONT_SIZE/4,
+        'fontS': GLO.FONT_SIZE/2,
         'pad_title': GLO.DEF_TITLE_PAD/6,
     })
     oo = dict(oo_format)
@@ -3786,7 +4013,7 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
     ff.update({
         'xticks_labels': [],
         'ylabel': '\chi',
-        'title': 'field: t={:0.2e}'.format(dd_current['t-point']),
+        'title': '\Phi(t={:0.2e})'.format(dd_current['t-point']),
     })
     oo.update({
         'signal': dd_current,
@@ -3799,7 +4026,7 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
     ff.update({
         'xticks_labels': [],
         'ylabel': '\chi',
-        'title': 'field: t={:0.2e}'.format(dd_current['t-point']),
+        'title': '\Phi(t={:0.2e})'.format(dd_current['t-point']),
     })
     oo.update({
         'signal': dd_current,
@@ -3812,7 +4039,7 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
     ff.update({
         'xlabel': 's',
         'ylabel': '\chi',
-        'title': 'field: t={:0.2e}'.format(dd_current['t-point']),
+        'title': '\Phi(t={:0.2e})'.format(dd_current['t-point']),
     })
     oo.update({
         'signal': dd_current,
@@ -3826,7 +4053,7 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
     ff.update({
         'xticks_labels': [],
         'yticks_labels': [],
-        'title': 'antenna: t={:0.2e}'.format(dd_current['t-point']),
+        'title': '\Phi_a(t={:0.2e})'.format(dd_current['t-point']),
     })
     oo.update({
         'signal': dd_current,
@@ -3839,7 +4066,7 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
     ff.update({
         'xticks_labels': [],
         'yticks_labels': [],
-        'title': 'antenna: t={:0.2e}'.format(dd_current['t-point']),
+        'title': '\Phi_a(t={:0.2e})'.format(dd_current['t-point']),
     })
     oo.update({
         'signal': dd_current,
@@ -3852,7 +4079,7 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
     ff.update({
         'xlabel': 's',
         'yticks_labels': [],
-        'title': 'antenna: t={:0.2e}'.format(dd_current['t-point']),
+        'title': '\Phi_a(t={:0.2e})'.format(dd_current['t-point']),
     })
     oo.update({
         'signal': dd_current,

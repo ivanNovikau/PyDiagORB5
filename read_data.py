@@ -379,6 +379,24 @@ def init(dd):
     dd['rhoL_speak'] = ymath.find_rhoL(dd['T_speak'], dd['B0'], dd['pf'].mass, dd['pf'].Z)
     dd['ele-nbar-m3'] = equil_profiles.ne_avr_m3(dd)
 
+    # magnetic equilibrium:
+    sel_equil = f['/parameters/basic/nsel_equil'].attrs
+    ids_attr = list(sel_equil)
+    equ_file = [sel_equil[name].decode("utf-8")
+                for name in ids_attr[0:len(ids_attr)]]
+    dd['nsel_equil'] = equ_file[0]
+
+    dd['equil_file_name'] = None
+    if dd['nsel_equil'].lower() == 'mhd':
+        equ_file = f['/parameters/equil/fname'].attrs
+        ids_attr = list(equ_file)
+        equ_file = [equ_file[name].decode("utf-8")
+                    for name in ids_attr[0:len(ids_attr)]]
+        dd['equil_file_name'] = equ_file[0]
+
+    # close the .h5 file
+    f.close()
+
 
 # init ->
 def species(dd, f):

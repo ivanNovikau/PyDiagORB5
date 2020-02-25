@@ -122,6 +122,8 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'pad_title': DEF_TITLE_PAD,
     'vmin': None,
     'vmax': None,
+    'flag_tight_layout': True,
+    'sci_limits': (-2, 2),
 }
 DEF_CURVE_FORMAT = {  # describe format of a curve
     'legend': None,
@@ -216,6 +218,12 @@ def_Teq_deuterium = {
     'plane': 'ts',
     'avr_operation': 'point-t',
     'avr_domain': 0,
+}
+def_T_evol_deuterium = {
+    'type': 'transport',
+    'variable': 'T',
+    'species': 'deuterium',
+    'plane': 'ts',
 }
 def_je = {
     'type':             'mpr',

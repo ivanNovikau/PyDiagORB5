@@ -19,15 +19,38 @@ def reload():
     mix.reload_module(GLO)
 
 
-def plot_curves(curves):
+def plot_curves_mix(curves):
+    fig, axs = mpl.subplots(
+        ncols=curves.ncols, nrows=curves.nrows,
+        figsize=(curves.ff['figure_width'],
+        curves.ff['figure_heigth'])
+    )
+    for id_col, list_curves in enumerate(curves.lists_sub_curves):
+        for id_row, sub_curves in enumerate(list_curves):
+            if len(list_curves) == 1:  # single row
+                ax_res = axs[id_col]
+            elif len(curves.lists_sub_curves) == 1:  # single column
+                ax_res = axs[id_row]
+            else:
+                ax_res = axs[id_col, id_row]
+
+            if sub_curves.list_curves[0].zs is None:
+                plot_curves(sub_curves, fig, ax_res)
+            else:
+                plot_curves_3d(sub_curves, fig, ax_res)
+
+
+def plot_curves(curves, fig=None, ax=None):
     if curves.is_empty() and not curves.flag_subplots:
         return
 
     # Build plots
-    fig, ax = mpl.subplots(ncols=curves.ncols, nrows=curves.nrows,
-                           figsize=(curves.ff['figure_width'],
-                                    curves.ff['figure_heigth'])
-                           )
+    if fig is None:
+        fig, ax = mpl.subplots(
+            ncols=curves.ncols, nrows=curves.nrows,
+            figsize=(curves.ff['figure_width'],
+            curves.ff['figure_heigth'])
+        )
 
     # set curves
     if curves.flag_subplots:
@@ -46,7 +69,7 @@ def plot_curves(curves):
         format_plot(fig, ax, curves)
 
 
-def plot_curves_3d(curves):
+def plot_curves_3d(curves, fig=None, axs=None):
     def set_colorbar(curves, ref=None, axs=None, cax=None):
         if curves.ff['flag_colorbar']:
             boundaries_map = None
@@ -87,10 +110,12 @@ def plot_curves_3d(curves):
     N_ROWS = curves.nrows
 
     # Build plots
-    fig, axs = mpl.subplots(ncols=N_COLUMNS, nrows=N_ROWS,
-                           figsize=(curves.ff['figure_width'],
-                                    curves.ff['figure_heigth'])
-                           )
+    if fig is None:
+        fig, axs = mpl.subplots(
+            ncols=N_COLUMNS, nrows=N_ROWS,
+            figsize=(curves.ff['figure_width'],
+            curves.ff['figure_heigth'])
+        )
 
     # set curves
     if curves.flag_subplots:
@@ -125,8 +150,13 @@ def plot_curves_3d(curves):
 
     # set a colorbar for every subplot
     if curves.sel_colorbar_subplots == 'none':
+        # for id_cs, cs_one in enumerate(css_res):
+        #     set_colorbar(curves_res[id_cs], ref=cs_one, axs=axs_res[id_cs])
+
         for id_cs, cs_one in enumerate(css_res):
-            set_colorbar(curves_res[id_cs], ref=cs_one, axs=axs_res[id_cs])
+            divider = make_axes_locatable(axs_res[id_cs])
+            cax = divider.append_axes("right", "5%", pad="3%")
+            set_colorbar(curves_res[id_cs], ref=cs_one, cax=cax)
 
     elif curves.sel_colorbar_subplots == 'all':
         divider = make_axes_locatable(mpl.gca())
@@ -154,6 +184,8 @@ def plot_curves_3d(curves):
     for id_ax, ax in enumerate(axs_res):
         set_curves(curves_res[id_ax], ax, 1)
         format_plot(fig, ax, curves_res[id_ax], flag_2d=True)
+
+    return fig, axs, css_res
 
 
 def plot_curves_3d_subplot(curves, ax, fig):
@@ -297,12 +329,14 @@ def format_plot(fig, ax, curves, flag_2d=False):
     # axes ticks:
     mpl.sca(ax)
 
+    sci_limits = curves.ff['sci_limits']
+
     if not np.isnan(curves.ff['xticks']):
         ax.set_xticks(curves.ff['xticks'])
     if not np.isnan(curves.ff['xticks_labels']):
         ax.set_xticklabels(curves.ff['xticks_labels'])
     else:
-        ax.ticklabel_format(axis='x', style=curves.ff['x_style'], scilimits=(-2, 2))
+        ax.ticklabel_format(axis='x', style=curves.ff['x_style'], scilimits=sci_limits)
         if curves.ff['flag_maxlocator']:
             ax.xaxis.set_major_locator(mpl.MaxNLocator(curves.ff['maxlocator']))
 
@@ -312,7 +346,7 @@ def format_plot(fig, ax, curves, flag_2d=False):
         ax.set_yticklabels(curves.ff['yticks_labels'])
     else:
         if not curves.ff['flag_semilogy']:
-            ax.ticklabel_format(axis='y', style=curves.ff['y_style'], scilimits=(-2, 2))
+            ax.ticklabel_format(axis='y', style=curves.ff['y_style'], scilimits=sci_limits)
 
     # fontsize of axes ticks
     ax.xaxis.set_tick_params(
@@ -382,7 +416,7 @@ def format_plot(fig, ax, curves, flag_2d=False):
     if not flag_2d:
         ax.grid(True)
 
-    if GLO.FLAG_LATEX:
+    if GLO.FLAG_LATEX and curves.ff['flag_tight_layout']:
         fig.tight_layout()
 
 
@@ -404,153 +438,153 @@ def register_offset(axis, func):
     axis._update_offset_text_position = types.MethodType(func, axis)
 
 
-def animation_1d(curves):
-    # WORKS, but in development
-
-    # PLOTTING along Y, ANIMATION along X, DATA is Z
-
-    # number of curves
-    ncurves = curves.n()
-    ngeoms = curves.n_geoms
-
-    # Build plots
-    fig, ax = mpl.subplots(figsize=(GLO.FIG_SIZE_W, GLO.FIG_SIZE_H))
-    axes = mpl.gca()
-
-    # set limits:
-    if curves.xlimits is not None:
-        ax.set_xlim(curves.xlimits[0], curves.xlimits[-1])
-    if curves.ylimits is not None:
-        ax.set_ylim(curves.ylimits[0], curves.ylimits[-1])
-
-    # set labels:
-    if curves.xlabel is not None:
-        mpl.xlabel(r'\boldmath $' + curves.xlabel + '$', fontsize=GLO.FONT_SIZE * 1.7)
-    if curves.ylabel is not None:
-        mpl.ylabel(r'\boldmath $' + curves.ylabel + '$', fontsize=GLO.FONT_SIZE * 1.7)
-
-    # axes ticks:
-    if curves.xticks_labels is np.nan:
-        mpl.xticks(curves.xticks) if curves.xticks is not np.nan else 0
-    else:
-        mpl.xticks(curves.xticks, curves.xticks_labels) if curves.xticks is not np.nan else 0
-
-    if curves.yticks_labels is np.nan:
-        mpl.yticks(curves.yticks) if curves.yticks is not np.nan else 0
-    else:
-        mpl.yticks(curves.yticks, curves.yticks_labels) if curves.yticks is not np.nan else 0
-
-    # fontsize of axes ticks
-    ax.xaxis.set_tick_params(labelsize=GLO.FONT_SIZE)
-    ax.yaxis.set_tick_params(labelsize=GLO.FONT_SIZE)
-    ax.xaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE)
-    ax.yaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE)
-
-    # format of axis labels
-    mpl.ticklabel_format(axis='x', style=curves.x_style, scilimits=(-2, 2))
-    if curves.flag_maxlocator:
-        ax.xaxis.set_major_locator(mpl.MaxNLocator(curves.maxlocator))
-
-    if curves.flag_semilogy is False:
-        mpl.ticklabel_format(axis='y', style=curves.y_style, scilimits=(-2, 2))
-
-    # set legend
-    if curves.flag_legend:
-        ax.legend(fontsize=GLO.FONT_SIZE * GLO.LEG_SCALE, loc=curves.legend_position,
-                  facecolor=curves.legend_fcol)
-
-    # set title
-    if curves.title is not None:
-        mpl.title(r'\boldmath $' + curves.title + '$', fontsize=GLO.FONT_SIZE * 1.5, pad='18', usetex=True)
-    if GLO.FLAG_LATEX:
-        mpl.rc('text', usetex=True)
-        mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
-        mpl.rcParams['text.latex.preamble'] = [r'\boldmath']
-
-    # set grid
-    mpl.grid(True)
-
-    # set empty curves
-    ref_lines = [None] * ncurves
-    for icrv in range(ncurves):
-        curve = curves.list(icrv)
-        if not curve.flag_errorbar:
-            if curves.flag_semilogy:
-                ref_lines[icrv], = ax.semilogy([], [], curve.style)
-            else:
-                ref_lines[icrv], = ax.plot([], [], curve.style)
-
-            if curve.style == ':':
-                ref_lines[icrv].set_dashes([0.5, 0.4])
-            mpl.setp(ref_lines[icrv], linewidth=curve.width,
-                     color=curve.color,
-                     markersize=curve.markersize,
-                     markerfacecolor=curve.markerfacecolor,
-                     markeredgewidth=curve.width / 2)
-        else:
-            ref_lines[icrv] = ax.errorbar([], [],
-                                    yerr=curve.ys_err, xerr=curve.xs_err, fmt=curve.style,
-                                    elinewidth=curve.width / 3, ecolor=curve.color)
-            mpl.setp(ref_lines[icrv][0], linewidth=curve.width,
-                     color=curve.color,
-                     markersize=curve.markersize,
-                     markerfacecolor=curve.markerfacecolor,
-                     markeredgewidth=curve.width / 2)
-
-        # set legend
-        if curve.legend == "_":
-            ref_lines[icrv].set_label("_")
-        else:
-            ref_lines[icrv].set_label(r'\boldmath $' + curve.legend + '$')
-
-    # # draw geometrical figures:
-    # for igeom in range(ngeoms):
-    #     one_geom = curves.list_geoms[igeom]
-    #     one_geom.draw(mpl, ax, axes, {})
-
-    # if FLAG_LATEX:
-    #     fig.tight_layout()
-
-    # initialization function: plot the background of each frame
-    def init():
-        for icrvL in range(ncurves):
-            ref_lines[icrvL].set_data([], [])
-        return ref_lines,  # !!!
-
-    # animation function. This is called sequentially
-    def animate(i, Y_res, Z_res):
-        for icrvL in range(ncurves):
-            if i < np.shape(z_res)[0]:
-                ref_lines[icrvL].set_data(Y_res[icrvL][:], Z_res[icrvL][i, :])
-        return ref_lines,  # !!!
-
-    nx_max = np.zeros(ncurves)
-    for icrv in range(ncurves):
-        nx_max[icrv] = np.size(curves.list(icrv).xs)
-    nx_max = int(np.max(nx_max))
-
-    Y_res, Z_res = [], []
-    for icrv in range(ncurves):
-        curve = curves.list(icrv)
-
-        z_res = curve.zs
-        if z_res is None:
-            continue
-
-        if curves.flag_norm:
-            z_res = ymath.find_norm(z_res, curve.data_norm_to)
-        if curves.flag_semilogy:
-            z_res = abs(z_res)
-        Z_res.append(z_res)
-        Y_res.append(curve.ys)
-
-    anim = animation.FuncAnimation(
-        fig,
-        animate, fargs=(Y_res, Z_res),
-        init_func=init,
-        frames=nx_max, interval=20, blit=True
-    )
-
-    HTML(anim.to_html5_video())
+# def animation_1d(curves):
+#     # WORKS, but in development
+#
+#     # PLOTTING along Y, ANIMATION along X, DATA is Z
+#
+#     # number of curves
+#     ncurves = curves.n()
+#     ngeoms = curves.n_geoms
+#
+#     # Build plots
+#     fig, ax = mpl.subplots(figsize=(GLO.FIG_SIZE_W, GLO.FIG_SIZE_H))
+#     axes = mpl.gca()
+#
+#     # set limits:
+#     if curves.xlimits is not None:
+#         ax.set_xlim(curves.xlimits[0], curves.xlimits[-1])
+#     if curves.ylimits is not None:
+#         ax.set_ylim(curves.ylimits[0], curves.ylimits[-1])
+#
+#     # set labels:
+#     if curves.xlabel is not None:
+#         mpl.xlabel(r'\boldmath $' + curves.xlabel + '$', fontsize=GLO.FONT_SIZE * 1.7)
+#     if curves.ylabel is not None:
+#         mpl.ylabel(r'\boldmath $' + curves.ylabel + '$', fontsize=GLO.FONT_SIZE * 1.7)
+#
+#     # axes ticks:
+#     if curves.xticks_labels is np.nan:
+#         mpl.xticks(curves.xticks) if curves.xticks is not np.nan else 0
+#     else:
+#         mpl.xticks(curves.xticks, curves.xticks_labels) if curves.xticks is not np.nan else 0
+#
+#     if curves.yticks_labels is np.nan:
+#         mpl.yticks(curves.yticks) if curves.yticks is not np.nan else 0
+#     else:
+#         mpl.yticks(curves.yticks, curves.yticks_labels) if curves.yticks is not np.nan else 0
+#
+#     # fontsize of axes ticks
+#     ax.xaxis.set_tick_params(labelsize=GLO.FONT_SIZE)
+#     ax.yaxis.set_tick_params(labelsize=GLO.FONT_SIZE)
+#     ax.xaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE)
+#     ax.yaxis.get_offset_text().set_fontsize(GLO.FONT_SIZE)
+#
+#     # format of axis labels
+#     mpl.ticklabel_format(axis='x', style=curves.x_style, scilimits=(-2, 2))
+#     if curves.flag_maxlocator:
+#         ax.xaxis.set_major_locator(mpl.MaxNLocator(curves.maxlocator))
+#
+#     if curves.flag_semilogy is False:
+#         mpl.ticklabel_format(axis='y', style=curves.y_style, scilimits=(-2, 2))
+#
+#     # set legend
+#     if curves.flag_legend:
+#         ax.legend(fontsize=GLO.FONT_SIZE * GLO.LEG_SCALE, loc=curves.legend_position,
+#                   facecolor=curves.legend_fcol)
+#
+#     # set title
+#     if curves.title is not None:
+#         mpl.title(r'\boldmath $' + curves.title + '$', fontsize=GLO.FONT_SIZE * 1.5, pad='18', usetex=True)
+#     if GLO.FLAG_LATEX:
+#         mpl.rc('text', usetex=True)
+#         mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
+#         mpl.rcParams['text.latex.preamble'] = [r'\boldmath']
+#
+#     # set grid
+#     mpl.grid(True)
+#
+#     # set empty curves
+#     ref_lines = [None] * ncurves
+#     for icrv in range(ncurves):
+#         curve = curves.list(icrv)
+#         if not curve.flag_errorbar:
+#             if curves.flag_semilogy:
+#                 ref_lines[icrv], = ax.semilogy([], [], curve.style)
+#             else:
+#                 ref_lines[icrv], = ax.plot([], [], curve.style)
+#
+#             if curve.style == ':':
+#                 ref_lines[icrv].set_dashes([0.5, 0.4])
+#             mpl.setp(ref_lines[icrv], linewidth=curve.width,
+#                      color=curve.color,
+#                      markersize=curve.markersize,
+#                      markerfacecolor=curve.markerfacecolor,
+#                      markeredgewidth=curve.width / 2)
+#         else:
+#             ref_lines[icrv] = ax.errorbar([], [],
+#                                     yerr=curve.ys_err, xerr=curve.xs_err, fmt=curve.style,
+#                                     elinewidth=curve.width / 3, ecolor=curve.color)
+#             mpl.setp(ref_lines[icrv][0], linewidth=curve.width,
+#                      color=curve.color,
+#                      markersize=curve.markersize,
+#                      markerfacecolor=curve.markerfacecolor,
+#                      markeredgewidth=curve.width / 2)
+#
+#         # set legend
+#         if curve.legend == "_":
+#             ref_lines[icrv].set_label("_")
+#         else:
+#             ref_lines[icrv].set_label(r'\boldmath $' + curve.legend + '$')
+#
+#     # # draw geometrical figures:
+#     # for igeom in range(ngeoms):
+#     #     one_geom = curves.list_geoms[igeom]
+#     #     one_geom.draw(mpl, ax, axes, {})
+#
+#     # if FLAG_LATEX:
+#     #     fig.tight_layout()
+#
+#     # initialization function: plot the background of each frame
+#     def init():
+#         for icrvL in range(ncurves):
+#             ref_lines[icrvL].set_data([], [])
+#         return ref_lines,  # !!!
+#
+#     # animation function. This is called sequentially
+#     def animate(i, Y_res, Z_res):
+#         for icrvL in range(ncurves):
+#             if i < np.shape(z_res)[0]:
+#                 ref_lines[icrvL].set_data(Y_res[icrvL][:], Z_res[icrvL][i, :])
+#         return ref_lines,  # !!!
+#
+#     nx_max = np.zeros(ncurves)
+#     for icrv in range(ncurves):
+#         nx_max[icrv] = np.size(curves.list(icrv).xs)
+#     nx_max = int(np.max(nx_max))
+#
+#     Y_res, Z_res = [], []
+#     for icrv in range(ncurves):
+#         curve = curves.list(icrv)
+#
+#         z_res = curve.zs
+#         if z_res is None:
+#             continue
+#
+#         if curves.flag_norm:
+#             z_res = ymath.find_norm(z_res, curve.data_norm_to)
+#         if curves.flag_semilogy:
+#             z_res = abs(z_res)
+#         Z_res.append(z_res)
+#         Y_res.append(curve.ys)
+#
+#     anim = animation.FuncAnimation(
+#         fig,
+#         animate, fargs=(Y_res, Z_res),
+#         init_func=init,
+#         frames=nx_max, interval=20, blit=True
+#     )
+#
+#     HTML(anim.to_html5_video())
 
 
