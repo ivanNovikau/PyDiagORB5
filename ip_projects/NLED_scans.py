@@ -2636,11 +2636,3 @@ def prepare_narrays(di):
 
 
 
-
-
-
-
-
-
-
-

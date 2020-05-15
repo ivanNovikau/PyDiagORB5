@@ -22,6 +22,10 @@ def normalization(sel_norm, dd=None):
         line_norm = '\ (ms)'
         if dd is not None:
             coef_norm = 1. / dd['wc'] * 1e3
+    if sel_norm == 't-csr':
+        line_norm = '\ [\omega_s^{-1}]'
+        if dd is not None:
+            coef_norm = (dd['cs']/dd['R0']) / dd['wc']
     if sel_norm == 'energy-transfer-W':
         line_norm = '\ [W]'
         if dd is not None:
@@ -80,7 +84,7 @@ def choose_wg_normalization(sel_norm, dd=None):
             coef_norm_w = coef_norm_g =\
                 dd['wc'] / (dd['cs'] / dd['a0'])
     if sel_norm == 'csr':
-        line_norm_w = line_norm_g = '\ [c_s/R_0]'
+        line_norm_w = line_norm_g = '\ [\omega_s]'  # which is cs/R0
         if dd is not None:
             coef_norm_w = coef_norm_g =\
                 dd['wc'] / (dd['cs'] / dd['R0'])
@@ -243,6 +247,19 @@ def get_ids(x, x_domain, format_x='{:0.3e}'):
         line_x = line_temp.format(x_res[0], x_res[-1])
 
     return ids, x_res, line_x
+
+
+def get_id_int_strict(x, x_point):
+    # x = [x1, x2, x3, ...], where must be x[i] < x[i+1]
+    # x_point = some value
+    # if x_point != x anywhere, return np.nan
+    id = np.where(x == x_point)[0]
+    if id.size != 0:
+        id = id[0]
+    else:
+        id = np.nan
+
+    return id
 
 
 def get_x_data_interval(x_domain, x, data):

@@ -103,6 +103,9 @@ def plot_curves_3d(curves, fig=None, axs=None):
             register_offset(cb.ax.yaxis, bottom_offset)
             cb.update_ticks()
 
+            if curves.ff['flag_graphic']:
+                cb.remove()
+
     if curves.is_empty() and not curves.flag_subplots:
         return
 
@@ -150,9 +153,6 @@ def plot_curves_3d(curves, fig=None, axs=None):
 
     # set a colorbar for every subplot
     if curves.sel_colorbar_subplots == 'none':
-        # for id_cs, cs_one in enumerate(css_res):
-        #     set_colorbar(curves_res[id_cs], ref=cs_one, axs=axs_res[id_cs])
-
         for id_cs, cs_one in enumerate(css_res):
             divider = make_axes_locatable(axs_res[id_cs])
             cax = divider.append_axes("right", "5%", pad="3%")
@@ -209,30 +209,12 @@ def plot_curves_3d_subplot(curves, ax, fig):
         divnorm = matplotlib.colors.DivergingNorm(vcenter=curve_one.ff['colormap_center'])
     cs = ax.contourf(
         XX, YY, ZZ.T,
-         levels=curve_one.ff['levels'],
+         levels=curve_one.ff['levels'],  # Nlevels or np.linspace(vmin, vmax, Nlevels)
          cmap=res_colormap,
          norm=divnorm,
-         vmin=curves.ff['vmin'],
+         vmin=curves.ff['vmin'],  # for proper change of vmax, change levels as well as np.linspace(vmin, vmax, Nlevels)
          vmax=curves.ff['vmax']
     )
-
-    # # color bar
-    # if curves.ff['flag_colorbar']:
-    #     cb = fig.colorbar(cs, shrink=0.8, extend='both', ax=ax)
-    #     cb.formatter.set_scientific(True)
-    #     cb.formatter.set_powerlimits((0, 0))
-    #     cb.ax.tick_params(labelsize=curves.ff['fontS'] * GLO.SCALE_TICKS)
-    #     cb.ax.yaxis.get_offset_text().set_fontsize(curves.ff['fontS'] * GLO.SCALE_ORDER)
-    #
-    #     register_offset(cb.ax.yaxis, bottom_offset)
-    #     cb.update_ticks()
-    #
-    # # set 1d curves
-    # set_curves(curves, ax, 1)
-    #
-    # # format the plot
-    # format_plot(fig, ax, curves, flag_2d=True)
-
     return cs
 
 
@@ -331,18 +313,18 @@ def format_plot(fig, ax, curves, flag_2d=False):
 
     sci_limits = curves.ff['sci_limits']
 
-    if not np.isnan(curves.ff['xticks']):
+    if not np.isnan(curves.ff['xticks']).any():
         ax.set_xticks(curves.ff['xticks'])
-    if not np.isnan(curves.ff['xticks_labels']):
+    if not np.isnan(curves.ff['xticks_labels']).any():
         ax.set_xticklabels(curves.ff['xticks_labels'])
     else:
         ax.ticklabel_format(axis='x', style=curves.ff['x_style'], scilimits=sci_limits)
         if curves.ff['flag_maxlocator']:
             ax.xaxis.set_major_locator(mpl.MaxNLocator(curves.ff['maxlocator']))
 
-    if not np.isnan(curves.ff['yticks']):
+    if not np.isnan(curves.ff['yticks']).any():
         ax.set_yticks(curves.ff['yticks'])
-    if not np.isnan(curves.ff['yticks_labels']):
+    if not np.isnan(curves.ff['yticks_labels']).any():
         ax.set_yticklabels(curves.ff['yticks_labels'])
     else:
         if not curves.ff['flag_semilogy']:
@@ -415,6 +397,15 @@ def format_plot(fig, ax, curves, flag_2d=False):
     # set grid
     if not flag_2d:
         ax.grid(True)
+
+    # keep only graphic:
+    if curves.ff['flag_graphic']:
+        frame1 = fig.gca()
+        frame1.axes.get_xaxis().set_visible(False)
+        frame1.axes.get_yaxis().set_visible(False)
+        # for xlabel_i in frame1.axes.get_xticklabels():
+        #     xlabel_i.set_visible(False)
+        #     xlabel_i.set_fontsize(0.0)
 
     if GLO.FLAG_LATEX and curves.ff['flag_tight_layout']:
         fig.tight_layout()

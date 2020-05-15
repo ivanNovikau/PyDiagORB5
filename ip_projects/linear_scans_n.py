@@ -14,52 +14,7 @@ def reload():
     mix.reload_module(crv)
 
 
-def aug_scan_n(oo={}):
-    ## --- ATTENTION ---
-    # Be carefull when you chose normalization, since
-    # you use only one project (one dictionary dd) to define normalization,
-    # different scans can have different normalization, e.g., for the case
-    # of different scans with different temperature profiles
-
-    dd = oo.get('dd_aug', None)
-    sel_norm = oo.get('sel_norm', 'wc')
-
-    ns, ws, gs = [], [], []
-    data_plot = {'n': [], 'w': [], 'g': [], 'leg': []}
-
-    # ws[i] and gs[i] should have the same size
-    def add_n(n, w, g):
-        ns.append(n)
-        ws.append(w)
-        gs.append(g)
-
-    # HERE, w, g are normalized to wci
-    add_n(10, [2.092e-04], [1.097e-04])
-    add_n(20, [3.530e-04], [3.057e-04])
-    add_n(30, [6.193e-04], [4.681e-04])
-    add_n(40, [9.129e-04], [5.417e-04])
-    add_n(50, [1.046e-04, 1.255e-03],
-              [5.386e-04, 5.386e-04])
-    add_n(60, [1.793e-04], [7.117e-04])
-    add_n(70, [2.718e-04], [8.464e-04])
-    add_n(80, [4.488e-04], [9.597e-04])
-    add_n(90, [6.910e-04], [1.026e-03])
-    add_n(100, [8.958e-05], [1.101e-03])
-    add_n(110, [2.090e-04], [1.250e-03])
-    add_n(120, [4.295e-04], [1.327e-03])
-    add_n(130, [6.352e-04], [1.369e-03])
-    add_n(140, [8.415e-04], [1.415e-03])
-    add_n(150, [1.047e-03], [1.442e-03])
-    add_n(160, [1.263e-03], [1.445e-03])
-    add_n(170, [1.274e-03], [1.470e-03])
-    add_n(180, [1.714e-03], [1.407e-03])
-    add_n(190, [1.858e-03], [1.374e-03])
-    add_n(200, [2.049e-03], [1.369e-03])
-
-    data_plot['leg'].append('initial')
-    plot_scan_n(ns, ws, gs, sel_norm, dd, data_plot)
-
-
+# do not delete, not all data have new saved
 def tcv_scan_n(oo={}):
     dd = oo.get('dd_tcv', None)
     sel_norm = oo.get('sel_norm', 'wc')
@@ -413,6 +368,503 @@ def tcv_egam(oo):
 
     # *** combined plot ***
     # plot_several_scans(data_plot, sel_norm)
+
+
+# REFACTORED:
+def aug20787_linear_scan_n_wg():
+    # ITG frequency and growth rate in wc units
+
+    # --- resulting linear GAM frequency spectrum ---
+    di_w = new_dict()
+    count_curve = 0
+    add_point(
+        di_w, count_curve,
+        [10, 0],
+        [2.092e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [20, 0],
+        [3.530e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [30, 0],
+        [6.193e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [40, 0],
+        [9.129e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [50, 0],
+        [1.046e-04, 0]
+    )
+    # add_point(
+    #     di_w, count_curve,
+    #     [50, 0],
+    #     [1.255e-03, 0]
+    # )
+    add_point(
+        di_w, count_curve,
+        [60, 0],
+        [1.793e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [70, 0],
+        [2.718e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [80, 0],
+        [4.488e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [90, 0],
+        [6.910e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [100, 0],
+        [8.958e-05, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [110, 0],
+        [2.090e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [120, 0],
+        [4.295e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [130, 0],
+        [6.352e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [140, 0],
+        [8.415e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [150, 0],
+        [1.047e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [160, 0],
+        [1.263e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [170, 0],
+        [1.274e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [180, 0],
+        [1.714e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [190, 0],
+        [1.858e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [200, 0],
+        [2.049e-03, 0]
+    )
+
+    prepare_narrays(di_w)
+
+    # --- resulting linear GAM damping rate spectrum ---
+    di_g = new_dict()
+    count_curve = 0
+    add_point(
+        di_g, count_curve,
+        [10, 0],
+        [1.097e-04, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [20, 0],
+        [3.057e-04, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [30, 0],
+        [4.681e-04, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [40, 0],
+        [5.417e-04, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [50, 0],
+        [5.386e-04, 0]
+    )
+    # add_point(
+    #     di_g, count_curve,
+    #     [50, 0],
+    #     [5.386e-04, 0]
+    # )  # the same growth rate
+    add_point(
+        di_g, count_curve,
+        [60, 0],
+        [7.117e-04, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [70, 0],
+        [8.464e-04, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [80, 0],
+        [9.597e-04, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [90, 0],
+        [1.026e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [100, 0],
+        [1.101e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [110, 0],
+        [1.250e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [120, 0],
+        [1.327e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [130, 0],
+        [1.369e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [140, 0],
+        [1.415e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [150, 0],
+        [1.442e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [160, 0],
+        [1.445e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [170, 0],
+        [1.470e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [180, 0],
+        [1.407e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [190, 0],
+        [1.374e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [200, 0],
+        [1.369e-03, 0]
+    )
+
+    prepare_narrays(di_g)
+
+    # give result
+    return di_w, di_g
+
+
+# REFACTORED:
+def tcv_linear_scan_n_wg():
+    # ITG frequency and growth rate in wc units
+
+    # --- resulting linear GAM frequency spectrum ---
+    di_w = new_dict()
+    count_curve = 0
+    # add_point(
+    #     di_w, count_curve,
+    #     [40, 0],
+    #     [2.997e-03, 0]
+    # )
+    # add_point(
+    #     di_w, count_curve,
+    #     [45, 0],
+    #     [1.256e-03, 0]
+    # )
+    # add_point(
+    #     di_w, count_curve,
+    #     [50, 0],
+    #     [1.525e-03, 0]
+    # )
+    add_point(
+        di_w, count_curve,
+        [50, 0],
+        [1.794e-04, 0]
+    )
+    # add_point(
+    #     di_w, count_curve,
+    #     [50, 0],
+    #     [1.705e-03, 0]
+    # )
+    add_point(
+        di_w, count_curve,
+        [55, 0],
+        [6.344e-05, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [58, 0],
+        [3.4e-05, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [60, 0],
+        [7.850e-05, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [62, 0],
+        [7.850e-05, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [65, 0],
+        [2.355e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [70, 0],
+        [4.039e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [75, 0],
+        [6.077e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [78, 0],
+        [7.397e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [80, 0],
+        [8.306e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [82, 0],
+        [8.947e-04, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [85, 0],
+        [1.013e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [90, 0],
+        [1.258e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [95, 0],
+        [1.621e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [98, 0],
+        [1.828e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [100, 0],
+        [1.957e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [102, 0],
+        [2.084e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [105, 0],
+        [2.244e-03, 0]
+    )
+    add_point(
+        di_w, count_curve,
+        [110, 0],
+        [2.398e-03, 0]
+    )
+
+    prepare_narrays(di_w)
+
+    # --- resulting linear GAM damping rate spectrum ---
+    di_g = new_dict()
+    count_curve = 0
+    # add_point(
+    #     di_g, count_curve,
+    #     [40, 0],
+    #     [1.091e-03, 0]
+    # )
+    # add_point(
+    #     di_g, count_curve,
+    #     [45, 0],
+    #     [1.099e-03, 0]
+    # )
+    add_point(
+        di_g, count_curve,
+        [50, 0],
+        [1.063e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [55, 0],
+        [1.275e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [58, 0],
+        [1.377e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [60, 0],
+        [1.459e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [62, 0],
+        [1.581e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [65, 0],
+        [1.666e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [70, 0],
+        [1.756e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [75, 0],
+        [1.826e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [78, 0],
+        [1.824e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [80, 0],
+        [1.823e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [82, 0],
+        [1.906e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [85, 0],
+        [1.906e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [90, 0],
+        [1.769e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [95, 0],
+        [1.544e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [98, 0],
+        [1.421e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [100, 0],
+        [1.267e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [102, 0],
+        [1.178e-03, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [105, 0],
+        [9.492e-04, 0]
+    )
+    add_point(
+        di_g, count_curve,
+        [110, 0],
+        [5.436e-04, 0]
+    )
+
+    prepare_narrays(di_g)
+
+    # give result
+    return di_w, di_g
+
+
+def new_dict():
+    data_save = {'xs': [], 'ys': [],
+                 'xs_err': [], 'ys_err': []}
+    return data_save
+
+
+def add_point(di, count_curve, x, y):
+    if count_curve >= len(di['xs']):
+        di['xs'].append([])
+        di['xs_err'].append([])
+        di['ys'].append([])
+        di['ys_err'].append([])
+
+    di['xs'][count_curve].append(x[0])
+    di['xs_err'][count_curve].append(x[1])
+    di['ys'][count_curve].append(y[0])
+    di['ys_err'][count_curve].append(y[1])
+
+
+def prepare_narrays(di):
+    for count_array in range(len(di['xs'])):
+        di['xs'][count_array]       = np.array(di['xs'][count_array])
+        di['xs_err'][count_array]   = np.array(di['xs_err'][count_array])
+        di['ys'][count_array]       = np.array(di['ys'][count_array])
+        di['ys_err'][count_array]   = np.array(di['ys_err'][count_array])
 
 
 

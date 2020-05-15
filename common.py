@@ -248,7 +248,10 @@ def plot_vars_2d(oo, fig=None, axs=None):
             data_part2 = mix.get_slice(data, ids_s, ids_chi_part2)
             data = np.concatenate((data_part1, data_part2), axis=1)
 
-        x1 = x1/dd['d_norm']
+        coef_R = dd['R0-axis']  # for AUG
+        # coef_R = 1  # for TCV
+
+        x1 = x1/dd['d_norm'] * coef_R
         x2 = x2/dd['d_norm']
     elif 'x' in vvar:
             if np.ndim(vvar['x']) > 1:
@@ -1766,6 +1769,7 @@ def B_equil(dd, flag_mult=True):
 
     print('Rmax - Rmin = {:0.3f}'.format(scale_R))
     print('Zmax - Zmin = {:0.3f}'.format(scale_Z))
+    print('dR/dZ = {:0.3f}'.format(scale_R/scale_Z))
 
     # signal:
     ch_signal = GLO.create_signals_dds(
@@ -1796,13 +1800,18 @@ def Bq_equil(dd, oo_format={}):
     #   if there is an equil file from CHEASE
 
     # for TCV: flag_mult must be false
-    # for NLED AUG312313: flag_mult must be true
+    # for NLED AUG3123: flag_mult must be true
 
     # --- additional data ---
     s_domain = oo_format.get('s_domain', [0.0, 1.0])
     flag_mult = oo_format.get('flag_mult', True)
     flag_subplots = oo_format.get('flag_subplots', False)
+    flag_q_s = oo_format.get('flag_q_s', False)  # True: plot q(s); False: plot q(R[m])
     q_fluxes = oo_format.get('q_fluxes', None)
+    flag_output = oo_format.get('flag_output', False)
+    flag_graphic = oo_format.get('flag_graphic', False)
+
+    qplot_s_ticks = oo_format.get('qplot_s_ticks', np.nan)
 
     font_size = GLO.FONT_SIZE
     font_size_q = font_size / 1.2
@@ -1817,7 +1826,7 @@ def Bq_equil(dd, oo_format={}):
     coef_R, coef_Z, coef_B = 1., 1., 1.
     if flag_mult:
         coef_R = dd['R0-axis']
-        # coef_Z = coef_R
+        coef_Z = dd['R0-axis']
         coef_B = dd['B0']
 
     # --- READ GRIDS ---
@@ -1826,7 +1835,7 @@ def Bq_equil(dd, oo_format={}):
 
     chi_equil = np.array(ff['/data/grid/CHI'])
     psi_equil = np.array(ff['/data/grid/PSI'])
-    B = np.array(ff['/data/var2d/B'])       * coef_B
+    B = np.array(ff['/data/var2d/B']) * coef_B
 
     ff.close()
 
@@ -1851,20 +1860,24 @@ def Bq_equil(dd, oo_format={}):
     r_meter = R_work[0, :]
     q_work = np.interp(s_work, s, q)
 
+    x_q, xlabel_q = r_meter, 'R\ [m]'
+    if flag_q_s:
+        x_q, xlabel_q = s_work, 's'
+
     q_signal_res = GLO.create_signals_dds(
         GLO.def_arbitrary_1d,
         dds=[dd],
         flag_arbitrary=True,
-        xs=[r_meter],
-        # xs=[s_new],
+        xs=[x_q],
         datas=[q_work]
     )
     ff = dict(GLO.DEF_PLOT_FORMAT)
     ff.update({
-        'xlabel': 'R\ (m)',
+        'xlabel': xlabel_q,
         'ylabel': 'q',
         'fontS': font_size_q,
         'figure_width': GLO.FIG_SIZE_H,
+        'xticks': qplot_s_ticks,
     })
     oo_plot = {
         'signals': q_signal_res,
@@ -1883,6 +1896,10 @@ def Bq_equil(dd, oo_format={}):
     print('Rmax - Rmin = {:0.3f}'.format(scale_R))
     print('Zmax - Zmin = {:0.3f}'.format(scale_Z))
 
+    elong = scale_Z / scale_R
+    print('dZ/dR = {:0.3f}'.format(elong))
+    print('aver. a = {:0.3f}'.format( (scale_R + scale_Z)*0.25 ))
+
     # create B signal
     ch_signal = GLO.create_signals_dds(
         GLO.def_arbitrary_2d, [dd],
@@ -1898,6 +1915,8 @@ def Bq_equil(dd, oo_format={}):
         'y': np.max(Z_work) - 0.05 * np.max(Z_work),
         'color': 'black'
     }]
+
+    q_res_fluxes = []
     if q_fluxes is not None:
         geo_curve = geom.Curve()
         geo_curve.style = ':'
@@ -1913,6 +1932,8 @@ def Bq_equil(dd, oo_format={}):
             x1_s1 = R_work[:, id_q_work]
             x2_s1 = Z_work[:, id_q_work]
 
+            q_res_fluxes.append([x1_s1, x2_s1])
+
             geo_curve.add_curve(x1_s1, x2_s1)
 
             x1_test = x1_s1[int( 25 / 40. * len(x1_s1) )]
@@ -1927,10 +1948,11 @@ def Bq_equil(dd, oo_format={}):
 
     ff = dict(GLO.DEF_PLOT_FORMAT)
     ff.update({
-        'xlabel': 'R(m)',
-        'ylabel': 'Z(m)',
+        'xlabel': 'R\ [m]',
+        'ylabel': 'Z\ [m]',
         'fontS': font_size,
         'figure_width': GLO.FIG_SIZE_H,
+        'flag_graphic': flag_graphic,
     })
     oo = {
         'signal': ch_signal,
@@ -1955,6 +1977,20 @@ def Bq_equil(dd, oo_format={}):
             'ff': ff,
         }
         plot_several_curves(oo)
+
+    if flag_output:
+        res = {
+            'q': q_work,
+            'sq': x_q,
+            'R': R_work,
+            'Z': Z_work,
+            'B': B_res,
+            'q-fluxes': q_res_fluxes,
+            'elong': elong,
+        }
+        return res
+    else:
+        return
 
 
 def calc_wg_s(oo, oo_wg, oo_s):
@@ -4096,6 +4132,19 @@ def check_antenna_potsc_rotation(dd_field, dd_ant, n_chosen_mode, name_file_ante
         'flag_3d': True,
     }
     plot_several_curves(oo)
+
+
+def get_q(dd):
+    data_q = choose_vars(
+        {'signals': GLO.create_signals_dds(GLO.def_safety_factor, [dd])}
+    )[0]
+    return data_q['data'], data_q['x']
+
+
+def get_q_s1(dd, s1):
+    q, s = get_q(dd)
+    q1 = np.interp(s1, s, q)
+    return q1
 
 
 def test_circle(dd):

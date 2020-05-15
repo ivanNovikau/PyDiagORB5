@@ -745,18 +745,23 @@ def signal_n1_m1_ts(d3, ff, n_mode_chosen, m_mode_chosen, sel_e='none', chi_poin
     signal_ts = np.zeros([np.size(t), np.size(s)], dtype=np.complex64)
     for id_s1, s1 in enumerate(s):
         current_m_modes = m_modes[id_n_res, id_s1, :]
-        id_m, m_current, _ = mix.get_ids(current_m_modes, m_mode_chosen)
+        id_m = mix.get_id_int_strict(current_m_modes, m_mode_chosen)
 
-        if sel_e == 'echi':
+        temp = 0 if np.isnan(id_m) else data_ft[:, id_n_res, id_s1, id_m]
+
+        if sel_e == 'echi':  # poloidal component of electric field: E_chi
+            if np.isnan(id_m):
+                signal_ts[:, id_s1] += 0
+                continue
+
             id_chi, chi_current, _ = mix.get_ids(chi, chi_point)
 
-            temp = data_ft[:, id_n_res, id_s1, id_m]
-            temp = temp[:, None] * np.exp(GLO.DEF_SIGN_M * 1j * m_current * chi[None, :])
+            temp = temp[:, None] * np.exp(GLO.DEF_SIGN_M * 1j * m_mode_chosen * chi[None, :])
             temp = - np.gradient(temp, chi, axis=1) / s1
 
             signal_ts[:, id_s1] += temp[:, id_chi]
         else:
-            signal_ts[:, id_s1] += data_ft[:, id_n_res, id_s1, id_m]
+            signal_ts[:, id_s1] += temp
     return np.real(signal_ts)
 
 

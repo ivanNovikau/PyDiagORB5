@@ -97,6 +97,12 @@ def choose_one_var_ts(one_signal):
         s = dd[species_name].nT_evol['s']
         t = dd[species_name].nT_evol['t']
         tit_var = species_name + ':\ T'
+    if opt_var == 'T-keV':
+        rd.nT_evol(dd, species_name)
+        data = dd[species_name].nT_evol['T_keV']
+        s = dd[species_name].nT_evol['s']
+        t = dd[species_name].nT_evol['t']
+        tit_var = species_name + ':\ T(keV)'
     if opt_var == 'n':
         rd.nT_evol(dd, species_name)
         data = dd[species_name].nT_evol['n']

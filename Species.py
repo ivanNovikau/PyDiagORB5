@@ -111,6 +111,9 @@ class Species:
         p = self.tau * 1./3 * self.mass_rel * (vperp2f + u2f - uf**2/n)
         T = p / n
 
+        T_J = T * dd['electrons'].T_speak(dd) * self.tau
+        T_keV = T_J / (1e3 * constants.elementary_charge)
+
         grad_T    = np.gradient(T, s, axis=1)
         grad_logT = np.gradient(np.log(T), s, axis=1)
         grad_n    = np.gradient(n, s, axis=1)
@@ -121,6 +124,7 @@ class Species:
             's': s, 't': t,
             'n': n, 'gradn': grad_n, 'grad_logn': grad_logn,
             'T': T, 'gradT': grad_T, 'grad_logT': grad_logT,
+            'T_keV': T_keV,
             'p': p
         }
 
@@ -183,9 +187,7 @@ class Species:
         if 'jdote_es' in self.mpr:
             return self.mpr[var_name]
 
-        # path_to_file = dd['path'] + '/orb5_MPR.h5'
-        path_to_file = dd['path'] + '/orb5_res.h5'
-
+        path_to_file = dd['path'] + '/' + dd['mpr_file_name']
         f = h5.File(path_to_file, 'r')
 
         # t    = np.array(f['/data/var2d/' + self.name + '/jdote_es/time'])

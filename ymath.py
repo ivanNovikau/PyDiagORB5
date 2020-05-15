@@ -879,13 +879,21 @@ def post_processing_2d(data, x, y, name_x, name_y, oo_operations):
         if sel_operation is None:
             data_temp, x_temp, y_temp = data_work, x_work, y_work
 
-        # * multiply by a value *
+        # * multiply the function by a value *
         elif sel_operation == 'mult':
             coef = oo_operation.get('coef', None)
             if coef is None:
                 mix.error_mes('Postprocessing: You need not-None \'coef\' field '
                               'for \'mult\' postprocessing')
             data_temp, x_temp, y_temp = coef * data_work, x_work, y_work
+
+        # * multiply the axis X by a value *
+        elif sel_operation == 'mult-axis-x':
+            coef = oo_operation.get('coef', None)
+            if coef is None:
+                mix.error_mes('Postprocessing: You need not-None \'coef\' field '
+                              'for \'mult-axis-x\' postprocessing')
+            data_temp, x_temp, y_temp = data_work, coef * x_work, y_work
 
         # * take an absolute signal *
         elif sel_operation == 'abs':
@@ -997,7 +1005,24 @@ def get_fft_2d(x, name_x, y, name_y, data, oo):
     return data_fft, coord_along, name_along, w, name_w
 
 
+def decrease_mesh_size(X, Y, Z, step_x, step_y):
+    print('Initial number of rows in X,Y,Z is: {:d}, {:d}, {:d}'.format(
+        len(X), len(Y), len(Z))
+    )
+    print('Initial number of columns in X,Y,Z is: {:d}, {:d}, {:d}'.format(
+        len(X[0]), len(Y[0]), len(Z[0]))
+    )
+    print('Initial size is {:d}'.format(np.size(Z)))
 
+    X_red = np.array(X[::step_x, ::step_y])
+    Y_red = np.array(Y[::step_x, ::step_y])
+    Z_red = np.array(Z[::step_x, ::step_y])
+
+    print('Result size is {:d}'.format(np.size(Z_red)))
+    print('Result number of rows in Z is {:d}'.format( len(Z_red)) )
+    print('Result number of columns in Z is {:d}'.format( len(Z_red[0])) )
+
+    return X_red, Y_red, Z_red
 
 
 

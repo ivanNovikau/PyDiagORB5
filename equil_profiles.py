@@ -46,6 +46,13 @@ def choose_one_var_ts(one_signal):
         vvar = dd[sp_name].nT_equil['T']
         s = dd[sp_name].nT_equil['s']
         t = np.array([0])
+    elif opt_var == 'kT':
+        sp_name = one_signal['species']
+        tit_var = sp_name + ':\ T'
+        vvar = dd[sp_name].nT_equil['T']
+        s = dd[sp_name].nT_equil['s']
+        vvar = - np.gradient(vvar, s)/vvar
+        t = np.array([0])
     elif opt_var == 'T-keV':
         sp_name = one_signal['species']
         tit_var = sp_name + ':\ T(keV)'

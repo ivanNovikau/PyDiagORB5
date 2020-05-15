@@ -6,6 +6,12 @@ def reload():
     return
 
 
+MPR_FILE_NAME = 'orb5_res.h5'
+
+dd_null = {
+    'project_name': 'NULL\ PROJECT',
+}
+
 # ---------------------------------------------------------------------------
 MIN_N_PEAKS = 3
 COEF_ERR = 1.96          # alpha-quantile of the standard normal distribution
@@ -32,17 +38,17 @@ DEF_FILTER_ROUGH = {
 DEF_FFT = {
     'flag_f2': False
 }
+DEF_FFT_2D = {
+    'flag_f2': False,
+    'name_coord_fft': 't',
+}
 DEF_OPERATION_FFT_1D = {
     'operation': 'fft-1d',
     'oo_fft': DEF_FFT,
 }
 DEF_OPERATION_FFT_2D = {
     'operation': 'fft-2d',
-    'oo_fft': DEF_FFT,
-}
-DEF_FFT_2D = {
-    'flag_f2': False,
-    'name_coord_fft': 't',
+    'oo_fft': DEF_FFT_2D,
 }
 
 # ---------------------------------------------------------------------------
@@ -124,6 +130,7 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'vmax': None,
     'flag_tight_layout': True,
     'sci_limits': (-2, 2),
+    'flag_graphic': False,
 }
 DEF_CURVE_FORMAT = {  # describe format of a curve
     'legend': None,
@@ -134,7 +141,8 @@ DEF_CURVE_FORMAT = {  # describe format of a curve
     'markerfacecolor': "None",
     'colormap': DEF_COLORMAP,  # hot, jet, pink, hot_r, jet_r etc.
     'colormap_center': None,
-    'levels': COLORMAP_LEVELS,  # for contour plot
+    # for contour plot, for proper change of vmax, change levels as well as np.linspace(vmin, vmax, Nlevels)
+    'levels': COLORMAP_LEVELS,
     'pr_alpha': 1,
     'flag_errorbar': False,
     'flag_hist': False,
@@ -219,9 +227,23 @@ def_Teq_deuterium = {
     'avr_operation': 'point-t',
     'avr_domain': 0,
 }
+def_n_deuterium = {
+    'type': 'equ-profile',
+    'variable': 'n',
+    'species': 'deuterium',
+    'plane': 'ts',
+    'avr_operation': 'point-t',
+    'avr_domain': 0,
+}
 def_T_evol_deuterium = {
     'type': 'transport',
     'variable': 'T',
+    'species': 'deuterium',
+    'plane': 'ts',
+}
+def_T_keV_evol_deuterium = {
+    'type': 'transport',
+    'variable': 'T-keV',
     'species': 'deuterium',
     'plane': 'ts',
 }
