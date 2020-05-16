@@ -287,7 +287,8 @@ def plot_vars_2d(oo, fig=None, axs=None):
         return curves
 
     if flag_plot:
-        fig, axs, css = cpr.plot_curves_3d(curves, fig, axs)
+        # fig, axs, css = cpr.plot_curves_3d(curves, fig, axs)
+        fig, axs, css = cpr.plot_data(curves, fig, axs)
         # return fig, axs, css
         return None
 
@@ -435,7 +436,8 @@ def plot_vars_1d(oo):
 
     # - plot the curves -
     if len(curves.list_curves) is not 0 and flag_plot:
-        cpr.plot_curves(curves)
+        # cpr.plot_curves(curves)
+        cpr.plot_data(curves)
 
     if not flag_plot:
         return curves

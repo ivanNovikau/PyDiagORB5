@@ -14,7 +14,7 @@ import tkinter
 from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.backend_bases import key_press_handler
+from matplotlib.backend_bases import key_press_handler, button_press_handler
 
 
 def reload():
@@ -44,6 +44,47 @@ def plot_curves_mix(curves):
                 plot_curves(sub_curves, fig, ax_res)
             else:
                 plot_curves_3d(sub_curves, fig, ax_res)
+
+
+def plot_data(curves, fig=None, ax=None):
+    flag_1d = False
+    if curves.list_curves[0].zs is None:
+        flag_1d = True
+
+    if flag_1d:
+        fig, ax, css = plot_curves(curves, fig, ax)
+    else:
+        fig, ax, css = plot_curves_3d(curves, fig, ax)
+
+    # tkinter:
+    if curves.ff['flag_tkinter']:
+        root = tkinter.Tk()
+        root.wm_title("Embedding in Tk")
+
+        canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+        canvas.draw()
+
+        toolbar = NavigationToolbar2Tk(canvas, root)
+        toolbar.update()
+
+        canvas.mpl_connect(
+            "key_press_event",
+            lambda event: on_key_press(event, canvas, toolbar)
+        )
+        canvas.mpl_connect(
+            "button_press_event",
+            lambda event: on_button_press(event, canvas, toolbar)
+        )
+
+        # button = tkinter.Button(master=root, text="Quit", command=root.quit)
+        button = tkinter.Button(master=root, text="Quit", command=root.destroy)
+
+        button.pack(side=tkinter.BOTTOM)
+        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+
+        tkinter.mainloop()
+
+    return fig, ax, css
 
 
 def plot_curves(curves, fig=None, ax=None):
@@ -84,6 +125,8 @@ def plot_curves(curves, fig=None, ax=None):
     else:
         set_curves(curves, ax)
         format_plot(fig, ax, curves)
+
+    return fig, ax, None
 
 
 def plot_curves_3d(curves, fig=None, axs=None):
@@ -130,12 +173,23 @@ def plot_curves_3d(curves, fig=None, axs=None):
     N_ROWS = curves.nrows
 
     # Build plots
-    if fig is None:
-        fig, axs = mpl.subplots(
-            ncols=N_COLUMNS, nrows=N_ROWS,
-            figsize=(curves.ff['figure_width'],
-            curves.ff['figure_heigth'])
+    if not curves.ff['flag_tkinter']:
+        if fig is None:
+            fig, axs = mpl.subplots(
+                ncols=N_COLUMNS,
+                nrows=N_ROWS,
+                figsize=(
+                    curves.ff['figure_width'],
+                    curves.ff['figure_heigth']
+                )
+            )
+    else:
+        fig = Figure(
+            figsize=(curves.ff['figure_width']/2,
+                curves.ff['figure_heigth']/2
+            ),
         )
+        axs = fig.add_subplot(111)
 
     # set curves
     if curves.flag_subplots:
@@ -425,29 +479,33 @@ def format_plot(fig, ax, curves, flag_2d=False):
     if GLO.FLAG_LATEX and curves.ff['flag_tight_layout']:
         fig.tight_layout()
 
-    # tkinter:
-    if curves.ff['flag_tkinter']:
-        root = tkinter.Tk()
-        root.wm_title("Embedding in Tk")
-
-        canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-        canvas.draw()
-
-        toolbar = NavigationToolbar2Tk(canvas, root)
-        toolbar.update()
-
-        canvas.mpl_connect(
-            "key_press_event",
-            lambda event: on_key_press(event, canvas, toolbar)
-        )
-
-        # button = tkinter.Button(master=root, text="Quit", command=root.quit)
-        button = tkinter.Button(master=root, text="Quit", command=root.destroy)
-
-        button.pack(side=tkinter.BOTTOM)
-        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-
-        tkinter.mainloop()
+    # # tkinter:
+    # if curves.ff['flag_tkinter']:
+    #     root = tkinter.Tk()
+    #     root.wm_title("Embedding in Tk")
+    #
+    #     canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+    #     canvas.draw()
+    #
+    #     toolbar = NavigationToolbar2Tk(canvas, root)
+    #     toolbar.update()
+    #
+    #     canvas.mpl_connect(
+    #         "key_press_event",
+    #         lambda event: on_key_press(event, canvas, toolbar)
+    #     )
+    #     canvas.mpl_connect(
+    #         "button_press_event",
+    #         lambda event: on_button_press(event, canvas, toolbar)
+    #     )
+    #
+    #     # button = tkinter.Button(master=root, text="Quit", command=root.quit)
+    #     button = tkinter.Button(master=root, text="Quit", command=root.destroy)
+    #
+    #     button.pack(side=tkinter.BOTTOM)
+    #     canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+    #
+    #     tkinter.mainloop()
 
 
 def bottom_offset(self, bboxes, bboxes2):
@@ -621,4 +679,9 @@ def register_offset(axis, func):
 def on_key_press(event, canvas, toolbar):
     print("you pressed {}".format(event.key))
     key_press_handler(event, canvas, toolbar)
+
+
+def on_button_press(event, canvas, toolbar):
+    print("you pressed {}".format(event.xdata))
+    button_press_handler(event, canvas, toolbar)
 
