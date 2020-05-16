@@ -131,6 +131,7 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'flag_tight_layout': True,
     'sci_limits': (-2, 2),
     'flag_graphic': False,
+    'flag_tkinter': False,
 }
 DEF_CURVE_FORMAT = {  # describe format of a curve
     'legend': None,

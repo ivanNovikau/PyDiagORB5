@@ -1,5 +1,6 @@
-*/__pycache__
+.idea
 .ipynb_checkpoints
+*/__pycache__
 __pycache__
 DRACO_*
 main_*.py

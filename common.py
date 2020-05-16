@@ -255,7 +255,7 @@ def plot_vars_2d(oo, fig=None, axs=None):
         x2 = x2/dd['d_norm']
     elif 'x' in vvar:
             if np.ndim(vvar['x']) > 1:
-                dummy = 0
+                pass
     else:
         x1, ids_x1 = mix.get_array_oo(oo, x1, name_x1)
         x2, ids_x2 = mix.get_array_oo(oo, x2, name_x2)
@@ -1810,6 +1810,8 @@ def Bq_equil(dd, oo_format={}):
     q_fluxes = oo_format.get('q_fluxes', None)
     flag_output = oo_format.get('flag_output', False)
     flag_graphic = oo_format.get('flag_graphic', False)
+    flag_plot_B = oo_format.get('flag_plot_B', True)
+    flag_plot_q = oo_format.get('flag_plot_q', True)
 
     qplot_s_ticks = oo_format.get('qplot_s_ticks', np.nan)
 

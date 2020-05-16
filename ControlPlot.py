@@ -10,6 +10,12 @@ from IPython.display import HTML
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.colors
 
+import tkinter
+from matplotlib.figure import Figure
+from matplotlib.backends.backend_tkagg import (
+    FigureCanvasTkAgg, NavigationToolbar2Tk)
+from matplotlib.backend_bases import key_press_handler
+
 
 def reload():
     # Important: put here all modules that you want to reload
@@ -45,12 +51,23 @@ def plot_curves(curves, fig=None, ax=None):
         return
 
     # Build plots
-    if fig is None:
-        fig, ax = mpl.subplots(
-            ncols=curves.ncols, nrows=curves.nrows,
-            figsize=(curves.ff['figure_width'],
-            curves.ff['figure_heigth'])
+    if not curves.ff['flag_tkinter']:
+        if fig is None:
+            fig, ax = mpl.subplots(
+                ncols=curves.ncols,
+                nrows=curves.nrows,
+                figsize=(
+                    curves.ff['figure_width'],
+                    curves.ff['figure_heigth']
+                )
+            )
+    else:
+        fig = Figure(
+            figsize=(curves.ff['figure_width']/2,
+                curves.ff['figure_heigth']/2
+            ),
         )
+        ax = fig.add_subplot(111)
 
     # set curves
     if curves.flag_subplots:
@@ -309,7 +326,8 @@ def format_plot(fig, ax, curves, flag_2d=False):
         )
 
     # axes ticks:
-    mpl.sca(ax)
+    if not curves.ff['flag_tkinter']:
+        mpl.sca(ax)
 
     sci_limits = curves.ff['sci_limits']
 
@@ -403,12 +421,33 @@ def format_plot(fig, ax, curves, flag_2d=False):
         frame1 = fig.gca()
         frame1.axes.get_xaxis().set_visible(False)
         frame1.axes.get_yaxis().set_visible(False)
-        # for xlabel_i in frame1.axes.get_xticklabels():
-        #     xlabel_i.set_visible(False)
-        #     xlabel_i.set_fontsize(0.0)
 
     if GLO.FLAG_LATEX and curves.ff['flag_tight_layout']:
         fig.tight_layout()
+
+    # tkinter:
+    if curves.ff['flag_tkinter']:
+        root = tkinter.Tk()
+        root.wm_title("Embedding in Tk")
+
+        canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
+        canvas.draw()
+
+        toolbar = NavigationToolbar2Tk(canvas, root)
+        toolbar.update()
+
+        canvas.mpl_connect(
+            "key_press_event",
+            lambda event: on_key_press(event, canvas, toolbar)
+        )
+
+        # button = tkinter.Button(master=root, text="Quit", command=root.quit)
+        button = tkinter.Button(master=root, text="Quit", command=root.destroy)
+
+        button.pack(side=tkinter.BOTTOM)
+        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
+
+        tkinter.mainloop()
 
 
 def bottom_offset(self, bboxes, bboxes2):
@@ -578,4 +617,8 @@ def register_offset(axis, func):
 #
 #     HTML(anim.to_html5_video())
 
+
+def on_key_press(event, canvas, toolbar):
+    print("you pressed {}".format(event.key))
+    key_press_handler(event, canvas, toolbar)
 
