@@ -1812,6 +1812,7 @@ def Bq_equil(dd, oo_format={}):
     flag_graphic = oo_format.get('flag_graphic', False)
     flag_plot_B = oo_format.get('flag_plot_B', True)
     flag_plot_q = oo_format.get('flag_plot_q', True)
+    flag_tkinter = oo_format.get('flag_tkinter', False)
 
     qplot_s_ticks = oo_format.get('qplot_s_ticks', np.nan)
 
@@ -1848,124 +1849,128 @@ def Bq_equil(dd, oo_format={}):
     s_calc   = dd['potsc_grids']['s']
     chi_calc = dd['potsc_grids']['chi']
 
-    # --- Plot safety factor ---
+    ids_s_work, s_work, _ = mix.get_ids(s_calc, s_domain)
+    R_work = R_calc[:, ids_s_work]
+    Z_work = Z_calc[:, ids_s_work]
+
     q_signal = GLO.create_signal(GLO.def_safety_factor, dd)
     oo_q = {'signals': [q_signal]}
     data_q = choose_vars(oo_q)[0]
     q = data_q['data']
     s = data_q['x']
 
-    ids_s_work, s_work, _ = mix.get_ids(s_calc, s_domain)
-    R_work = R_calc[:, ids_s_work]
-    Z_work = Z_calc[:, ids_s_work]
-
-    r_meter = R_work[0, :]
     q_work = np.interp(s_work, s, q)
 
-    x_q, xlabel_q = r_meter, 'R\ [m]'
-    if flag_q_s:
-        x_q, xlabel_q = s_work, 's'
+    # --- Plot safety factor ---
+    if flag_plot_q:
+        r_meter = R_work[0, :]
+        x_q, xlabel_q = r_meter, 'R\ [m]'
+        if flag_q_s:
+            x_q, xlabel_q = s_work, 's'
 
-    q_signal_res = GLO.create_signals_dds(
-        GLO.def_arbitrary_1d,
-        dds=[dd],
-        flag_arbitrary=True,
-        xs=[x_q],
-        datas=[q_work]
-    )
-    ff = dict(GLO.DEF_PLOT_FORMAT)
-    ff.update({
-        'xlabel': xlabel_q,
-        'ylabel': 'q',
-        'fontS': font_size_q,
-        'figure_width': GLO.FIG_SIZE_H,
-        'xticks': qplot_s_ticks,
-    })
-    oo_plot = {
-        'signals': q_signal_res,
-        'ff': ff,
-        'flag_plot': not flag_subplots,
-    }
-    curve_q = plot_vars_1d(oo_plot)
+        q_signal_res = GLO.create_signals_dds(
+            GLO.def_arbitrary_1d,
+            dds=[dd],
+            flag_arbitrary=True,
+            xs=[x_q],
+            datas=[q_work]
+        )
+        ff = dict(GLO.DEF_PLOT_FORMAT)
+        ff.update({
+            'xlabel': xlabel_q,
+            'ylabel': 'q',
+            'fontS': font_size_q,
+            'figure_width': GLO.FIG_SIZE_H,
+            'xticks': qplot_s_ticks,
+            'flag_tkinter': flag_tkinter,
+        })
+        oo_plot = {
+            'signals': q_signal_res,
+            'ff': ff,
+            'flag_plot': not flag_subplots,
+        }
+        curve_q = plot_vars_1d(oo_plot)
 
     # --- MAGNETIC CONFIGURATION ---
-    s_equil = np.sqrt(psi_equil/psi_equil[-1])
-    f_B_interp = interpolate.interp2d(s_equil, chi_equil, B)
-    B_res = f_B_interp(s_work, chi_calc)
+    if flag_plot_B:
+        s_equil = np.sqrt(psi_equil/psi_equil[-1])
+        f_B_interp = interpolate.interp2d(s_equil, chi_equil, B)
+        B_res = f_B_interp(s_work, chi_calc)
 
-    scale_R = np.max(R_work) - np.min(R_work)
-    scale_Z = np.max(Z_work) - np.min(Z_work)
-    print('Rmax - Rmin = {:0.3f}'.format(scale_R))
-    print('Zmax - Zmin = {:0.3f}'.format(scale_Z))
+        scale_R = np.max(R_work) - np.min(R_work)
+        scale_Z = np.max(Z_work) - np.min(Z_work)
+        print('Rmax - Rmin = {:0.3f}'.format(scale_R))
+        print('Zmax - Zmin = {:0.3f}'.format(scale_Z))
 
-    elong = scale_Z / scale_R
-    print('dZ/dR = {:0.3f}'.format(elong))
-    print('aver. a = {:0.3f}'.format( (scale_R + scale_Z)*0.25 ))
+        elong = scale_Z / scale_R
+        print('dZ/dR = {:0.3f}'.format(elong))
+        print('aver. a = {:0.3f}'.format( (scale_R + scale_Z)*0.25 ))
 
-    # create B signal
-    ch_signal = GLO.create_signals_dds(
-        GLO.def_arbitrary_2d, [dd],
-        flag_arbitrary=True,
-        xs=[R_work], ys=[Z_work], datas=[B_res.T]
-    )[0]
+        # create B signal
+        ch_signal = GLO.create_signals_dds(
+            GLO.def_arbitrary_2d, [dd],
+            flag_arbitrary=True,
+            xs=[R_work], ys=[Z_work], datas=[B_res.T]
+        )[0]
 
-    # add some geometry:
-    geoms = None
-    oo_text = [{
-        'line': '|B|\ (T)',
-        'x': np.min(R_work) + 0.05 * np.min(R_work),
-        'y': np.max(Z_work) - 0.05 * np.max(Z_work),
-        'color': 'black'
-    }]
+        # add some geometry:
+        geoms = None
+        oo_text = [{
+            'line': '|B|\ (T)',
+            'x': np.min(R_work) + 0.05 * np.min(R_work),
+            'y': np.max(Z_work) - 0.05 * np.max(Z_work),
+            'color': 'black'
+        }]
 
-    q_res_fluxes = []
-    if q_fluxes is not None:
-        geo_curve = geom.Curve()
-        geo_curve.style = ':'
-        geo_curve.color = 'black'
-        geoms = [geo_curve]
-        for id_flux, q_one in enumerate(q_fluxes):
-            ids_temp = np.argwhere(q_work >= q_one)
-            q_res = q_work[ids_temp[:, 0]]
-            id_min = np.argmin(np.abs(q_res))
-            id_q_work = ids_temp[id_min][0]
+        q_res_fluxes = []
+        if q_fluxes is not None:
+            geo_curve = geom.Curve()
+            geo_curve.style = ':'
+            geo_curve.color = 'black'
+            geoms = [geo_curve]
+            for id_flux, q_one in enumerate(q_fluxes):
+                ids_temp = np.argwhere(q_work >= q_one)
+                q_res = q_work[ids_temp[:, 0]]
+                id_min = np.argmin(np.abs(q_res))
+                id_q_work = ids_temp[id_min][0]
 
-            q_one = q_work[id_q_work]
-            x1_s1 = R_work[:, id_q_work]
-            x2_s1 = Z_work[:, id_q_work]
+                q_one = q_work[id_q_work]
+                x1_s1 = R_work[:, id_q_work]
+                x2_s1 = Z_work[:, id_q_work]
 
-            q_res_fluxes.append([x1_s1, x2_s1])
+                q_res_fluxes.append([x1_s1, x2_s1])
 
-            geo_curve.add_curve(x1_s1, x2_s1)
+                geo_curve.add_curve(x1_s1, x2_s1)
 
-            x1_test = x1_s1[int( 25 / 40. * len(x1_s1) )]
-            x2_test = x2_s1[int( 25 / 40. * len(x2_s1) )]
-            x2_test = x2_test - text_shift_rel * scale_Z * np.max(x2_s1) / np.max(Z_work)
-            oo_text.append(
-                {'line': 'q = {:0.2f}'.format(q_one),
-                 'x': x1_test, 'y': x2_test,
-                 'color': 'black'
-                 }
-            )
+                x1_test = x1_s1[int( 25 / 40. * len(x1_s1) )]
+                x2_test = x2_s1[int( 25 / 40. * len(x2_s1) )]
+                x2_test = x2_test - text_shift_rel * scale_Z * np.max(x2_s1) / np.max(Z_work)
+                oo_text.append(
+                    {'line': 'q = {:0.2f}'.format(q_one),
+                     'x': x1_test, 'y': x2_test,
+                     'color': 'black'
+                     }
+                )
 
-    ff = dict(GLO.DEF_PLOT_FORMAT)
-    ff.update({
-        'xlabel': 'R\ [m]',
-        'ylabel': 'Z\ [m]',
-        'fontS': font_size,
-        'figure_width': GLO.FIG_SIZE_H,
-        'flag_graphic': flag_graphic,
-    })
-    oo = {
-        'signal': ch_signal,
-        'ff': ff,
-        'geoms': geoms,
-        'text': oo_text,
-        'flag_plot': not flag_subplots,
-    }
-    curve_B = plot_vars_2d(oo)
+        ff = dict(GLO.DEF_PLOT_FORMAT)
+        ff.update({
+            'xlabel': 'R\ [m]',
+            'ylabel': 'Z\ [m]',
+            'fontS': font_size,
+            'figure_width': GLO.FIG_SIZE_H,
+            'flag_graphic': flag_graphic,
+            'flag_tkinter': flag_tkinter,
+        })
+        oo = {
+            'signal': ch_signal,
+            'ff': ff,
+            'geoms': geoms,
+            'text': oo_text,
+            'flag_plot': not flag_subplots,
+        }
+        curve_B = plot_vars_2d(oo)
 
-    # plotting subplots
+    # --- Plot subplots ---
     if flag_subplots:
         ff = dict(GLO.DEF_PLOT_FORMAT)
         ff.update({
@@ -1980,6 +1985,7 @@ def Bq_equil(dd, oo_format={}):
         }
         plot_several_curves(oo)
 
+    # --- Output data ---
     if flag_output:
         res = {
             'q': q_work,
