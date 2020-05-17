@@ -1814,7 +1814,7 @@ def Bq_equil(dd, oo_format={}):
     flag_graphic = oo_format.get('flag_graphic', False)
     flag_plot_B = oo_format.get('flag_plot_B', True)
     flag_plot_q = oo_format.get('flag_plot_q', True)
-    flag_tkinter = oo_format.get('flag_tkinter', False)
+    flag_ivis = oo_format.get('flag_ivis', False)
 
     qplot_s_ticks = oo_format.get('qplot_s_ticks', np.nan)
 
@@ -1884,7 +1884,7 @@ def Bq_equil(dd, oo_format={}):
             'fontS': font_size_q,
             'figure_width': GLO.FIG_SIZE_H,
             'xticks': qplot_s_ticks,
-            'flag_tkinter': flag_tkinter,
+            'flag_ivis': flag_ivis,
         })
         oo_plot = {
             'signals': q_signal_res,
@@ -1961,7 +1961,7 @@ def Bq_equil(dd, oo_format={}):
             'fontS': font_size,
             'figure_width': GLO.FIG_SIZE_H,
             'flag_graphic': flag_graphic,
-            'flag_tkinter': flag_tkinter,
+            'flag_ivis': flag_ivis,
         })
         oo = {
             'signal': ch_signal,

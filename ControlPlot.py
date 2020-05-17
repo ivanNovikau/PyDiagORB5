@@ -2,6 +2,7 @@ import Mix as mix
 import ymath
 import curve as crv
 import Global_variables as GLO
+import ivis.ivis as ivis
 import matplotlib.pyplot as mpl
 import numpy as np
 import types
@@ -9,20 +10,15 @@ from matplotlib import animation, ticker
 from IPython.display import HTML
 from mpl_toolkits.axes_grid1 import make_axes_locatable
 import matplotlib.colors
-
-import tkinter
 from matplotlib.figure import Figure
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2Tk)
-from matplotlib.backend_bases import key_press_handler, button_press_handler
 
 
 def reload():
-    # Important: put here all modules that you want to reload
     mix.reload_module(mix)
     mix.reload_module(crv)
     mix.reload_module(ymath)
     mix.reload_module(GLO)
+    mix.reload_module(ivis)
 
 
 def plot_curves_mix(curves):
@@ -56,33 +52,9 @@ def plot_data(curves, fig=None, ax=None):
     else:
         fig, ax, css = plot_curves_3d(curves, fig, ax)
 
-    # tkinter:
-    if curves.ff['flag_tkinter']:
-        root = tkinter.Tk()
-        root.wm_title("Embedding in Tk")
-
-        canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-        canvas.draw()
-
-        toolbar = NavigationToolbar2Tk(canvas, root)
-        toolbar.update()
-
-        canvas.mpl_connect(
-            "key_press_event",
-            lambda event: on_key_press(event, canvas, toolbar)
-        )
-        canvas.mpl_connect(
-            "button_press_event",
-            lambda event: on_button_press(event, canvas, toolbar)
-        )
-
-        # button = tkinter.Button(master=root, text="Quit", command=root.quit)
-        button = tkinter.Button(master=root, text="Quit", command=root.destroy)
-
-        button.pack(side=tkinter.BOTTOM)
-        canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-
-        tkinter.mainloop()
+    # --- ivis: interactive visualisation ---
+    if curves.ff['flag_ivis']:
+        oi = ivis.Ivis(fig=fig, curves=curves)
 
     return fig, ax, css
 
@@ -92,7 +64,7 @@ def plot_curves(curves, fig=None, ax=None):
         return
 
     # Build plots
-    if not curves.ff['flag_tkinter']:
+    if not curves.ff['flag_ivis']:
         if fig is None:
             fig, ax = mpl.subplots(
                 ncols=curves.ncols,
@@ -173,7 +145,7 @@ def plot_curves_3d(curves, fig=None, axs=None):
     N_ROWS = curves.nrows
 
     # Build plots
-    if not curves.ff['flag_tkinter']:
+    if not curves.ff['flag_ivis']:
         if fig is None:
             fig, axs = mpl.subplots(
                 ncols=N_COLUMNS,
@@ -380,7 +352,7 @@ def format_plot(fig, ax, curves, flag_2d=False):
         )
 
     # axes ticks:
-    if not curves.ff['flag_tkinter']:
+    if not curves.ff['flag_ivis']:
         mpl.sca(ax)
 
     sci_limits = curves.ff['sci_limits']
@@ -478,34 +450,6 @@ def format_plot(fig, ax, curves, flag_2d=False):
 
     if GLO.FLAG_LATEX and curves.ff['flag_tight_layout']:
         fig.tight_layout()
-
-    # # tkinter:
-    # if curves.ff['flag_tkinter']:
-    #     root = tkinter.Tk()
-    #     root.wm_title("Embedding in Tk")
-    #
-    #     canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-    #     canvas.draw()
-    #
-    #     toolbar = NavigationToolbar2Tk(canvas, root)
-    #     toolbar.update()
-    #
-    #     canvas.mpl_connect(
-    #         "key_press_event",
-    #         lambda event: on_key_press(event, canvas, toolbar)
-    #     )
-    #     canvas.mpl_connect(
-    #         "button_press_event",
-    #         lambda event: on_button_press(event, canvas, toolbar)
-    #     )
-    #
-    #     # button = tkinter.Button(master=root, text="Quit", command=root.quit)
-    #     button = tkinter.Button(master=root, text="Quit", command=root.destroy)
-    #
-    #     button.pack(side=tkinter.BOTTOM)
-    #     canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-    #
-    #     tkinter.mainloop()
 
 
 def bottom_offset(self, bboxes, bboxes2):
@@ -674,14 +618,3 @@ def register_offset(axis, func):
 #     )
 #
 #     HTML(anim.to_html5_video())
-
-
-def on_key_press(event, canvas, toolbar):
-    print("you pressed {}".format(event.key))
-    key_press_handler(event, canvas, toolbar)
-
-
-def on_button_press(event, canvas, toolbar):
-    print("you pressed {}".format(event.xdata))
-    button_press_handler(event, canvas, toolbar)
-
