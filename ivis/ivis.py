@@ -6,8 +6,9 @@ import Global_variables as GLO
 import os
 from matplotlib import rcParams
 import re
-
 import pandas as pd
+import subprocess
+import shlex
 
 import matplotlib.pyplot as mpl
 import numpy as np
@@ -32,37 +33,12 @@ class Ivis:
     canvas = None  # canvas with a plot
     curves = None
 
-    # def __init__(self, fig, curves, **kwargs):
-    #     # curves to plot:
-    #     self.curves = curves
-    #
-    #     # create the main window of the application (top widget)
-    #     root = tkinter.Tk()
-    #     root.wm_title("ivis")
-    #
-    #     # create plot
-    #     canvas = FigureCanvasTkAgg(fig, master=root)  # A tk.DrawingArea.
-    #     canvas.draw()
-    #
-    #     toolbar = NavigationToolbar2Tk(canvas, root)
-    #     toolbar.update()
-    #
-    #     canvas.mpl_connect(
-    #         "key_press_event",
-    #         lambda event: self.on_key_press(event, canvas, toolbar)
-    #     )
-    #     canvas.mpl_connect(
-    #         "button_press_event",
-    #         lambda event: self.on_button_press(event, canvas, toolbar)
-    #     )
-    #
-    #     # button = tkinter.Button(master=root, text="Quit", command=root.quit)
-    #     button = tkinter.Button(master=root, text="Quit", command=root.destroy)
-    #
-    #     button.pack(side=tkinter.BOTTOM)
-    #     canvas.get_tk_widget().pack(side=tkinter.TOP, fill=tkinter.BOTH, expand=1)
-    #
-    #     tkinter.mainloop()
+    fig = None  # figure
+
+    ext_data = '.dat'
+    ext_latex = '.tex'
+    ext_png = '.png'
+    ext_eps = '.eps'
 
     def __init__(self, fig, curves, **kwargs):
         # curves to plot:
@@ -76,6 +52,7 @@ class Ivis:
         figFrame = tk.Frame(master=self.root)
 
         # create plot
+        self.fig = fig
         self.canvas = FigureCanvasTkAgg(fig, master=figFrame)  # A tk.DrawingArea.
         self.canvas.draw()
 
@@ -164,15 +141,11 @@ class Ivis:
 
     def save_pgfplot_1d(self, fname):
         print('Save the 1d plot to files with a name: {}'.format(fname))
-        ext_data = '.dat'
-        ext_latex = '.tex'
-
-        ref_curve = self.curves.list_curves[0]
 
         # save data to a .dat file:
         file_data_name_curves = []
         for id_curve, one_curve in enumerate(self.curves.list_curves):
-            file_name = fname + "{:d}".format(id_curve) + ext_data
+            file_name = fname + "{:d}".format(id_curve) + self.ext_data
             file_data_name_curves.append(file_name)
             output_df = pd.DataFrame({
                 'X': one_curve.xs,
@@ -186,7 +159,7 @@ class Ivis:
         ff_template.close()
 
         # --- save a corresponding .tex file ---
-        file_name = fname + ext_latex
+        file_name = fname + self.ext_latex
         ff_tex = open(file_name, 'w')
 
         result_text = template_text
@@ -237,17 +210,80 @@ class Ivis:
             result_text, 6, line_ticks
         )
 
+        # save the resulting text into the .tex file
         ff_tex.write(result_text)
         ff_tex.close()
 
     def save_pgfplot_2d(self, fname):
         print('Save the 2d plot to files with a name: {}'.format(fname))
-        pass
+
+        # --- extract necessary data ---
+        ref_curve = self.curves.list_curves[0]
+        xmin, xmax = np.min(ref_curve.xs), np.max(ref_curve.xs)
+        ymin, ymax = np.min(ref_curve.ys), np.max(ref_curve.ys)
+        zmin, zmax = np.min(ref_curve.zs), np.max(ref_curve.zs)
+
+        # --- create external figure .eps (using Image Magic) ---
+        name_plot_png = fname + self.ext_png
+        self.fig.savefig(name_plot_png)
+
+        name_plot_eps = fname + self.ext_eps
+        command_line = 'convert -trim ' + name_plot_png + ' ' + name_plot_eps
+        os.system(command_line)
+
+        # --- read template to create a .tex file ---
+        ff_template = open("ivis/template_plot_2d.txt", 'r')
+        template_text = ff_template.read()
+        ff_template.close()
+
+        # --- save the corresponding .tex file ---
+        file_name = fname + self.ext_latex
+        ff_tex = open(file_name, 'w')
+
+        result_text = template_text
+
+        # set the plot file name to read
+        result_text = self.template_set(
+            result_text, 1, name_plot_eps
+        )
+
+        # set title
+        result_text = self.template_set(
+            result_text, 2, self.curves.ff['title']
+        )
+
+        # set XY labels
+        result_text = self.template_set(
+            result_text, 3, self.curves.ff['xlabel']
+        )
+        result_text = self.template_set(
+            result_text, 4, self.curves.ff['ylabel']
+        )
+
+        # set min and max values of axes:
+        result_text = self.template_set(result_text, 5, xmin)
+        result_text = self.template_set(result_text, 6, xmax)
+        result_text = self.template_set(result_text, 7, ymin)
+        result_text = self.template_set(result_text, 8, ymax)
+        result_text = self.template_set(result_text, 9, zmin)
+        result_text = self.template_set(result_text, 10, zmax)
+
+        # set the colormap:
+        resulting_colormap = ref_curve.ff['colormap'] \
+            if ref_curve.ff['colormap'] is not None \
+            else GLO.DEF_COLORMAP
+        result_text = self.template_set(
+            result_text, 11, resulting_colormap
+        )
+
+        # save the resulting text into the .tex file
+        ff_tex.write(result_text)
+        ff_tex.close()
 
     def template_set(self, template_text, id_to_change, value):
         # create identifiers
-        id_left = "IVIS{:d}".format(id_to_change)
-        id_right =  "{:d}IVIS".format(id_to_change)
+        id_left = "IVIS{:d}N".format(id_to_change)
+        id_right =  "N{:d}IVIS".format(id_to_change)
 
         # find a line between the identifiers
         line_to_change = re.search(

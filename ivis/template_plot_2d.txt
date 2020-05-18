@@ -1,0 +1,33 @@
+\begin{tikzpicture}
+\begin{axis}[
+    title = {IVIS2N{}N2IVIS},
+    xlabel= {IVIS3N{}N3IVIS},
+    ylabel= {IVIS4N{}N4IVIS},,
+    colormap/IVIS11N{}N11IVIS,
+    colorbar,
+    point meta min=IVIS9N{:0.3e}N9IVIS,
+    point meta max=IVIS10N{:0.3e}N10IVIS,
+    colorbar style={
+        ytick={},
+        y tick label style={
+            /pgf/number format/.cd,
+    %			fixed,
+    %			fixed zerofill,
+                precision=2,  % works only up to 2 numbers after the comma
+            /tikz/.cd
+        },
+    },
+    extra x ticks={},
+	extra y ticks={},
+	width=0.46\textwidth,
+    enlargelimits=false,
+    axis on top
+]
+\addplot graphics[
+	xmin=IVIS5N{:0.3e}N5IVIS,
+	xmax=IVIS6N{:0.3e}N6IVIS,
+	ymin=IVIS7N{:0.3e}N7IVIS,
+	ymax=IVIS8N{:0.3e}N8IVIS,
+]{IVIS1N{}N1IVIS};
+\end{axis}
+\end{tikzpicture}

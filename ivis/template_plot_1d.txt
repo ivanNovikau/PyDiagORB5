@@ -1,16 +1,16 @@
 \begin{tikzpicture}
 \begin{axis}[
-	title={IVIS1{}1IVIS},
-	xlabel={IVIS2{}2IVIS},
-	ylabel={IVIS3{}3IVIS},
+	title={IVIS1N{}N1IVIS},
+	xlabel={IVIS2N{}N2IVIS},
+	ylabel={IVIS3N{}N3IVIS},
 	legend pos=north west,
-	extra x ticks={IVIS5{}5IVIS},
-	extra y ticks={IVIS6{}6IVIS},
+	extra x ticks={IVIS5N{}N5IVIS},
+	extra y ticks={IVIS6N{}N6IVIS},
 	xmajorgrids=true,
 	ymajorgrids=true,
 	grid style=dashed,
-	width=0.333\textwidth,
+	width=0.46\textwidth,
 ]
-IVIS4{}4IVIS
+IVIS4N{}N4IVIS
 \end{axis}
 \end{tikzpicture}
