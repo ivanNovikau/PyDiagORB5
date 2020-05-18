@@ -16,6 +16,7 @@ import Geom as geom
 import fields3d
 import arbitrary_data as ARD
 import Global_variables as GLO
+import ivis.ivis as ivis
 import numpy as np
 import scipy.signal
 from scipy.stats import norm as stat_norm
@@ -48,6 +49,7 @@ def reload():
     mix.reload_module(fields3d)
     mix.reload_module(ARD)
     mix.reload_module(GLO)
+    mix.reload_module(ivis)
 
 
 def choose_vars(oo):
@@ -288,7 +290,7 @@ def plot_vars_2d(oo, fig=None, axs=None):
 
     if flag_plot:
         # fig, axs, css = cpr.plot_curves_3d(curves, fig, axs)
-        fig, axs, css = cpr.plot_data(curves, fig, axs)
+        fig, axs, css = ivis.plot_data(curves, fig, axs)
         # return fig, axs, css
         return None
 
@@ -437,7 +439,7 @@ def plot_vars_1d(oo):
     # - plot the curves -
     if len(curves.list_curves) is not 0 and flag_plot:
         # cpr.plot_curves(curves)
-        cpr.plot_data(curves)
+        ivis.plot_data(curves)
 
     if not flag_plot:
         return curves
@@ -1730,71 +1732,71 @@ def calc_wg(oo, oo_wg):
     return out_res
 
 
-def B_equil(dd, flag_mult=True):
-    # plot B(R,Z) if there is an equil file from CHEASE
-
-    # for TCV: flag_mult must be false
-    # for NLED AUG312313: flag_mult must be true
-
-    # --- read parameters from the equilibrium file ---
-    path_to_equ_file = dd['path'] + '/' + dd['equil_file_name']
-    ff = h5.File(path_to_equ_file, 'r')
-
-    chi = np.array(ff['/data/grid/CHI'])
-    psi = np.array(ff['/data/grid/PSI'])
-    B = np.array(ff['/data/var2d/B'])
-    R = np.array(ff['/data/var2d/R'])
-    Z = np.array(ff['/data/var2d/Z'])
-
-    ff.close()
-
-    # create grids and form the magnetic configuration
-    chi = np.append(chi, 2 * np.pi)
-
-    nChi = np.shape(B)[0]
-    nR = np.shape(B)[1]
-    B_new = np.zeros([np.size(chi), np.size(psi)])
-    Z_new = np.zeros([np.size(chi), np.size(psi)])
-    R_new = np.zeros([np.size(chi), np.size(psi)])
-    for i in range(nR):
-        B_new[:, i] = np.append(B[:, i], B[0, i])
-        Z_new[:, i] = np.append(Z[:, i], Z[0, i])
-        R_new[:, i] = np.append(R[:, i], R[0, i])
-
-    if flag_mult:
-        R_new *= dd['R0']
-        B_new *= dd['B0']
-
-    # check scales
-    scale_R = np.max(R_new) - np.min(R_new)
-    scale_Z = np.max(Z_new) - np.min(Z_new)
-
-    print('Rmax - Rmin = {:0.3f}'.format(scale_R))
-    print('Zmax - Zmin = {:0.3f}'.format(scale_Z))
-    print('dR/dZ = {:0.3f}'.format(scale_R/scale_Z))
-
-    # signal:
-    ch_signal = GLO.create_signals_dds(
-        GLO.def_arbitrary_2d, [dd],
-        flag_arbitrary=True,
-        xs=[R_new], ys=[Z_new], datas=[B_new.T]
-    )[0]
-
-    # styling:
-    ff = dict(GLO.DEF_PLOT_FORMAT)
-    ff.update({
-        'xlabel': 'R(m)',
-        'ylabel': 'Z(m)',
-        'title': '|B|(T)',
-        'figure_width': GLO.FIG_SIZE_H,
-    })
-
-    # plotting
-    oo = {
-        'signal': ch_signal,
-        'ff': ff,
-    }
-    plot_vars_2d(oo)
+# def B_equil(dd, flag_mult=True):
+#     # plot B(R,Z) if there is an equil file from CHEASE
+#
+#     # for TCV: flag_mult must be false
+#     # for NLED AUG312313: flag_mult must be true
+#
+#     # --- read parameters from the equilibrium file ---
+#     path_to_equ_file = dd['path'] + '/' + dd['equil_file_name']
+#     ff = h5.File(path_to_equ_file, 'r')
+#
+#     chi = np.array(ff['/data/grid/CHI'])
+#     psi = np.array(ff['/data/grid/PSI'])
+#     B = np.array(ff['/data/var2d/B'])
+#     R = np.array(ff['/data/var2d/R'])
+#     Z = np.array(ff['/data/var2d/Z'])
+#
+#     ff.close()
+#
+#     # create grids and form the magnetic configuration
+#     chi = np.append(chi, 2 * np.pi)
+#
+#     nChi = np.shape(B)[0]
+#     nR = np.shape(B)[1]
+#     B_new = np.zeros([np.size(chi), np.size(psi)])
+#     Z_new = np.zeros([np.size(chi), np.size(psi)])
+#     R_new = np.zeros([np.size(chi), np.size(psi)])
+#     for i in range(nR):
+#         B_new[:, i] = np.append(B[:, i], B[0, i])
+#         Z_new[:, i] = np.append(Z[:, i], Z[0, i])
+#         R_new[:, i] = np.append(R[:, i], R[0, i])
+#
+#     if flag_mult:
+#         R_new *= dd['R0']
+#         B_new *= dd['B0']
+#
+#     # check scales
+#     scale_R = np.max(R_new) - np.min(R_new)
+#     scale_Z = np.max(Z_new) - np.min(Z_new)
+#
+#     print('Rmax - Rmin = {:0.3f}'.format(scale_R))
+#     print('Zmax - Zmin = {:0.3f}'.format(scale_Z))
+#     print('dR/dZ = {:0.3f}'.format(scale_R/scale_Z))
+#
+#     # signal:
+#     ch_signal = GLO.create_signals_dds(
+#         GLO.def_arbitrary_2d, [dd],
+#         flag_arbitrary=True,
+#         xs=[R_new], ys=[Z_new], datas=[B_new.T]
+#     )[0]
+#
+#     # styling:
+#     ff = dict(GLO.DEF_PLOT_FORMAT)
+#     ff.update({
+#         'xlabel': 'R(m)',
+#         'ylabel': 'Z(m)',
+#         'title': '|B|(T)',
+#         'figure_width': GLO.FIG_SIZE_H,
+#     })
+#
+#     # plotting
+#     oo = {
+#         'signal': ch_signal,
+#         'ff': ff,
+#     }
+#     plot_vars_2d(oo)
 
 
 def Bq_equil(dd, oo_format={}):
@@ -1919,7 +1921,7 @@ def Bq_equil(dd, oo_format={}):
         geoms = None
         oo_text = [{
             'line': '|B|\ (T)',
-            'x': np.min(R_work) + 0.05 * np.min(R_work),
+            'x': np.min(R_work) + 0.15 * np.min(R_work),
             'y': np.max(Z_work) - 0.05 * np.max(Z_work),
             'color': 'black'
         }]
@@ -1954,12 +1956,14 @@ def Bq_equil(dd, oo_format={}):
                      }
                 )
 
+        # plot format
         ff = dict(GLO.DEF_PLOT_FORMAT)
         ff.update({
             'xlabel': 'R\ [m]',
             'ylabel': 'Z\ [m]',
             'fontS': font_size,
-            'figure_width': GLO.FIG_SIZE_H,
+            'figure_width': GLO.FIG_SIZE_W/elong,
+            'figure_height': GLO.FIG_SIZE_W,
             'flag_graphic': flag_graphic,
             'flag_ivis': flag_ivis,
         })

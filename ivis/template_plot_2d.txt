@@ -19,7 +19,8 @@
     },
     extra x ticks={},
 	extra y ticks={},
-	width=0.46\textwidth,
+	height=0.5\textwidth,
+	width=IVIS12N{:0.3f}N12IVIS\textwidth,
     enlargelimits=false,
     axis on top
 ]
@@ -29,5 +30,6 @@
 	ymin=IVIS7N{:0.3e}N7IVIS,
 	ymax=IVIS8N{:0.3e}N8IVIS,
 ]{IVIS1N{}N1IVIS};
+IVIS400N{}N400IVIS
 \end{axis}
 \end{tikzpicture}

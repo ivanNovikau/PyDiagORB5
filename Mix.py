@@ -456,6 +456,11 @@ def error_mes(message):
     sys.exit(-1)
 
 
+# translates an rgb tuple of int to a tkinter friendly color code
+def to_rgb(rgb):
+    return "#%02x%02x%02x" % rgb
+
+
 
 
 

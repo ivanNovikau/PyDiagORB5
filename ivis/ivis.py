@@ -2,20 +2,17 @@ import Mix as mix
 import ymath
 import curve as crv
 import Global_variables as GLO
+import ControlPlot as cpr
 
 import os
 from matplotlib import rcParams
 import re
 import pandas as pd
-import subprocess
-import shlex
 
-import matplotlib.pyplot as mpl
 import numpy as np
 import tkinter as tk
 import tkinter.filedialog
 import tkinter.messagebox
-from matplotlib.figure import Figure
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 from matplotlib.backend_bases import key_press_handler, button_press_handler
@@ -26,6 +23,40 @@ def reload():
     mix.reload_module(crv)
     mix.reload_module(ymath)
     mix.reload_module(GLO)
+    mix.reload_module(cpr)
+
+
+def plot_data(curves, fig=None, ax=None):
+    # --- modify font size if ivis is used ---
+    if curves.ff['flag_ivis']:
+        curves.ff['fontS'] /= GLO.COEF_FONT_SIZE_IVIS
+        curves.ff['flag_graphic'] = False
+
+    # --- create a figure and plot data ---
+    fig, ax, css = plot(
+        curves, fig, ax,
+        FIG_W=curves.ff['figure_width']/2,
+        FIG_H=curves.ff['figure_height']/2,
+    )
+
+    # --- ivis: interactive visualisation ---
+    if curves.ff['flag_ivis']:
+        oi = Ivis(fig=fig, curves=curves)
+
+    return fig, ax, css
+
+
+def plot(curves, fig=None, ax=None, FIG_W=None, FIG_H=None):
+    flag_1d = False
+    if curves.list_curves[0].zs is None:
+        flag_1d = True
+
+    if flag_1d:
+        fig, ax, css = cpr.plot_curves(curves, fig, ax, FIG_W, FIG_H)
+    else:
+        fig, ax, css = cpr.plot_curves_3d(curves, fig, ax, FIG_W, FIG_H)
+
+    return fig, ax, css
 
 
 class Ivis:
@@ -40,12 +71,24 @@ class Ivis:
     ext_png = '.png'
     ext_eps = '.eps'
 
+    WINDOW_SIZE_W = 1900
+    WINDOW_SIZE_H = 990
+    WINDOW_POSITION_FROM_RIGHT = 2
+    WINDOW_POSITION_FROM_DOWN = 2
+
     def __init__(self, fig, curves, **kwargs):
         # curves to plot:
         self.curves = curves
 
         # create the main window of the application (top widget)
         self.root = tk.Tk()
+        self.root.geometry("{:d}x{:d}+{:d}+{:d}".format(
+            int(self.WINDOW_SIZE_W), int(self.WINDOW_SIZE_H),
+            int(self.WINDOW_POSITION_FROM_RIGHT), int(self.WINDOW_POSITION_FROM_DOWN)
+        ))
+        self.root.configure(
+            bg=mix.to_rgb((186, 180, 180))
+        )
         self.root.wm_title("ivis")
 
         # Frame with a plot and basic toolbar
@@ -53,6 +96,9 @@ class Ivis:
 
         # create plot
         self.fig = fig
+        fig.patch.set_facecolor(
+            mix.to_rgb((155, 153, 153))
+        )
         self.canvas = FigureCanvasTkAgg(fig, master=figFrame)  # A tk.DrawingArea.
         self.canvas.draw()
 
@@ -86,7 +132,7 @@ class Ivis:
         figFrame.grid(row=0, column=1, rowspan=2, sticky=tk.N+tk.S+tk.E+tk.W)
         self.root.rowconfigure(0, weight=1)
         self.root.columnconfigure(0, weight=1)
-        self.root.columnconfigure(1, weight=1)
+        self.root.columnconfigure(1, weight=2)
 
         tk.mainloop()
 
@@ -165,9 +211,10 @@ class Ivis:
         result_text = template_text
 
         # set title
-        result_text = self.template_set(
-            result_text, 1, self.curves.ff['title']
-        )
+        resulting_title = '' \
+            if self.curves.ff['title'] is None \
+            else self.curves.ff['title']
+        result_text = self.template_set(result_text, 1, resulting_title)
 
         # set XY labels
         result_text = self.template_set(
@@ -210,6 +257,13 @@ class Ivis:
             result_text, 6, line_ticks
         )
 
+        # set width of the figure:
+        resulting_w = GLO.PGFPLOT_WIDTH
+        if self.curves.ff['figure_width'] != GLO.FIG_SIZE_W:
+            resulting_w = GLO.PGFPLOT_WIDTH * \
+                 self.curves.ff['figure_width'] / self.curves.ff['figure_height']
+        result_text = self.template_set(result_text, 7, resulting_w)
+
         # save the resulting text into the .tex file
         ff_tex.write(result_text)
         ff_tex.close()
@@ -223,9 +277,16 @@ class Ivis:
         ymin, ymax = np.min(ref_curve.ys), np.max(ref_curve.ys)
         zmin, zmax = np.min(ref_curve.zs), np.max(ref_curve.zs)
 
+        # --- rebuild the figure without axes and enlarged ---
+        self.curves.ff['flag_graphic'] = True
+        self.curves.ff['flag_add_text_plot'] = False
+        fig_new, _, _ = plot(self.curves)
+        self.curves.ff['flag_graphic'] = False
+        self.curves.ff['flag_add_text_plot'] = True
+
         # --- create external figure .eps (using Image Magic) ---
         name_plot_png = fname + self.ext_png
-        self.fig.savefig(name_plot_png)
+        fig_new.savefig(name_plot_png)
 
         name_plot_eps = fname + self.ext_eps
         command_line = 'convert -trim ' + name_plot_png + ' ' + name_plot_eps
@@ -248,9 +309,10 @@ class Ivis:
         )
 
         # set title
-        result_text = self.template_set(
-            result_text, 2, self.curves.ff['title']
-        )
+        resulting_title = '' \
+            if self.curves.ff['title'] is None \
+            else self.curves.ff['title']
+        result_text = self.template_set(result_text, 2, resulting_title)
 
         # set XY labels
         result_text = self.template_set(
@@ -275,6 +337,28 @@ class Ivis:
         result_text = self.template_set(
             result_text, 11, resulting_colormap
         )
+
+        # set width of the figure:
+        resulting_w = GLO.PGFPLOT_WIDTH
+        if self.curves.ff['figure_width'] != GLO.FIG_SIZE_W:
+            resulting_w = GLO.PGFPLOT_WIDTH * \
+                          self.curves.ff['figure_width'] / self.curves.ff['figure_height']
+        result_text = self.template_set(result_text, 12, resulting_w)
+
+        # add text:
+        resulting_command = 'node[]{}'
+
+        ntexts = len(self.curves.list_text)
+        if ntexts != 0:
+            resulting_command = ''
+
+        for itext in range(ntexts):
+            loc_text = self.curves.list_text[itext]
+            resulting_command += '\\node[{}] at (axis cs: {:0.3e}, {:0.3e})'\
+                .format(loc_text.color, loc_text.x, loc_text.y)
+            resulting_command += ' {' + '{}'.format(loc_text.line) + '};\n'
+        resulting_command = resulting_command[:-1]
+        result_text = self.template_set(result_text, 400, resulting_command)
 
         # save the resulting text into the .tex file
         ff_tex.write(result_text)

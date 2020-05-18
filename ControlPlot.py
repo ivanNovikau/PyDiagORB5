@@ -2,7 +2,6 @@ import Mix as mix
 import ymath
 import curve as crv
 import Global_variables as GLO
-import ivis.ivis as ivis
 import matplotlib.pyplot as mpl
 import numpy as np
 import types
@@ -18,14 +17,13 @@ def reload():
     mix.reload_module(crv)
     mix.reload_module(ymath)
     mix.reload_module(GLO)
-    mix.reload_module(ivis)
 
 
 def plot_curves_mix(curves):
     fig, axs = mpl.subplots(
         ncols=curves.ncols, nrows=curves.nrows,
         figsize=(curves.ff['figure_width'],
-        curves.ff['figure_heigth'])
+        curves.ff['figure_height'])
     )
     for id_col, list_curves in enumerate(curves.lists_sub_curves):
         for id_row, sub_curves in enumerate(list_curves):
@@ -42,26 +40,14 @@ def plot_curves_mix(curves):
                 plot_curves_3d(sub_curves, fig, ax_res)
 
 
-def plot_data(curves, fig=None, ax=None):
-    flag_1d = False
-    if curves.list_curves[0].zs is None:
-        flag_1d = True
-
-    if flag_1d:
-        fig, ax, css = plot_curves(curves, fig, ax)
-    else:
-        fig, ax, css = plot_curves_3d(curves, fig, ax)
-
-    # --- ivis: interactive visualisation ---
-    if curves.ff['flag_ivis']:
-        oi = ivis.Ivis(fig=fig, curves=curves)
-
-    return fig, ax, css
-
-
-def plot_curves(curves, fig=None, ax=None):
+def plot_curves(curves, fig=None, ax=None, FIG_W=None, FIG_H=None):
     if curves.is_empty() and not curves.flag_subplots:
         return
+
+    figure_width = curves.ff['figure_width'] \
+        if FIG_W is None else FIG_W
+    figure_height = curves.ff['figure_height'] \
+        if FIG_H is None else FIG_H
 
     # Build plots
     if not curves.ff['flag_ivis']:
@@ -69,16 +55,11 @@ def plot_curves(curves, fig=None, ax=None):
             fig, ax = mpl.subplots(
                 ncols=curves.ncols,
                 nrows=curves.nrows,
-                figsize=(
-                    curves.ff['figure_width'],
-                    curves.ff['figure_heigth']
-                )
+                figsize=(figure_width, figure_height),
             )
     else:
         fig = Figure(
-            figsize=(curves.ff['figure_width']/2,
-                curves.ff['figure_heigth']/2
-            ),
+            figsize=(figure_width, figure_height),
         )
         ax = fig.add_subplot(111)
 
@@ -101,7 +82,7 @@ def plot_curves(curves, fig=None, ax=None):
     return fig, ax, None
 
 
-def plot_curves_3d(curves, fig=None, axs=None):
+def plot_curves_3d(curves, fig=None, axs=None, FIG_W=None, FIG_H=None):
     def set_colorbar(curves, ref=None, axs=None, cax=None):
         if curves.ff['flag_colorbar']:
             boundaries_map = None
@@ -144,22 +125,22 @@ def plot_curves_3d(curves, fig=None, axs=None):
     N_COLUMNS = curves.ncols
     N_ROWS = curves.nrows
 
+    figure_width = curves.ff['figure_width'] \
+        if FIG_W is None else FIG_W
+    figure_height = curves.ff['figure_height'] \
+        if FIG_H is None else FIG_H
+
     # Build plots
     if not curves.ff['flag_ivis']:
         if fig is None:
             fig, axs = mpl.subplots(
                 ncols=N_COLUMNS,
                 nrows=N_ROWS,
-                figsize=(
-                    curves.ff['figure_width'],
-                    curves.ff['figure_heigth']
-                )
+                figsize=(figure_width, figure_height),
             )
     else:
         fig = Figure(
-            figsize=(curves.ff['figure_width']/2,
-                curves.ff['figure_heigth']/2
-            ),
+            figsize=(figure_width, figure_height),
         )
         axs = fig.add_subplot(111)
 
@@ -351,9 +332,9 @@ def format_plot(fig, ax, curves, flag_2d=False):
             fontsize=curves.ff['fontS'] * GLO.SCALE_LABELS
         )
 
-    # axes ticks:
-    if not curves.ff['flag_ivis']:
-        mpl.sca(ax)
+    # # axes ticks:
+    # if not curves.ff['flag_ivis']:
+    #     mpl.sca(ax)
 
     sci_limits = curves.ff['sci_limits']
 
@@ -404,10 +385,14 @@ def format_plot(fig, ax, curves, flag_2d=False):
         flag_legend_res = False
 
     if ncurves > 1 and flag_legend_res:
-        ax.legend(fontsize=GLO.FONT_SIZE * GLO.LEG_SCALE,
-                  loc=curves.ff['legend_position'],
-                  facecolor=curves.ff['legend_fcol'],
-                  labelspacing=0.1, handlelength=1, handletextpad=0.4)
+        ax.legend(
+            fontsize=curves.ff['fontS'] * GLO.LEG_SCALE,
+            loc=curves.ff['legend_position'],
+            facecolor=curves.ff['legend_fcol'],
+            labelspacing=0.1,
+            handlelength=1,
+            handletextpad=0.4
+        )
 
     # set title
     res_title = mix.create_line_from_list(curves.ff['title'])
@@ -428,15 +413,17 @@ def format_plot(fig, ax, curves, flag_2d=False):
             one_geom.draw(mpl, ax, {})
 
     # add text:
-    for itext in range(ntexts):
-        loc_text = curves.list_text[itext]
-        ax.text(
-            loc_text.x,
-            loc_text.y,
-            loc_text.line,
-            fontsize=GLO.FONT_SIZE * loc_text.coef_width,
-            color=loc_text.color
-        )
+    if curves.ff['flag_add_text_plot']:
+        for itext in range(ntexts):
+            loc_text = curves.list_text[itext]
+            ax.text(
+                loc_text.x,
+                loc_text.y,
+                loc_text.line,
+                fontsize=GLO.FONT_SIZE * loc_text.coef_width,
+                color=loc_text.color,
+                ha="center",
+            )
 
     # set grid
     if not flag_2d:

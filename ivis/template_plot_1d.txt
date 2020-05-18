@@ -9,7 +9,8 @@
 	xmajorgrids=true,
 	ymajorgrids=true,
 	grid style=dashed,
-	width=0.46\textwidth,
+	height=0.5\textwidth,
+	width=IVIS7N{:0.3f}N7IVIS\textwidth,
 ]
 IVIS4N{}N4IVIS
 \end{axis}

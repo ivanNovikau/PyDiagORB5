@@ -73,11 +73,13 @@ DEF_COLORS = ['b', 'r', 'g', 'black', 'm', 'c',
 DEF_STYLES = ['-', ':', '-.', ':']
 DEF_SIGN_M = 1
 DEF_TITLE_PAD = 18
+COEF_FONT_SIZE_IVIS = 3
+PGFPLOT_WIDTH = 0.5
 if FLAG_LATEX:
     FLAG_LATEX = True
     FIG_SIZE_W = 15
     FIG_SIZE_H = 9.5
-    LEG_SCALE = 1.0
+    LEG_SCALE = 1.5
     FONT_SIZE = 28
     SCALE_LABELS = 1.8
     SCALE_TICKS  = 1.5
@@ -124,7 +126,7 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'maxlocator': DEF_MAXLOCATOR,
     'flag_fixed_limits': False,
     'figure_width': FIG_SIZE_W,
-    'figure_heigth': FIG_SIZE_H,
+    'figure_height': FIG_SIZE_H,
     'pad_title': DEF_TITLE_PAD,
     'vmin': None,
     'vmax': None,
@@ -132,6 +134,7 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'sci_limits': (-2, 2),
     'flag_graphic': False,
     'flag_tkinter': False,
+    'flag_add_text_plot': True,  # to render or not an additional text
 }
 DEF_CURVE_FORMAT = {  # describe format of a curve
     'legend': None,
