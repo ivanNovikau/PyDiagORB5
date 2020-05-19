@@ -458,6 +458,7 @@ def error_mes(message):
 
 # translates an rgb tuple of int to a tkinter friendly color code
 def to_rgb(rgb):
+    # rgb = (int, int, int)
     return "#%02x%02x%02x" % rgb
 
 

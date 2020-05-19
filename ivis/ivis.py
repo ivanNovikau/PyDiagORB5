@@ -3,6 +3,8 @@ import ymath
 import curve as crv
 import Global_variables as GLO
 import ControlPlot as cpr
+import ivis.IVButtons as ivb
+import ivis.IVFrames as ivf
 
 import os
 from matplotlib import rcParams
@@ -13,8 +15,7 @@ import numpy as np
 import tkinter as tk
 import tkinter.filedialog
 import tkinter.messagebox
-from matplotlib.backends.backend_tkagg import (
-    FigureCanvasTkAgg, NavigationToolbar2Tk)
+
 from matplotlib.backend_bases import key_press_handler, button_press_handler
 
 
@@ -24,12 +25,14 @@ def reload():
     mix.reload_module(ymath)
     mix.reload_module(GLO)
     mix.reload_module(cpr)
+    mix.reload_module(ivb)
+    mix.reload_module(ivf)
 
 
 def plot_data(curves, fig=None, ax=None):
     # --- modify font size if ivis is used ---
     if curves.ff['flag_ivis']:
-        curves.ff['fontS'] /= GLO.COEF_FONT_SIZE_IVIS
+        curves.ff['fontS'] /= GLO.IVIS_COEF_FONT_SIZE
         curves.ff['flag_graphic'] = False
 
     # --- create a figure and plot data ---
@@ -61,10 +64,12 @@ def plot(curves, fig=None, ax=None, FIG_W=None, FIG_H=None):
 
 class Ivis:
     root = None  # main window
-    canvas = None  # canvas with a plot
     curves = None
+    fig = None
 
-    fig = None  # figure
+    # styles:
+    colorbg_root = mix.to_rgb((120, 120, 120))
+    colorbb_upper_frame = mix.to_rgb((140, 140, 140))
 
     ext_data = '.dat'
     ext_latex = '.tex'
@@ -77,74 +82,73 @@ class Ivis:
     WINDOW_POSITION_FROM_DOWN = 2
 
     def __init__(self, fig, curves, **kwargs):
-        # curves to plot:
+        # Set curves and figure to plot:
         self.curves = curves
+        self.fig = fig
 
-        # create the main window of the application (top widget)
+        # Main window (top widget)
         self.root = tk.Tk()
         self.root.geometry("{:d}x{:d}+{:d}+{:d}".format(
             int(self.WINDOW_SIZE_W), int(self.WINDOW_SIZE_H),
             int(self.WINDOW_POSITION_FROM_RIGHT), int(self.WINDOW_POSITION_FROM_DOWN)
         ))
         self.root.configure(
-            bg=mix.to_rgb((186, 180, 180))
+            bg=self.colorbg_root
         )
         self.root.wm_title("ivis")
 
-        # Frame with a plot and basic toolbar
-        figFrame = tk.Frame(master=self.root)
+        # Upper frame
+        fUpper = ivf.UpperFrame(mw=self, master=self.root, height=30)
 
-        # create plot
-        self.fig = fig
-        fig.patch.set_facecolor(
-            mix.to_rgb((155, 153, 153))
-        )
-        self.canvas = FigureCanvasTkAgg(fig, master=figFrame)  # A tk.DrawingArea.
-        self.canvas.draw()
+        # Figure frame
+        figFrame = ivf.FigureFrame(mw=self, master=self.root)
 
-        # add the standard matpotlib toolbar
-        toolbarFrame = tk.Frame(master=figFrame)
-        toolbar = NavigationToolbar2Tk(self.canvas, toolbarFrame)
-        toolbar.update()
+        # Left frame
+        fLeft = ivf.LeftFrame(mw=self, master=self.root)
 
-        self.canvas.mpl_connect(
-            "key_press_event",
-            lambda event: self.on_key_press(event, self.canvas, toolbar)
-        )
-        self.canvas.mpl_connect(
-            "button_press_event",
-            lambda event: self.on_button_press(event, self.canvas, toolbar)
-        )
+        # # Button: quit
+        # bQuit = ivb.QuitButton(
+        #     mw=self,
+        #     master=self.root,
+        #     text="Quit",
+        #     command=self.root.destroy,
+        # )
 
-        # create a quit button
-        bQuit = tk.Button(master=self.root, text="Quit", command=self.root.destroy)
-        bPgf = tk.Button(master=self.root, text="Save pgfplot",
-                         command=self.on_press_pgfplot_save)
+        # # Button: save pgfplot
+        # bPgf = tk.Button(master=self.root, text="Save pgfplot",
+        #                  command=self.on_press_pgfplot_save)
 
-        # create the window grid
-        self.canvas.get_tk_widget().grid(row=0, column=0, sticky=tk.N+tk.S+tk.E+tk.W)
-        toolbarFrame.grid(row=1, column=0)
-        figFrame.columnconfigure(0, weight=1)
-        figFrame.rowconfigure(0, weight=1)
-
-        bQuit.grid(row=0, column=0)
-        bPgf.grid(row=1, column=0)
-        figFrame.grid(row=0, column=1, rowspan=2, sticky=tk.N+tk.S+tk.E+tk.W)
-        self.root.rowconfigure(0, weight=1)
+        # --- create the window grid ---
+        fUpper.grid(row=0, column=0, columnspan=2, sticky=tk.N + tk.S + tk.E + tk.W)
+        fLeft.grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        figFrame.grid(row=1, column=1, sticky=tk.N + tk.S + tk.E + tk.W)
+        self.root.rowconfigure(0, weight=0)
+        self.root.rowconfigure(1, weight=1)
         self.root.columnconfigure(0, weight=1)
-        self.root.columnconfigure(1, weight=2)
+        self.root.columnconfigure(1, weight=1)
 
+        # fUpper.grid(row=0, column=0, columnspan=2)
+        # fRootProc.grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        # figFrame.grid(row=1, column=1, sticky=tk.N + tk.S + tk.E + tk.W)
+        # self.root.rowconfigure(0, weight=0)
+        # self.root.rowconfigure(1, weight=1)
+        # self.root.columnconfigure(0, weight=1)
+        # self.root.columnconfigure(1, weight=1)
+        #
+        # fFigProp.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        # fAxProp.grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        # fProc.grid(row=2, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        # fRootProc.columnconfigure(0, weight=1)
+        # fRootProc.rowconfigure(0, weight=1)
+        # fRootProc.rowconfigure(1, weight=1)
+        # fRootProc.rowconfigure(2, weight=1)
+
+        # --- Launch tkinter loop ---
         tk.mainloop()
 
-    def on_key_press(self, event, canvas, toolbar):
-        print("you pressed {}".format(event.key))
-        key_press_handler(event, canvas, toolbar)
-
-    def on_button_press(self, event, canvas, toolbar):
-        print("you pressed {}".format(event.xdata))
-        button_press_handler(event, canvas, toolbar)
-
     def on_press_pgfplot_save(self):
+
+        # get file name and path to this file from the filedialog
         fname = self.get_pgfplot_filename()
         if fname in ["", ()]:
             return
@@ -176,7 +180,7 @@ class Ivis:
         return fname
 
     def save_pgfplot(self, fname):
-        # save a bunch of files necessary to recreate the pgfplot
+        # save files necessary to create a pgfplot
 
         # save 1d plot
         if self.curves.list_curves[0].zs is None:
@@ -210,6 +214,22 @@ class Ivis:
 
         result_text = template_text
 
+        # set file name where data are read from
+        result_data_line = ''
+        for id_curve, file_data_name in enumerate(file_data_name_curves):
+            line_file_name = '\\addplot table [y=Y, x=X]{' \
+                             + '{}'.format(file_data_name) \
+                             + '};\n'
+            line_legend = '\\addlegendentry{' \
+                          + '{}'.format(self.curves.list_curves[id_curve].ff['legend']) \
+                          + '};\n'
+            result_data_line += line_file_name + line_legend
+        result_data_line = result_data_line[:-1]
+
+        result_text = self.template_set(
+            result_text, 4, result_data_line
+        )
+
         # set title
         resulting_title = '' \
             if self.curves.ff['title'] is None \
@@ -222,22 +242,6 @@ class Ivis:
         )
         result_text = self.template_set(
             result_text, 3, self.curves.ff['ylabel']
-        )
-
-        # set file name where data are read from
-        result_data_line = ''
-        for id_curve, file_data_name in enumerate(file_data_name_curves):
-            line_file_name = '\\addplot table [y=Y, x=X]{' \
-                + '{}'.format(file_data_name) \
-                + '};\n'
-            line_legend = '\\addlegendentry{'\
-                + '{}'.format(self.curves.list_curves[id_curve].ff['legend'])\
-                + '};\n'
-            result_data_line += line_file_name + line_legend
-        result_data_line = result_data_line[:-1]
-
-        result_text = self.template_set(
-            result_text, 4, result_data_line
         )
 
         # set additional XY ticks:

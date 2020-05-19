@@ -8,17 +8,13 @@ def reload():
 
 MPR_FILE_NAME = 'orb5_res.h5'
 
-dd_null = {
-    'project_name': 'NULL\ PROJECT',
-}
+dd_null = {'project_name': 'NULL\ PROJECT'}
 
 # ---------------------------------------------------------------------------
 MIN_N_PEAKS = 3
 COEF_ERR = 1.96          # alpha-quantile of the standard normal distribution
-CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval,
-                         # that corresponds to the alpha quantile
+CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval, that corresponds to the alpha quantile
 
-# ---------------------------------------------------------------------------
 # --- DEFAULT POST-PROCESSING OPERATIONS ---
 NONE_FILTER = {'sel_filt': None}
 DEF_FILTER_SMOOTH = {
@@ -51,7 +47,6 @@ DEF_OPERATION_FFT_2D = {
     'oo_fft': DEF_FFT_2D,
 }
 
-# ---------------------------------------------------------------------------
 # --- FOR PLOTTING ---
 if 'Terminal' in get_ipython().__class__.__name__:
     FLAG_LATEX = True
@@ -73,7 +68,6 @@ DEF_COLORS = ['b', 'r', 'g', 'black', 'm', 'c',
 DEF_STYLES = ['-', ':', '-.', ':']
 DEF_SIGN_M = 1
 DEF_TITLE_PAD = 18
-COEF_FONT_SIZE_IVIS = 3
 PGFPLOT_WIDTH = 0.5
 if FLAG_LATEX:
     FLAG_LATEX = True
@@ -172,9 +166,11 @@ def new_style(count_style):
     return one_style
 
 
-# ---------------------------------------------------------------------------
+# --- IVIS ---
+IVIS_label_color = (200, 200, 200)
+IVIS_COEF_FONT_SIZE = 3
+
 # --- DEFAULT VARIABLE DEFINITIONS ---
-# ---------------------------------------------------------------------------
 DEF_SPECIES = 'deuterium'
 def_erbar_ts = {
     'type':             'zonal',
