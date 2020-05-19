@@ -77,6 +77,9 @@ class PopupCanvasMenu(BMenu):
         lbY = tk.Label(chWindow, text="Y")
         lbY.grid(row=2)
 
+        lbC = tk.Label(chWindow, text="Color")
+        lbC.grid(row=3)
+
         # add inputs
         vText = tk.StringVar()
         enText = tk.Entry(chWindow, textvariable=vText)
@@ -90,19 +93,29 @@ class PopupCanvasMenu(BMenu):
         enY = tk.Entry(chWindow, textvariable=vY)
         enY.grid(row=2, column=1)
 
+        # select color
+        vColor = tk.StringVar()
+        vColor.set("black")  # default value
+
+        tk.OptionMenu(
+            chWindow,
+            vColor,
+            "black", "red", "green", "blue", "grey"
+        ).grid(row=3, column=1)
+
         # add buttons
         bEnter = tk.Button(
             chWindow,
             text='Enter',
-            command=lambda: self.add_text_get_values(None, chWindow, vX, vY, vText)
+            command=lambda: self.add_text_get_values(None, chWindow, vX, vY, vText, vColor)
         )
-        bEnter.grid(row=3, column=0)
+        bEnter.grid(row=4, column=0)
         bCancel = tk.Button(chWindow, text='Cancel', command=chWindow.destroy)
-        bCancel.grid(row=3, column=1)
+        bCancel.grid(row=4, column=1)
 
         chWindow.bind(
             '<Return>',
-            lambda event: self.add_text_get_values(event, chWindow, vX, vY, vText)
+            lambda event: self.add_text_get_values(event, chWindow, vX, vY, vText, vColor)
         )
 
         # set focus
@@ -114,11 +127,12 @@ class PopupCanvasMenu(BMenu):
         txt[-1].set_visible(False)
         self.mw.fig.canvas.draw()
 
-    def add_text_get_values(self, event, chWindow, vX, vY, vText):
+    def add_text_get_values(self, event, chWindow, vX, vY, vText, vColor):
         oo_text = {
             'x': float(vX.get()),
             'y': float(vY.get()),
             'line': vText.get(),
+            'color': vColor.get()
         }
 
         # add the text into the plot
@@ -130,6 +144,7 @@ class PopupCanvasMenu(BMenu):
             oo_text['y'],
             oo_text['line'],
             fontsize=GLO.FONT_SIZE,
+            color=oo_text['color'],
         )
         self.mw.fig.canvas.draw()
 
@@ -356,8 +371,13 @@ class FileMenu(BMenu):
 
         for itext in range(ntexts):
             loc_text = self.mw.curves.list_text[itext]
+
+            resulting_color = loc_text.color
+            if resulting_color == 'grey':
+                resulting_color = 'gray'
+
             resulting_command += '\\node[{}] at (axis cs: {:0.3e}, {:0.3e})' \
-                .format(loc_text.color, loc_text.x, loc_text.y)
+                .format(resulting_color, loc_text.x, loc_text.y)
             resulting_command += ' {' + '{}'.format(loc_text.line) + '};\n'
         resulting_command = resulting_command[:-1]
         return mix.template_set(result_text, 107, resulting_command)
