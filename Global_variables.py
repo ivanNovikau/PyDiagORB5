@@ -169,6 +169,10 @@ def new_style(count_style):
 # --- IVIS ---
 IVIS_label_color = (200, 200, 200)
 IVIS_COEF_FONT_SIZE = 3
+ext_data = '.dat'
+ext_latex = '.tex'
+ext_png = '.png'
+ext_eps = '.eps'
 
 # --- DEFAULT VARIABLE DEFINITIONS ---
 DEF_SPECIES = 'deuterium'

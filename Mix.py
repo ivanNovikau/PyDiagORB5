@@ -2,6 +2,7 @@ import numpy as np
 import importlib as imp
 import Global_variables as GLO
 import sys
+import re
 
 
 def reload():
@@ -460,6 +461,28 @@ def error_mes(message):
 def to_rgb(rgb):
     # rgb = (int, int, int)
     return "#%02x%02x%02x" % rgb
+
+
+# to create .text files for pgfplot from templates
+def template_set(template_text, id_to_change, value):
+    # create identifiers
+    id_left = "IVIS{:d}N".format(id_to_change)
+    id_right =  "N{:d}IVIS".format(id_to_change)
+
+    # find a line between the identifiers
+    line_to_change = re.search(
+        id_left + "(.*)" + id_right,
+        template_text
+    ).group(1)
+
+    # change the line
+    changed_line = line_to_change.format(value)
+
+    # update the text created from the template
+    result_text = template_text.replace(
+        id_left + line_to_change + id_right, changed_line
+    )
+    return result_text
 
 
 

@@ -20,6 +20,7 @@ def reload():
     mix.reload_module(GLO)
     mix.reload_module(cpr)
     mix.reload_module(ivb)
+    mix.reload_module(ivm)
 
 
 # *** Basic Frame ***

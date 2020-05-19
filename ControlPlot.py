@@ -40,6 +40,19 @@ def plot_curves_mix(curves):
                 plot_curves_3d(sub_curves, fig, ax_res)
 
 
+def plot(curves, fig=None, ax=None, FIG_W=None, FIG_H=None):
+    flag_1d = False
+    if curves.list_curves[0].zs is None:
+        flag_1d = True
+
+    if flag_1d:
+        fig, ax, css = plot_curves(curves, fig, ax, FIG_W, FIG_H)
+    else:
+        fig, ax, css = plot_curves_3d(curves, fig, ax, FIG_W, FIG_H)
+
+    return fig, ax, css
+
+
 def plot_curves(curves, fig=None, ax=None, FIG_W=None, FIG_H=None):
     if curves.is_empty() and not curves.flag_subplots:
         return

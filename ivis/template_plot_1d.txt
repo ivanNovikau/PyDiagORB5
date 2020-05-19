@@ -1,17 +1,18 @@
 \begin{tikzpicture}
 \begin{axis}[
-	title={IVIS1N{}N1IVIS},
-	xlabel={IVIS2N{}N2IVIS},
-	ylabel={IVIS3N{}N3IVIS},
+	title={IVIS101N{}N101IVIS},
+	xlabel={IVIS102N{}N102IVIS},
+	ylabel={IVIS103N{}N103IVIS},
 	legend pos=north west,
-	extra x ticks={IVIS5N{}N5IVIS},
-	extra y ticks={IVIS6N{}N6IVIS},
+	extra x ticks={IVIS105N{}N105IVIS},
+	extra y ticks={IVIS106N{}N106IVIS},
 	xmajorgrids=true,
 	ymajorgrids=true,
 	grid style=dashed,
 	height=0.5\textwidth,
-	width=IVIS7N{:0.3f}N7IVIS\textwidth,
+	width=IVIS104N{:0.3f}N104IVIS\textwidth,
 ]
-IVIS4N{}N4IVIS
+IVIS1N{}N1IVIS
+IVIS107N{}N107IVIS
 \end{axis}
 \end{tikzpicture}

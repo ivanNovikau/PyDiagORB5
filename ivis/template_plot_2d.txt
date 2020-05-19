@@ -1,12 +1,12 @@
 \begin{tikzpicture}
 \begin{axis}[
-    title = {IVIS2N{}N2IVIS},
-    xlabel= {IVIS3N{}N3IVIS},
-    ylabel= {IVIS4N{}N4IVIS},,
-    colormap/IVIS11N{}N11IVIS,
+    title = {IVIS101N{}N101IVIS},
+    xlabel= {IVIS102N{}N102IVIS},
+    ylabel= {IVIS103N{}N103IVIS},,
+    colormap/IVIS8N{}N8IVIS,
     colorbar,
-    point meta min=IVIS9N{:0.3e}N9IVIS,
-    point meta max=IVIS10N{:0.3e}N10IVIS,
+    point meta min=IVIS6N{:0.3e}N6IVIS,
+    point meta max=IVIS7N{:0.3e}N7IVIS,
     colorbar style={
         ytick={},
         y tick label style={
@@ -17,19 +17,19 @@
             /tikz/.cd
         },
     },
-    extra x ticks={},
-	extra y ticks={},
+	extra x ticks={IVIS105N{}N105IVIS},
+	extra y ticks={IVIS106N{}N106IVIS},
 	height=0.5\textwidth,
-	width=IVIS12N{:0.3f}N12IVIS\textwidth,
+	width=IVIS104N{:0.3f}N104IVIS\textwidth,
     enlargelimits=false,
     axis on top
 ]
 \addplot graphics[
-	xmin=IVIS5N{:0.3e}N5IVIS,
-	xmax=IVIS6N{:0.3e}N6IVIS,
-	ymin=IVIS7N{:0.3e}N7IVIS,
-	ymax=IVIS8N{:0.3e}N8IVIS,
+	xmin=IVIS2N{:0.3e}N2IVIS,
+	xmax=IVIS3N{:0.3e}N3IVIS,
+	ymin=IVIS4N{:0.3e}N4IVIS,
+	ymax=IVIS5N{:0.3e}N5IVIS,
 ]{IVIS1N{}N1IVIS};
-IVIS400N{}N400IVIS
+IVIS107N{}N107IVIS
 \end{axis}
 \end{tikzpicture}
