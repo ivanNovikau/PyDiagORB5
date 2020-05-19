@@ -3,6 +3,7 @@ import ymath
 import curve as crv
 import Global_variables as GLO
 import ControlPlot as cpr
+import curve
 
 import os
 from matplotlib import rcParams
@@ -20,6 +21,7 @@ def reload():
     mix.reload_module(ymath)
     mix.reload_module(GLO)
     mix.reload_module(cpr)
+    mix.reload_module(curve)
 
 
 # *** Basic Menu ***
@@ -61,21 +63,81 @@ class PopupCanvasMenu(BMenu):
             self.grab_release()
 
     def add_text_here(self):
-        axes = self.mw.fig.axes
-        ax = axes[0]
+        # --- create a child window ---
+        chWindow = tk.Toplevel(self)
+        chWindow.wm_title("Add text")
 
-        ax.text(
-            self.xdata,
-            self.ydata,
-            'Text here',
-            fontsize=GLO.FONT_SIZE,
+        # add labels
+        lbText = tk.Label(chWindow, text="Text")
+        lbText.grid(row=0)
+
+        lbX = tk.Label(chWindow, text="X")
+        lbX.grid(row=1)
+
+        lbY = tk.Label(chWindow, text="Y")
+        lbY.grid(row=2)
+
+        # add inputs
+        vText = tk.StringVar()
+        enText = tk.Entry(chWindow, textvariable=vText)
+        enText.grid(row=0, column=1)
+
+        vX = tk.StringVar(value='{:0.3e}'.format(self.xdata))
+        enX = tk.Entry(chWindow, textvariable=vX)
+        enX.grid(row=1, column=1)
+
+        vY = tk.StringVar(value='{:0.3e}'.format(self.ydata))
+        enY = tk.Entry(chWindow, textvariable=vY)
+        enY.grid(row=2, column=1)
+
+        # add buttons
+        bEnter = tk.Button(
+            chWindow,
+            text='Enter',
+            command=lambda: self.add_text_get_values(None, chWindow, vX, vY, vText)
         )
-        self.mw.fig.canvas.draw()
+        bEnter.grid(row=3, column=0)
+        bCancel = tk.Button(chWindow, text='Cancel', command=chWindow.destroy)
+        bCancel.grid(row=3, column=1)
+
+        chWindow.bind(
+            '<Return>',
+            lambda event: self.add_text_get_values(event, chWindow, vX, vY, vText)
+        )
+
+        # set focus
+        chWindow.focus_set()
+        enText.focus_set()
 
     def delete_previous_text(self):
         txt = self.mw.fig.axes[0].texts
         txt[-1].set_visible(False)
         self.mw.fig.canvas.draw()
+
+    def add_text_get_values(self, event, chWindow, vX, vY, vText):
+        oo_text = {
+            'x': float(vX.get()),
+            'y': float(vY.get()),
+            'line': vText.get(),
+        }
+
+        # add the text into the plot
+        axes = self.mw.fig.axes
+        ax = axes[0]
+
+        ax.text(
+            oo_text['x'],
+            oo_text['y'],
+            oo_text['line'],
+            fontsize=GLO.FONT_SIZE,
+        )
+        self.mw.fig.canvas.draw()
+
+        # add to curves
+        self.mw.curves.list_text.append(curve.PlText(oo_text))
+
+        # destroy the window
+        chWindow.destroy()
 
 
 # *** File Menu in main Menu bar ***
