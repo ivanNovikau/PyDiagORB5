@@ -164,6 +164,11 @@ class FileMenu(BMenu):
         self.add_separator()
         self.add_command(label="Exit", command=self.mw.root.destroy)
 
+        self.mw.root.bind(
+            '<Control-S>',
+            lambda event: self.on_press_pgfplot_save()
+        )
+
     def on_press_pgfplot_save(self):
 
         # get file name and path to this file from the filedialog
@@ -184,7 +189,7 @@ class FileMenu(BMenu):
 
         fname = tk.filedialog.asksaveasfilename(
             master=self.mw.root,
-            title='Save the figure',
+            title='Save pgfplot',
             defaultextension=defaultextension,
             initialdir=initialdir,
             # initialfile=initialfile,

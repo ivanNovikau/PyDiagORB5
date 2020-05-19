@@ -3,6 +3,7 @@
   <component name="ChangeListManager">
     <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="">
       <change beforePath="$PROJECT_DIR$/ivis/IVMenus.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/IVMenus.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ivis/ivis.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/ivis.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
@@ -30,11 +31,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="ivis.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="ivis.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/ivis/ivis.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="241">
-                  <caret line="110" column="42" selection-start-line="110" selection-start-column="42" selection-end-line="110" selection-end-column="42" />
+                <state relative-caret-position="401">
+                  <caret line="70" column="49" selection-start-line="70" selection-start-column="49" selection-end-line="70" selection-end-column="49" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                     <element signature="e#764#851#0" />
@@ -46,7 +47,7 @@
           <file leaf-file-name="Global_variables.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/Global_variables.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="593">
+                <state relative-caret-position="2933">
                   <caret line="174" column="16" selection-start-line="174" selection-start-column="16" selection-end-line="174" selection-end-column="16" />
                   <folding>
                     <element signature="e#87#93#0" />
@@ -61,18 +62,6 @@
                     <element signature="e#1661#1759#0" />
                     <element signature="e#7263#7366#0" />
                     <element signature="e#7671#9191#0" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="curve.py" pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/curve.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-2321">
-                  <caret line="61" column="8" lean-forward="true" selection-start-line="61" selection-start-column="8" selection-end-line="61" selection-end-column="8" />
-                  <folding>
-                    <element signature="e#271#1032#0" />
                   </folding>
                 </state>
               </provider>
@@ -253,8 +242,8 @@
           <file leaf-file-name="IVMenus.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/ivis/IVMenus.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="541">
-                  <caret line="375" column="39" selection-start-line="375" selection-start-column="39" selection-end-line="375" selection-end-column="39" />
+                <state relative-caret-position="540">
+                  <caret line="191" column="31" selection-start-line="191" selection-start-column="31" selection-end-line="191" selection-end-column="31" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
                     <element signature="e#332#501#0" />
@@ -262,7 +251,6 @@
                     <element signature="e#1061#1335#0" />
                     <element signature="e#1635#1735#0" />
                     <element signature="e#2121#2442#0" />
-                    <element signature="e#2488#3094#0" />
                     <element signature="e#3297#3481#0" />
                     <element signature="e#3420#6433#0" />
                     <element signature="e#6481#10121#0" />
@@ -271,6 +259,7 @@
                     <element signature="e#10055#10289#0" />
                     <element signature="e#9915#10248#0" />
                     <element signature="e#9661#10269#0" />
+                    <element signature="e#11879#12602#0" />
                   </folding>
                 </state>
               </provider>
@@ -407,8 +396,8 @@
         <option value="$PROJECT_DIR$/Global_variables.py" />
         <option value="$PROJECT_DIR$/ControlPlot.py" />
         <option value="$PROJECT_DIR$/ivis/template_plot_2d.txt" />
-        <option value="$PROJECT_DIR$/ivis/ivis.py" />
         <option value="$PROJECT_DIR$/ivis/template_plot_1d.txt" />
+        <option value="$PROJECT_DIR$/ivis/ivis.py" />
         <option value="$PROJECT_DIR$/ivis/IVMenus.py" />
       </list>
     </option>
@@ -1089,27 +1078,6 @@ print(Z_calc[0,1:3])</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Global_variables.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="593">
-          <caret line="174" column="16" selection-start-line="174" selection-start-column="16" selection-end-line="174" selection-end-column="16" />
-          <folding>
-            <element signature="e#87#93#0" />
-            <element signature="e#656#790#0" />
-            <element signature="e#726#788#0" />
-            <element signature="e#810#957#0" />
-            <element signature="e#880#955#0" />
-            <element signature="e#968#992#0" />
-            <element signature="e#1006#1058#0" />
-            <element signature="e#1082#1135#0" />
-            <element signature="e#1159#1215#0" />
-            <element signature="e#1661#1759#0" />
-            <element signature="e#7263#7366#0" />
-            <element signature="e#7671#9191#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Mix.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-913">
@@ -1198,17 +1166,6 @@ print(Z_calc[0,1:3])</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/ivis.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="241">
-          <caret line="110" column="42" selection-start-line="110" selection-start-column="42" selection-end-line="110" selection-end-column="42" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-            <element signature="e#764#851#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/Geom.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="641">
@@ -1222,16 +1179,6 @@ print(Z_calc[0,1:3])</expression-string>
           <caret line="9" column="18" selection-start-line="9" selection-start-column="18" selection-end-line="9" selection-end-column="18" />
           <folding>
             <element signature="e#695#1308#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/curve.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-2321">
-          <caret line="61" column="8" lean-forward="true" selection-start-line="61" selection-start-column="8" selection-end-line="61" selection-end-column="8" />
-          <folding>
-            <element signature="e#271#1032#0" />
           </folding>
         </state>
       </provider>
@@ -1301,10 +1248,52 @@ print(Z_calc[0,1:3])</expression-string>
         </state>
       </provider>
     </entry>
+    <entry file="file://$PROJECT_DIR$/curve.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="519">
+          <caret line="161" column="30" lean-forward="true" selection-start-line="161" selection-start-column="30" selection-end-line="161" selection-end-column="30" />
+          <folding>
+            <element signature="e#271#1032#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Global_variables.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="2933">
+          <caret line="174" column="16" selection-start-line="174" selection-start-column="16" selection-end-line="174" selection-end-column="16" />
+          <folding>
+            <element signature="e#87#93#0" />
+            <element signature="e#656#790#0" />
+            <element signature="e#726#788#0" />
+            <element signature="e#810#957#0" />
+            <element signature="e#880#955#0" />
+            <element signature="e#968#992#0" />
+            <element signature="e#1006#1058#0" />
+            <element signature="e#1082#1135#0" />
+            <element signature="e#1159#1215#0" />
+            <element signature="e#1661#1759#0" />
+            <element signature="e#7263#7366#0" />
+            <element signature="e#7671#9191#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ivis/ivis.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="401">
+          <caret line="70" column="49" selection-start-line="70" selection-start-column="49" selection-end-line="70" selection-end-column="49" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+            <element signature="e#764#851#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
     <entry file="file://$PROJECT_DIR$/ivis/IVMenus.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="541">
-          <caret line="375" column="39" selection-start-line="375" selection-start-column="39" selection-end-line="375" selection-end-column="39" />
+        <state relative-caret-position="540">
+          <caret line="191" column="31" selection-start-line="191" selection-start-column="31" selection-end-line="191" selection-end-column="31" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
             <element signature="e#332#501#0" />
@@ -1312,7 +1301,6 @@ print(Z_calc[0,1:3])</expression-string>
             <element signature="e#1061#1335#0" />
             <element signature="e#1635#1735#0" />
             <element signature="e#2121#2442#0" />
-            <element signature="e#2488#3094#0" />
             <element signature="e#3297#3481#0" />
             <element signature="e#3420#6433#0" />
             <element signature="e#6481#10121#0" />
@@ -1321,6 +1309,7 @@ print(Z_calc[0,1:3])</expression-string>
             <element signature="e#10055#10289#0" />
             <element signature="e#9915#10248#0" />
             <element signature="e#9661#10269#0" />
+            <element signature="e#11879#12602#0" />
           </folding>
         </state>
       </provider>
