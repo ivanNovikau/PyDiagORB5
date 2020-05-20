@@ -139,7 +139,8 @@ DEF_CURVE_FORMAT = {  # describe format of a curve
     'markerfacecolor': "None",
     'colormap': DEF_COLORMAP,  # hot, jet, pink, hot_r, jet_r etc.
     'colormap_center': None,
-    # for contour plot, for proper change of vmax, change levels as well as np.linspace(vmin, vmax, Nlevels)
+    # for contour plot, for proper change of vmax,
+    #   change levels as well as np.linspace(vmin, vmax, Nlevels)
     'levels': COLORMAP_LEVELS,
     'pr_alpha': 1,
     'flag_errorbar': False,
@@ -173,6 +174,7 @@ ext_data = '.dat'
 ext_latex = '.tex'
 ext_png = '.png'
 ext_eps = '.eps'
+IVIS_border_color = (60, 60, 60)
 
 # --- DEFAULT VARIABLE DEFINITIONS ---
 DEF_SPECIES = 'deuterium'

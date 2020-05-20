@@ -143,7 +143,9 @@ class UpperFigureFrame(BFrame):
         # styles:
         self.bg = mix.to_rgb((160, 160, 160))
         self.config(
-            bg=self.bg
+            bg=self.bg,
+            highlightbackground=mix.to_rgb(GLO.IVIS_border_color),
+            highlightthickness=2,
         )
 
 
@@ -208,17 +210,35 @@ class FigPropFrame(BFrame):
     def __init__(self, mw, **kwargs):
         super(FigPropFrame, self).__init__(mw, **kwargs)
 
+        # style
+        self.config(
+            highlightbackground=mix.to_rgb(GLO.IVIS_border_color),
+            highlightthickness=3,
+        )
+
 
 # *** Frame with Axes properties  ***
 class AxPropFrame(BFrame):
     def __init__(self, mw, **kwargs):
         super(AxPropFrame, self).__init__(mw, **kwargs)
 
+        # style
+        self.config(
+            highlightbackground=mix.to_rgb(GLO.IVIS_border_color),
+            highlightthickness=3,
+        )
+
 
 # *** Frame to work with post-processing  ***
 class ProcessingFrame(BFrame):
     def __init__(self, mw, **kwargs):
         super(ProcessingFrame, self).__init__(mw, **kwargs)
+
+        # style
+        self.config(
+            highlightbackground=mix.to_rgb(GLO.IVIS_border_color),
+            highlightthickness=3,
+        )
 
 
 
