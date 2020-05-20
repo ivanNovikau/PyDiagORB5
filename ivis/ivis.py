@@ -67,7 +67,7 @@ class Ivis:
     WINDOW_POSITION_FROM_RIGHT = 2
     WINDOW_POSITION_FROM_DOWN = 2
 
-    # Available shortcurts:
+    # --- Available shortcurts ---
     # Ctrl + S (Ctrl + Shift + s)  - save pgfplot
 
     def __init__(self, fig, curves, **kwargs):
@@ -97,7 +97,7 @@ class Ivis:
         fLeft = ivf.LeftFrame(mw=self, master=self.root)
 
         # create Menu bar
-        self.menubar = tk.Menu(self.root, bg=mix.to_rgb((100, 100, 100)))
+        self.menubar = tk.Menu(self.root)
 
         # create a pulldown menu, and add it to the menu bar
         filemenu = ivm.FileMenu(

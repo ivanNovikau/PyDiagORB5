@@ -27,32 +27,15 @@ def reload():
 class BFrame(tk.Frame):
     mw = None  # main window
 
-    # style:
-    bg = None  # background color
-
     def __init__(self, mw, **kwargs):
+        if 'bg' not in kwargs:
+            kwargs['bg'] = GLO.IVIS_frame_color
         super(BFrame, self).__init__(**kwargs)
         self.mw = mw
 
 
-# *** Upper Frame (with File, Options etc.) ***
-class UpperFrame(BFrame):
-
-    def __init__(self, mw, **kwargs):
-        super(UpperFrame, self).__init__(mw, **kwargs)
-
-        # styles:
-        self.bg = mix.to_rgb((180, 180, 180))
-        self.config(
-            bg=self.bg
-        )
-
-
 # *** Figure Frame (where figures are plotted) ***
 class FigureFrame(BFrame):
-    # style
-    bg_canvas = mix.to_rgb((140, 140, 140))
-
     # frames
     fUpper = None
     fBottom = None
@@ -66,18 +49,11 @@ class FigureFrame(BFrame):
     def __init__(self, mw, **kwargs):
         super(FigureFrame, self).__init__(mw, **kwargs)
 
-        # styles:
-        self.bg = mix.to_rgb((140, 140, 140))
-        self.config(
-            bg=self.bg
-        )
-
         # upper figure frame
-        self.fUpper = UpperFigureFrame(
-            mw=self.mw,
-            figure_frame=self,
+        self.fUpper = tk.Frame(
             master=self,
-            height=30
+            height=GLO.IVIS_height_tab_frame,
+            bg=GLO.IVIS_color_tabs_frame,
         )
 
         # create canvas
@@ -93,7 +69,7 @@ class FigureFrame(BFrame):
         )
 
         # figure style
-        self.mw.fig.patch.set_facecolor(self.bg_canvas)
+        self.mw.fig.patch.set_facecolor(GLO.IVIS_canvas_color)
 
         # press events
         self.fig_canvas.mpl_connect("key_press_event", self.on_key_press)
@@ -132,23 +108,6 @@ class FigureFrame(BFrame):
         button_press_handler(event, self.fig_canvas)
 
 
-# *** Upper Figure Frame (with figure tabs) ***
-class UpperFigureFrame(BFrame):
-    fFigure = None  # figure frame
-
-    def __init__(self, mw, figure_frame, **kwargs):
-        super(UpperFigureFrame, self).__init__(mw, **kwargs)
-        self.fFigure = figure_frame
-
-        # styles:
-        self.bg = mix.to_rgb((160, 160, 160))
-        self.config(
-            bg=self.bg,
-            highlightbackground=mix.to_rgb(GLO.IVIS_border_color),
-            highlightthickness=2,
-        )
-
-
 # *** Bottom Figure Frame (with some properties) ***
 class BottomFigureFrame(BFrame):
     fFigure = None  # figure frame
@@ -164,7 +123,7 @@ class BottomFigureFrame(BFrame):
         self.lbXYdata = tk.Label(
             master=self,
             text='XY data',
-            bg=mix.to_rgb(GLO.IVIS_label_color)
+            bg=GLO.IVIS_label_color
         )
 
         # set position of frame elements
@@ -184,16 +143,10 @@ class LeftFrame(BFrame):
     def __init__(self, mw, **kwargs):
         super(LeftFrame, self).__init__(mw, **kwargs)
 
-        # styles:
-        self.bg = mix.to_rgb((120, 120, 120))
-        self.config(
-            bg=self.bg
-        )
-
         # Add frames:
-        self.fFigProp = FigPropFrame(self.mw, master=self, bg=self.bg)
-        self.fAxProp = AxPropFrame(self.mw, master=self, bg=self.bg)
-        self.fProc = ProcessingFrame(self.mw, master=self, bg=self.bg)
+        self.fFigProp = FigPropFrame(self.mw, master=self)
+        self.fAxProp = AxPropFrame(self.mw, master=self)
+        self.fProc = ProcessingFrame(self.mw, master=self)
 
         # set position of elements
         self.fFigProp.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
@@ -212,21 +165,65 @@ class FigPropFrame(BFrame):
 
         # style
         self.config(
-            highlightbackground=mix.to_rgb(GLO.IVIS_border_color),
-            highlightthickness=3,
+            highlightbackground=GLO.IVIS_border_color,
+            highlightthickness=2,
         )
 
 
 # *** Frame with Axes properties  ***
 class AxPropFrame(BFrame):
+    tabController = None
+    n_columns = 5
+
     def __init__(self, mw, **kwargs):
         super(AxPropFrame, self).__init__(mw, **kwargs)
 
         # style
         self.config(
-            highlightbackground=mix.to_rgb(GLO.IVIS_border_color),
-            highlightthickness=3,
+            highlightbackground=GLO.IVIS_border_color,
+            highlightthickness=2,
         )
+
+        # Create Tab Controller
+        self.tabController = ivb.TabController(self)
+
+        # Create pages
+        self.create_frame_text()
+        self.create_frame_curves()
+
+        # self.fText.tkraise()
+
+    def create_frame_text(self):
+        cf = self.tabController.create_page('Text')
+
+        # labels:
+        ivb.BLabel(master=cf, text="Title: ").grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="X label: ").grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Y label: ").grid(row=2, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Additional X ticks: ").grid(row=3, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Additional Y ticks: ").grid(row=4, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Additional texts: ").grid(row=5, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+
+        cf.columnconfigure(0, weight=1)
+        n_rows = 6
+        for id_row in range(n_rows):
+            cf.rowconfigure(id_row, weight=1)
+
+    def create_frame_curves(self):
+        cf = self.tabController.create_page('Curves')
+
+        # labels:
+        ivb.BLabel(master=cf, text="List of curves: ").grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Color: ").grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Colormap: ").grid(row=2, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Styles: ").grid(row=3, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Width: ").grid(row=4, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        ivb.BLabel(master=cf, text="Marker size: ").grid(row=5, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+
+        cf.columnconfigure(0, weight=1)
+        n_rows = 6
+        for id_row in range(n_rows):
+            cf.rowconfigure(id_row, weight=1)
 
 
 # *** Frame to work with post-processing  ***
@@ -236,8 +233,8 @@ class ProcessingFrame(BFrame):
 
         # style
         self.config(
-            highlightbackground=mix.to_rgb(GLO.IVIS_border_color),
-            highlightthickness=3,
+            highlightbackground=GLO.IVIS_border_color,
+            highlightthickness=2,
         )
 
 

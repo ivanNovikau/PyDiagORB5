@@ -122,11 +122,6 @@ class PopupCanvasMenu(BMenu):
         chWindow.focus_set()
         enText.focus_set()
 
-    def delete_previous_text(self):
-        txt = self.mw.fig.axes[0].texts
-        txt[-1].set_visible(False)
-        self.mw.fig.canvas.draw()
-
     def add_text_get_values(self, event, chWindow, vX, vY, vText, vColor):
         oo_text = {
             'x': float(vX.get()),
@@ -153,6 +148,12 @@ class PopupCanvasMenu(BMenu):
 
         # destroy the window
         chWindow.destroy()
+
+
+    def delete_previous_text(self):
+        txt = self.mw.fig.axes[0].texts
+        txt[-1].set_visible(False)
+        self.mw.fig.canvas.draw()
 
 
 # *** File Menu in main Menu bar ***

@@ -6,6 +6,11 @@ def reload():
     return
 
 
+def to_rgb(rgb):
+    # rgb = (int, int, int)
+    return "#%02x%02x%02x" % rgb
+
+
 MPR_FILE_NAME = 'orb5_res.h5'
 
 dd_null = {'project_name': 'NULL\ PROJECT'}
@@ -168,13 +173,19 @@ def new_style(count_style):
 
 
 # --- IVIS ---
-IVIS_label_color = (200, 200, 200)
+IVIS_label_color = to_rgb((200, 200, 200))
+IVIS_frame_color = to_rgb((120, 120, 120))
+IVIS_canvas_color = to_rgb((140, 140, 140))
+IVIS_border_color = to_rgb((60, 60, 60))
+IVIS_color_tabs_frame = to_rgb((160, 160, 160))
+IVIS_color_button = to_rgb((160, 160, 160))
 IVIS_COEF_FONT_SIZE = 3
 ext_data = '.dat'
 ext_latex = '.tex'
 ext_png = '.png'
 ext_eps = '.eps'
-IVIS_border_color = (60, 60, 60)
+IVIS_height_tab_frame = 30
+
 
 # --- DEFAULT VARIABLE DEFINITIONS ---
 DEF_SPECIES = 'deuterium'
