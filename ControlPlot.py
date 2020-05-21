@@ -334,20 +334,24 @@ def format_plot(fig, ax, curves, flag_2d=False):
     # set labels:
     res_xlabel = mix.create_line_from_list(curves.ff['xlabel'])
     res_ylabel = mix.create_line_from_list(curves.ff['ylabel'])
-    if res_xlabel is not None:
-        ax.set_xlabel(
-            res_xlabel,
-            fontsize=curves.ff['fontS'] * GLO.SCALE_LABELS
-        )
-    if res_ylabel is not None:
-        ax.set_ylabel(
-            res_ylabel,
-            fontsize=curves.ff['fontS'] * GLO.SCALE_LABELS
-        )
 
-    # # axes ticks:
-    # if not curves.ff['flag_ivis']:
-    #     mpl.sca(ax)
+    if res_xlabel is None:
+        res_xlabel = ""
+    if res_ylabel is None:
+        res_ylabel = ""
+
+    ax.set_xlabel(
+        res_xlabel,
+        fontsize=curves.ff['fontS'] * GLO.SCALE_LABELS
+    )
+    ax.set_ylabel(
+        res_ylabel,
+        fontsize=curves.ff['fontS'] * GLO.SCALE_LABELS
+    )
+
+    # axes ticks:
+    if not curves.ff['flag_ivis']:
+        mpl.sca(ax)
 
     sci_limits = curves.ff['sci_limits']
 
@@ -409,11 +413,14 @@ def format_plot(fig, ax, curves, flag_2d=False):
 
     # set title
     res_title = mix.create_line_from_list(curves.ff['title'])
-    if res_title is not None:
-        ax.set_title(res_title,
-                  fontsize=curves.ff['fontS'] * GLO.SCALE_TITLE,
-                  pad=curves.ff['pad_title'],
-                  usetex=True)
+
+    if res_title is None:
+        res_title = ""
+
+    ax.set_title(res_title,
+              fontsize=curves.ff['fontS'] * GLO.SCALE_TITLE,
+              pad=curves.ff['pad_title'],
+              usetex=True)
     if GLO.FLAG_LATEX:
         mpl.rc('text', usetex=True)
         mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]

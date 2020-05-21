@@ -149,7 +149,6 @@ class PopupCanvasMenu(BMenu):
         # destroy the window
         chWindow.destroy()
 
-
     def delete_previous_text(self):
         txt = self.mw.fig.axes[0].texts
         txt[-1].set_visible(False)
@@ -357,15 +356,17 @@ class FileMenu(BMenu):
 
     def set_xy_extra_ticks(self, result_text):
         line_ticks = ''
-        if not np.isnan(self.mw.curves.ff['xticks']).any():
-            line_ticks = '{}'.format(line_ticks)
-            line_ticks = line_ticks[1:-1]
+        if not np.isnan(self.mw.curves.ff['ivis_add_xticks']).any():
+            line_ticks = mix.str_from_array(
+                list(self.mw.curves.ff['ivis_add_xticks'])
+            )
         result_text = mix.template_set(result_text, 105, line_ticks)
 
         line_ticks = ''
-        if not np.isnan(self.mw.curves.ff['yticks']).any():
-            line_ticks = '{}'.format(line_ticks)
-            line_ticks = line_ticks[1:-1]
+        if not np.isnan(self.mw.curves.ff['ivis_add_yticks']).any():
+            line_ticks = mix.str_from_array(
+                list(self.mw.curves.ff['ivis_add_yticks'])
+            )
         return mix.template_set(result_text, 106, line_ticks)
 
     def set_additional_text(self, result_text):

@@ -447,8 +447,12 @@ def create_line_from_list(list_lines):
                     format_middle + one_line
     else:
         res_line = list_lines
-    res_line = format_begin + res_line + format_end
-    return res_line
+    resulting_line = format_begin + res_line + format_end
+
+    if res_line == '':
+        resulting_line = None
+
+    return resulting_line
 
 
 # Print error message and exit from the program:
@@ -483,6 +487,31 @@ def template_set(template_text, id_to_change, value):
         id_left + line_to_change + id_right, changed_line
     )
     return result_text
+
+
+# get string from an array of numbers:
+def str_from_array(array):
+
+    if np.isnan(array).any():
+        return ""
+    if array is None:
+        return ""
+    if len(array) == 0:
+        return ""
+
+    # work_array = array
+    # if isinstance(array, list):
+    #     work_array = np.array(array)
+    res_str = str(array).strip('[]')
+
+    return res_str
+
+
+# get array of numbers from string:
+def array_from_str(init_str):
+    work_str = init_str.replace(',', '')
+    res_array = np.array([float(el) for el in work_str.split()])
+    return res_array
 
 
 

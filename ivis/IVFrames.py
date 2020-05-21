@@ -6,6 +6,8 @@ import ControlPlot as cpr
 import ivis.IVButtons as ivb
 import ivis.IVMenus as ivm
 
+import numpy as np
+
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
@@ -191,23 +193,78 @@ class AxPropFrame(BFrame):
         self.create_frame_text()
         self.create_frame_curves()
 
+        # Activate Text tab:
+        self.tabController.call_page('Text')
+
         # self.fText.tkraise()
 
     def create_frame_text(self):
         cf = self.tabController.create_page('Text')
+        curves = self.mw.curves
 
-        # labels:
-        ivb.BLabel(master=cf, text="Title: ").grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="X label: ").grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Y label: ").grid(row=2, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Additional X ticks: ").grid(row=3, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Additional Y ticks: ").grid(row=4, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Additional texts: ").grid(row=5, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        # Entries:
+        eTitle = ivb.LabelledEntry(cf, "Title: ", [0, 0], curves.ff['title']).var
+        eXlabel = ivb.LabelledEntry(cf, "X label: ", [1, 0], curves.ff['xlabel']).var
+        eYlabel = ivb.LabelledEntry(cf, "Y label: ", [2, 0], curves.ff['ylabel']).var
+        eXAticks = ivb.LabelledEntry(cf, "X additional ticks: ", [3, 0], "").var
+        eYAticks = ivb.LabelledEntry(cf, "Y additional ticks: ", [4, 0], "").var
+        # ivb.BLabel(master=cf, text="Additional texts: ").grid(row=5, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
 
         cf.columnconfigure(0, weight=1)
+        cf.columnconfigure(1, weight=2)
         n_rows = 6
         for id_row in range(n_rows):
-            cf.rowconfigure(id_row, weight=1)
+            cf.rowconfigure(id_row, weight=0)
+
+        # Buttons to rebuild or reset the plot:
+        def rebuild_plot():
+            ivis_add_xticks = list(mix.array_from_str(eXAticks.get()))
+            ivis_add_yticks = list(mix.array_from_str(eYAticks.get()))
+            curves.ff.update({
+                'title': eTitle.get(),
+                'xlabel': eXlabel.get(),
+                'ylabel': eYlabel.get(),
+                'xticks': self.mw.ff_default['xticks'] + ivis_add_xticks,
+                'yticks': self.mw.ff_default['yticks'] + ivis_add_yticks,
+                'ivis_add_xticks': ivis_add_xticks,
+                'ivis_add_yticks': ivis_add_yticks,
+            })
+
+            ax = self.mw.fig.axes[0]
+
+            cpr.format_plot(
+                self.mw.fig, ax, curves, self.mw.flag_2d
+            )
+            self.mw.fig.canvas.draw()
+
+        def default_plot():
+            curves.ff = dict(self.mw.ff_default)
+
+            eTitle.set(curves.ff['title'] if curves.ff['title'] is not None else "")
+            eXlabel.set(curves.ff['xlabel'] if curves.ff['xlabel'] is not None else "")
+            eYlabel.set(curves.ff['ylabel'] if curves.ff['ylabel'] is not None else "")
+            eXAticks.set("")
+            eYAticks.set("")
+
+            ax = self.mw.fig.axes[0]
+
+            cpr.format_plot(
+                self.mw.fig, ax, curves, self.mw.flag_2d
+            )
+            self.mw.fig.canvas.draw()
+
+        ivb.BButton(
+            master=cf,
+            text='Rebuild plot',
+            command=rebuild_plot
+        ).grid(row=n_rows+1, column=0)
+        ivb.BButton(
+            master=cf,
+            text='Default',
+            command=default_plot
+        ).grid(row=n_rows + 1, column=1)
+
+        cf.rowconfigure(6, weight=1)
 
     def create_frame_curves(self):
         cf = self.tabController.create_page('Curves')

@@ -103,10 +103,6 @@ class TabController:
 
         new_button.grid(column=self.n_pages - 1, row=0)
 
-        # set the first create page as the selected one:
-        if self.n_pages == 1:
-            self.call_page(name)
-
         return new_page
 
     def call_page(self, page_name):
@@ -128,6 +124,30 @@ class TabController:
             bg=self.bg_active
         )
 
+
+# *** Labelled entry ***
+class LabelledEntry:
+    master = None
+    label = None
+    entry = None
+    var = None
+
+    def __init__(self, master, text, pos_row_col, init_entry=''):
+        self.master = master
+        self.label = BLabel(master=self.master, text=text)
+
+        self.var = tk.StringVar(value=init_entry)
+        self.entry = tk.Entry(master=self.master, textvariable=self.var)
+
+        # set position
+        self.label.grid(
+            row=pos_row_col[0], column=pos_row_col[-1],
+            sticky=tk.N + tk.S + tk.E + tk.W,
+        )
+        self.entry.grid(
+            row=pos_row_col[0], column=pos_row_col[-1]+1,
+            sticky=tk.N + tk.S + tk.E + tk.W,
+        )
 
 
 

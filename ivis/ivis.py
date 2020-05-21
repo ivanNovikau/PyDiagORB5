@@ -7,17 +7,7 @@ import ivis.IVButtons as ivb
 import ivis.IVFrames as ivf
 import ivis.IVMenus as ivm
 
-import os
-from matplotlib import rcParams
-import re
-import pandas as pd
-
-import numpy as np
 import tkinter as tk
-import tkinter.filedialog
-import tkinter.messagebox
-
-from matplotlib.backend_bases import key_press_handler, button_press_handler
 
 
 def reload():
@@ -55,6 +45,8 @@ class Ivis:
     root = None  # main window
     curves = None
     fig = None
+    flag_2d = False
+    ff_default = None  # default curves format
 
     # Menu bar
     menubar = None
@@ -74,6 +66,15 @@ class Ivis:
         # Set curves and figure to plot:
         self.curves = curves
         self.fig = fig
+        if curves.list_curves[0].zs is not None:
+            self.flag_2d = True
+
+        ax = self.fig.axes[0]
+        self.ff_default = dict(self.curves.ff)
+        self.ff_default.update({
+            'xticks': list(ax.get_xticks())[1:-1],
+            'yticks': list(ax.get_yticks())[1:-1],
+        })
 
         # Main window (top widget)
         self.root = tk.Tk()

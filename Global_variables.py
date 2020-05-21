@@ -20,6 +20,12 @@ MIN_N_PEAKS = 3
 COEF_ERR = 1.96          # alpha-quantile of the standard normal distribution
 CONFIDENCE_PERC = 0.95   # (2*alpha - 1)-confidence interval, that corresponds to the alpha quantile
 
+# --- System float ---
+if isinstance(0.1, np.float64):
+    SYS_FLOAT_TYPE = np.float64
+else:
+    SYS_FLOAT_TYPE = np.float32
+
 # --- DEFAULT POST-PROCESSING OPERATIONS ---
 NONE_FILTER = {'sel_filt': None}
 DEF_FILTER_SMOOTH = {
@@ -113,6 +119,8 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'zlimits': None,
     'xticks': np.nan,
     'yticks': np.nan,
+    'ivis_add_xticks': np.nan,
+    'ivis_add_yticks': np.nan,
     'xticks_labels': np.nan,
     'yticks_labels': np.nan,
     'flag_legend': True,
@@ -132,7 +140,7 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'flag_tight_layout': True,
     'sci_limits': (-2, 2),
     'flag_graphic': False,
-    'flag_tkinter': False,
+    'flag_ivis': False,
     'flag_add_text_plot': True,  # to render or not an additional text
 }
 DEF_CURVE_FORMAT = {  # describe format of a curve
