@@ -150,6 +150,78 @@ class LabelledEntry:
         )
 
 
+# *** Labelled OptionMenu ***
+class LabelledOptionMenu:
+    master = None
+    label = None
+    entry = None
+    var = None
+    ids_elements = {}
+    call_selected = None
+
+    def __init__(self, master, text, pos_row_col, options, call_selected=None):
+        # Label
+        self.master = master
+        self.label = BLabel(master=self.master, text=text)
+        self.call_selected = call_selected
+
+        # OptionMenu
+        res_options = self.form_options(options)
+
+        self.var = tk.StringVar()
+        self.entry = tk.OptionMenu(
+            self.master,
+            self.var,
+            *res_options
+        )
+        self.var.trace(
+            'w',
+            self.option_selected
+        )
+
+        # set position
+        self.label.grid(
+            row=pos_row_col[0], column=pos_row_col[-1],
+            sticky=tk.N + tk.S + tk.E + tk.W,
+        )
+        self.entry.grid(
+            row=pos_row_col[0], column=pos_row_col[-1] + 1,
+            sticky=tk.N + tk.S + tk.E + tk.W,
+        )
+
+    def form_options(self, options):
+        res_options = ["---"]
+        if len(options) > 0:
+            res_options = []
+            for id_opt, one_opt in enumerate(options):
+                if self.call_selected is not None:
+                    one_opt = '{:d}: '.format(id_opt) + one_opt
+                    self.ids_elements[one_opt] = id_opt
+                res_options.append(one_opt)
+        return res_options
+
+    def option_selected(self, *args):
+        if self.call_selected is not None:
+            opt_selected = self.var.get()
+            if opt_selected == "---":
+                id_selected = None
+            else:
+                id_selected = self.ids_elements[opt_selected]
+            self.call_selected(opt_selected, id_selected)
+
+    def update_options(self, options):
+        menu = self.entry["menu"]
+        menu.delete(0, "end")
+        res_options = self.form_options(options)
+
+        for one_text in res_options:
+            menu.add_command(
+                label=one_text,
+                command=lambda value=one_text: self.var.set(value)
+            )
+        self.var.set(res_options[-1])
+
+
 
 
 

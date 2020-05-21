@@ -190,6 +190,7 @@ class PlText:
     line = ''
     color = 'black'
     coef_width = 1
+    flag_invisible = False
 
     def __init__(self, oo):
         self.init_from_oo(oo)

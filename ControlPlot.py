@@ -444,6 +444,7 @@ def format_plot(fig, ax, curves, flag_2d=False):
                 color=loc_text.color,
                 ha="center",
             )
+            ax.texts[-1].set_visible(not loc_text.flag_invisible)
 
     # set grid
     if not flag_2d:

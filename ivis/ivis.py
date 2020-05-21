@@ -54,6 +54,9 @@ class Ivis:
     # styles:
     colorbg_root = mix.to_rgb((120, 120, 120))
 
+    # frames:
+    fLeft = None
+
     WINDOW_SIZE_W = 1900
     WINDOW_SIZE_H = 990
     WINDOW_POSITION_FROM_RIGHT = 2
@@ -95,7 +98,7 @@ class Ivis:
         figFrame = ivf.FigureFrame(mw=self, master=self.root)
 
         # Left frame
-        fLeft = ivf.LeftFrame(mw=self, master=self.root)
+        self.fLeft = ivf.LeftFrame(mw=self, master=self.root)
 
         # create Menu bar
         self.menubar = tk.Menu(self.root)
@@ -111,7 +114,7 @@ class Ivis:
 
         # --- create the window grid ---
         n_columns = 3
-        fLeft.grid(
+        self.fLeft.grid(
             row=0, column=0,
             sticky=tk.N + tk.S + tk.E + tk.W
         )
@@ -134,4 +137,5 @@ class Ivis:
             pass
 
     def destroy(self, event):
-        print("destroy application")
+        pass
+        # print("destroy application")

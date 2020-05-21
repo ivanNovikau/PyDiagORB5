@@ -123,6 +123,7 @@ class PopupCanvasMenu(BMenu):
         enText.focus_set()
 
     def add_text_get_values(self, event, chWindow, vX, vY, vText, vColor):
+        # check text
         oo_text = {
             'x': float(vX.get()),
             'y': float(vY.get()),
@@ -145,6 +146,11 @@ class PopupCanvasMenu(BMenu):
 
         # add to curves
         self.mw.curves.list_text.append(curve.PlText(oo_text))
+
+        # update text OptionMenu in left panel
+        self.mw.fLeft.fAxProp.omAText.update_options(
+            mix.get_atext_from_curves(self.mw.curves)
+        )
 
         # destroy the window
         chWindow.destroy()

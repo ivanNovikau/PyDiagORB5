@@ -183,6 +183,7 @@ def new_style(count_style):
 # --- IVIS ---
 IVIS_label_color = to_rgb((200, 200, 200))
 IVIS_frame_color = to_rgb((120, 120, 120))
+IVIS_selected_element_inf_frame = to_rgb((168, 172, 185))
 IVIS_canvas_color = to_rgb((140, 140, 140))
 IVIS_border_color = to_rgb((60, 60, 60))
 IVIS_color_tabs_frame = to_rgb((160, 160, 160))

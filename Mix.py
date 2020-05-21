@@ -499,9 +499,6 @@ def str_from_array(array):
     if len(array) == 0:
         return ""
 
-    # work_array = array
-    # if isinstance(array, list):
-    #     work_array = np.array(array)
     res_str = str(array).strip('[]')
 
     return res_str
@@ -512,6 +509,29 @@ def array_from_str(init_str):
     work_str = init_str.replace(',', '')
     res_array = np.array([float(el) for el in work_str.split()])
     return res_array
+
+
+# get list of additional text of curves
+def get_atext_from_curves(curves):
+    texts = [
+        delete_bold_keyword(one_text.line)
+        for one_text in curves.list_text
+    ]
+    return texts
+
+
+# delete bold keyword:
+def delete_bold_keyword(text):
+    res_text = re.search(
+        "\\\\boldmath \$(.*)\$", text
+    )
+    if res_text is not None:
+        res_text = res_text.group(1)
+    return res_text
+
+
+
+
 
 
 
