@@ -64,10 +64,9 @@ class Curves:
     n_geoms = 0
     ff = None  # format
 
-    # to plot curves in different subplots:
-    # every element - one object of class Curves
-    # 2D list: [id_col, id_row]
-    lists_sub_curves = None
+    lists_sub_curves = None     # to plot curves in different subplots:
+                                # every element - one object of class Curves
+                                # 2D list: [id_col, id_row]
     ncols, id_col_set = 1, 0
     nrows, id_row_set = 1, 0
     flag_subplots = False
@@ -191,8 +190,10 @@ class PlText:
     color = 'black'
     coef_width = 1
     flag_invisible = False
+    oo_init = None
 
     def __init__(self, oo):
+        self.oo_init = oo
         self.init_from_oo(oo)
 
     def init_from_oo(self, oo):
@@ -202,7 +203,34 @@ class PlText:
         self.coef_width = oo.get('coef_width', 1)
         self.line = mix.create_line_from_list(oo.get('line', ''))
 
-        # self.line = line_res if line_res != '' else '\ '
+
+def copy_curves(curves, ax):
+    curves_copy = Curves()
+
+    # copy format
+    curves_copy.set_ff(curves.ff)
+    curves_copy.ff.update({
+        'xticks': list(ax.get_xticks())[1:-1],
+        'yticks': list(ax.get_yticks())[1:-1],
+    })
+
+    # copy curves
+    curves_copy.load(curves)
+
+    # copy texts
+    for one_text in curves.list_text:
+        curves_copy.list_text.append(
+            PlText(one_text.oo_init)
+        )
+
+    # copy geometries
+    curves_copy.newg(curves.list_geoms)
+
+
+
+    return curves_copy
+
+
 
 
 

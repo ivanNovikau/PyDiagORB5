@@ -46,7 +46,7 @@ class Ivis:
     curves = None
     fig = None
     flag_2d = False
-    ff_default = None  # default curves format
+    curves_default = None
 
     # Menu bar
     menubar = None
@@ -73,11 +73,7 @@ class Ivis:
             self.flag_2d = True
 
         ax = self.fig.axes[0]
-        self.ff_default = dict(self.curves.ff)
-        self.ff_default.update({
-            'xticks': list(ax.get_xticks())[1:-1],
-            'yticks': list(ax.get_yticks())[1:-1],
-        })
+        self.curves_default = crv.copy_curves(self.curves, ax)
 
         # Main window (top widget)
         self.root = tk.Tk()

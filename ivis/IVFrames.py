@@ -211,12 +211,12 @@ class AxPropFrame(BFrame):
         def rebuild_plot():
             ivis_add_xticks = list(mix.array_from_str(eXAticks.get()))
             ivis_add_yticks = list(mix.array_from_str(eYAticks.get()))
-            curves.ff.update({
+            self.mw.curves.ff.update({
                 'title': eTitle.get(),
                 'xlabel': eXlabel.get(),
                 'ylabel': eYlabel.get(),
-                'xticks': self.mw.ff_default['xticks'] + ivis_add_xticks,
-                'yticks': self.mw.ff_default['yticks'] + ivis_add_yticks,
+                'xticks': self.mw.curves_default.ff['xticks'] + ivis_add_xticks,
+                'yticks': self.mw.curves_default.ff['yticks'] + ivis_add_yticks,
                 'ivis_add_xticks': ivis_add_xticks,
                 'ivis_add_yticks': ivis_add_yticks,
             })
@@ -225,20 +225,24 @@ class AxPropFrame(BFrame):
             ax = self.mw.fig.axes[0]
             ax.texts = []
             cpr.format_plot(
-                self.mw.fig, ax, curves, self.mw.flag_2d
+                self.mw.fig, ax, self.mw.curves, self.mw.flag_2d
             )
             self.mw.fig.canvas.draw()
 
         def default_plot():
-            curves.ff = dict(self.mw.ff_default)
+            ax = self.mw.fig.axes[0]
+            self.mw.curves = crv.copy_curves(self.mw.curves_default, ax)
+            curves = self.mw.curves
 
             eTitle.set(curves.ff['title'] if curves.ff['title'] is not None else "")
             eXlabel.set(curves.ff['xlabel'] if curves.ff['xlabel'] is not None else "")
             eYlabel.set(curves.ff['ylabel'] if curves.ff['ylabel'] is not None else "")
             eXAticks.set("")
             eYAticks.set("")
+            self.omAText.update_options(
+                mix.get_atext_from_curves(curves)
+            )
 
-            ax = self.mw.fig.axes[0]
             ax.texts = []
             cpr.format_plot(
                 self.mw.fig, ax, curves, self.mw.flag_2d

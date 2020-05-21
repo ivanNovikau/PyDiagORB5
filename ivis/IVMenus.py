@@ -47,10 +47,6 @@ class PopupCanvasMenu(BMenu):
             label='Add text',
             command=self.add_text_here
         )
-        self.add_command(
-            label='Delete previous text',
-            command=self.delete_previous_text
-        )
 
     def call(self, event):
         try:
@@ -154,11 +150,6 @@ class PopupCanvasMenu(BMenu):
 
         # destroy the window
         chWindow.destroy()
-
-    def delete_previous_text(self):
-        txt = self.mw.fig.axes[0].texts
-        txt[-1].set_visible(False)
-        self.mw.fig.canvas.draw()
 
 
 # *** File Menu in main Menu bar ***
