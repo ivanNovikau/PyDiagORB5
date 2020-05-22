@@ -375,14 +375,14 @@ class FileMenu(BMenu):
 
         for itext in range(ntexts):
             loc_text = self.mw.curves.list_text[itext]
+            if not loc_text.flag_invisible:
+                resulting_color = loc_text.color
+                if resulting_color == 'grey':
+                    resulting_color = 'gray'
 
-            resulting_color = loc_text.color
-            if resulting_color == 'grey':
-                resulting_color = 'gray'
-
-            resulting_command += '\\node[{}] at (axis cs: {:0.3e}, {:0.3e})' \
-                .format(resulting_color, loc_text.x, loc_text.y)
-            resulting_command += ' {' + '{}'.format(loc_text.line) + '};\n'
+                resulting_command += '\\node[{}] at (axis cs: {:0.3e}, {:0.3e})' \
+                    .format(resulting_color, loc_text.x, loc_text.y)
+                resulting_command += ' {' + '{}'.format(loc_text.line) + '};\n'
         resulting_command = resulting_command[:-1]
         return mix.template_set(result_text, 107, resulting_command)
 

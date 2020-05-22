@@ -163,6 +163,8 @@ class LeftFrame(BFrame):
 
 # *** Frame with Figure properties  ***
 class FigPropFrame(BFrame):
+    bUpdatePlot = None
+
     def __init__(self, mw, **kwargs):
         super(FigPropFrame, self).__init__(mw, **kwargs)
 
@@ -171,6 +173,33 @@ class FigPropFrame(BFrame):
             highlightbackground=GLO.IVIS_border_color,
             highlightthickness=2,
         )
+
+        # Buttons
+        self.bUpdatePlot = ivb.BButton(
+            master=self,
+            text="Update plot",
+            command=self.update_plot
+        )
+
+        # arrange elements
+        self.bUpdatePlot.grid(row=0, column=0)
+
+    def update_plot(self):
+        # --- create a figure and plot data ---
+        mw = self.mw
+        ax = mw.fig.axes[0]
+
+        mw.curves = crv.copy_curves(mw.curves_default, ax)
+
+        mw.fig, _, _ = cpr.plot(
+            mw.curves_default, mw.fig, ax,
+            FIG_W=mw.curves.ff['figure_width'] / 2,
+            FIG_H=mw.curves.ff['figure_height'] / 2,
+        )
+        mw.fig.canvas.draw()
+
+        # update elemens in left panel:
+        self.mw.fLeft.fAxProp.update_elements()
 
 
 # *** Frame with Axes properties  ***
@@ -182,6 +211,7 @@ class AxPropFrame(BFrame):
     # frames with information about different elements
     fElementInf = None  # root element frame
     feiText = None
+    main_els = {}
     feiText_elements = {}
     id_current_text = None
 
@@ -199,60 +229,63 @@ class AxPropFrame(BFrame):
 
         # Create pages
         self.create_frame_text()
-        self.create_frame_curves()
+        # self.create_frame_curves()
 
         # Activate Text tab:
         self.tabController.call_page('Text')
 
         # self.fText.tkraise()
 
+    def rebuild_plot(self):
+        ivis_add_xticks = list(mix.array_from_str(self.main_els['xaticks'].get()))
+        ivis_add_yticks = list(mix.array_from_str(self.main_els['yaticks'].get()))
+        self.mw.curves.ff.update({
+            'title': self.main_els['title'].get(),
+            'xlabel': self.main_els['xlabel'].get(),
+            'ylabel': self.main_els['ylabel'].get(),
+            'xticks': self.mw.curves_default.ff['xticks'] + ivis_add_xticks,
+            'yticks': self.mw.curves_default.ff['yticks'] + ivis_add_yticks,
+            'ivis_add_xticks': ivis_add_xticks,
+            'ivis_add_yticks': ivis_add_yticks,
+        })
+
+        # update the plot format
+        ax = self.mw.fig.axes[0]
+        ax.texts = []
+        cpr.format_plot(
+            self.mw.fig, ax, self.mw.curves, self.mw.flag_2d
+        )
+        self.mw.fig.canvas.draw()
+
+    def update_elements(self):
+        ax = self.mw.fig.axes[0]
+        self.mw.curves = crv.copy_curves(self.mw.curves_default, ax)
+        curves = self.mw.curves
+
+        self.main_els['title'].set(curves.ff['title'] if curves.ff['title'] is not None else "")
+        self.main_els['xlabel'].set(curves.ff['xlabel'] if curves.ff['xlabel'] is not None else "")
+        self.main_els['ylabel'].set(curves.ff['ylabel'] if curves.ff['ylabel'] is not None else "")
+        self.main_els['xaticks'].set("")
+        self.main_els['yaticks'].set("")
+        self.omAText.update_options(
+            mix.get_atext_from_curves(curves)
+        )
+
+    def default_plot(self):
+        self.update_elements()
+
+        ax = self.mw.fig.axes[0]
+        ax.texts = []
+        cpr.format_plot(
+            self.mw.fig, ax, self.mw.curves, self.mw.flag_2d
+        )
+        self.mw.fig.canvas.draw()
+
     def create_frame_text(self):
         # --- FUNCTIONS ------------------------------------------------------------------
-        def rebuild_plot():
-            ivis_add_xticks = list(mix.array_from_str(eXAticks.get()))
-            ivis_add_yticks = list(mix.array_from_str(eYAticks.get()))
-            self.mw.curves.ff.update({
-                'title': eTitle.get(),
-                'xlabel': eXlabel.get(),
-                'ylabel': eYlabel.get(),
-                'xticks': self.mw.curves_default.ff['xticks'] + ivis_add_xticks,
-                'yticks': self.mw.curves_default.ff['yticks'] + ivis_add_yticks,
-                'ivis_add_xticks': ivis_add_xticks,
-                'ivis_add_yticks': ivis_add_yticks,
-            })
-
-            # update the plot format
-            ax = self.mw.fig.axes[0]
-            ax.texts = []
-            cpr.format_plot(
-                self.mw.fig, ax, self.mw.curves, self.mw.flag_2d
-            )
-            self.mw.fig.canvas.draw()
-
-        def default_plot():
-            ax = self.mw.fig.axes[0]
-            self.mw.curves = crv.copy_curves(self.mw.curves_default, ax)
-            curves = self.mw.curves
-
-            eTitle.set(curves.ff['title'] if curves.ff['title'] is not None else "")
-            eXlabel.set(curves.ff['xlabel'] if curves.ff['xlabel'] is not None else "")
-            eYlabel.set(curves.ff['ylabel'] if curves.ff['ylabel'] is not None else "")
-            eXAticks.set("")
-            eYAticks.set("")
-            self.omAText.update_options(
-                mix.get_atext_from_curves(curves)
-            )
-
-            ax.texts = []
-            cpr.format_plot(
-                self.mw.fig, ax, curves, self.mw.flag_2d
-            )
-            self.mw.fig.canvas.draw()
-
         def text_selected(opt_selected, id_selected):
-            if id_selected is not None:
-                self.id_current_text = id_selected
-
+            self.id_current_text = id_selected
+            if self.id_current_text is not None:
                 el_text = self.mw.curves.list_text[id_selected]
 
                 self.feiText_elements['text'].set(
@@ -264,6 +297,13 @@ class AxPropFrame(BFrame):
                 self.feiText_elements['flag_invisible'].set(el_text.flag_invisible)
 
                 self.feiText.tkraise()
+            else:
+                self.feiText_elements['text'].set('')
+                self.feiText_elements['x'].set('')
+                self.feiText_elements['y'].set('')
+                self.feiText_elements['color'].var.set('black')
+                self.feiText_elements['flag_invisible'].set(0)
+
 
         def write_text(*args):
             if self.id_current_text is not None:
@@ -296,11 +336,11 @@ class AxPropFrame(BFrame):
         curves = self.mw.curves
 
         # Entries:
-        eTitle = ivb.LabelledEntry(cf, "Title: ", [0, 0], curves.ff['title']).var
-        eXlabel = ivb.LabelledEntry(cf, "X label: ", [1, 0], curves.ff['xlabel']).var
-        eYlabel = ivb.LabelledEntry(cf, "Y label: ", [2, 0], curves.ff['ylabel']).var
-        eXAticks = ivb.LabelledEntry(cf, "X additional ticks: ", [3, 0], "").var
-        eYAticks = ivb.LabelledEntry(cf, "Y additional ticks: ", [4, 0], "").var
+        self.main_els['title'] = ivb.LabelledEntry(cf, "Title: ", [0, 0], curves.ff['title']).var
+        self.main_els['xlabel'] = ivb.LabelledEntry(cf, "X label: ", [1, 0], curves.ff['xlabel']).var
+        self.main_els['ylabel'] = ivb.LabelledEntry(cf, "Y label: ", [2, 0], curves.ff['ylabel']).var
+        self.main_els['xaticks'] = ivb.LabelledEntry(cf, "X additional ticks: ", [3, 0], "").var
+        self.main_els['yaticks'] = ivb.LabelledEntry(cf, "Y additional ticks: ", [4, 0], "").var
 
         self.omAText = ivb.LabelledOptionMenu(
             cf,
@@ -396,12 +436,12 @@ class AxPropFrame(BFrame):
         ivb.BButton(
             master=cf,
             text='Rebuild plot',
-            command=rebuild_plot
+            command=self.rebuild_plot
         ).grid(row=n_rows+1, column=0)
         ivb.BButton(
             master=cf,
             text='Default',
-            command=default_plot
+            command=self.default_plot
         ).grid(row=n_rows + 1, column=1)
 
         cf.rowconfigure(6, weight=1)

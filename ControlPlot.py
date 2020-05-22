@@ -71,10 +71,13 @@ def plot_curves(curves, fig=None, ax=None, FIG_W=None, FIG_H=None):
                 figsize=(figure_width, figure_height),
             )
     else:
-        fig = Figure(
-            figsize=(figure_width, figure_height),
-        )
-        ax = fig.add_subplot(111)
+        if fig is None:
+            fig = Figure(
+                figsize=(figure_width, figure_height),
+            )
+            ax = fig.add_subplot(111)
+        else:
+            ax.cla()
 
     # set curves
     if curves.flag_subplots:
@@ -152,10 +155,13 @@ def plot_curves_3d(curves, fig=None, axs=None, FIG_W=None, FIG_H=None):
                 figsize=(figure_width, figure_height),
             )
     else:
-        fig = Figure(
-            figsize=(figure_width, figure_height),
-        )
-        axs = fig.add_subplot(111)
+        if fig is None:
+            fig = Figure(
+                figsize=(figure_width, figure_height),
+            )
+            axs = fig.add_subplot(111)
+        else:
+            axs.cla()
 
     # set curves
     if curves.flag_subplots:
