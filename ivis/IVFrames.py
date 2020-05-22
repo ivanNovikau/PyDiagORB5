@@ -9,12 +9,14 @@ import ivis.IVMenus as ivm
 import numpy as np
 import re
 import matplotlib.lines as mlines
+import matplotlib.patches as patches
 
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import (
     FigureCanvasTkAgg, NavigationToolbar2Tk)
 
 from matplotlib.backend_bases import key_press_handler, button_press_handler
+from matplotlib.ticker import AutoLocator
 
 
 def reload():
@@ -52,6 +54,11 @@ class FigureFrame(BFrame):
 
     # to view curves XYZ data
     flag_curves_xyz_data = False
+
+    # to zoom data
+    flag_zoom = False
+    xy_zoom = None
+
     n_temp_lines = 0
 
     def __init__(self, mw, **kwargs):
@@ -111,6 +118,40 @@ class FigureFrame(BFrame):
         key_press_handler(event, self.fig_canvas)
 
     def on_button_press(self, event):
+        if event.button == 1:
+            if self.flag_zoom:
+
+                # start drawing a rectangle:
+                if self.xy_zoom is None:
+                    self.xy_zoom = {
+                        'x1': event.xdata,
+                        'y1': event.ydata
+                    }
+                # end drawing a rectangle
+                else:
+                    self.xy_zoom.update({
+                        'x2': event.xdata,
+                        'y2': event.ydata
+                    })
+
+                    # change axis limits
+                    x1, x2, y1, y2 = \
+                        self.xy_zoom['x1'], self.xy_zoom['x2'], \
+                        self.xy_zoom['y1'], self.xy_zoom['y2']
+
+                    x_lim = (x1, x2) if x1 < x2 else (x2, x1)
+                    y_lim = (y1, y2) if y1 < y2 else (y2, y1)
+
+                    ax = self.mw.get_ax()
+                    ax.set_xlim(x_lim)
+                    ax.set_ylim(y_lim)
+
+                    # reset to None XY coordinates of the zoom box
+                    self.xy_zoom = None
+
+                    # update the axis
+                    self.mw.draw()
+
         if event.button == 3:
             self.popup_menu_canvas.call(event)
 
@@ -124,65 +165,99 @@ class FigureFrame(BFrame):
         fB.elements['ygui'].set(event.guiEvent.y_root)
 
         if self.flag_curves_xyz_data:
-            if event.xdata is not None and event.ydata is not None:
+            self.view_xyz(event)
+        if self.flag_zoom:
+            self.zoom_data(event)
+
+    def view_xyz(self, event):
+        if event.xdata is not None and event.ydata is not None:
+            self.n_temp_lines = 0
+            ax = self.mw.get_ax()
+
+            x_lim = ax.get_xlim()
+            y_lim = ax.get_ylim()
+
+            # draw horizontal and vertical lines
+            self.n_temp_lines += 1
+            one_line = mlines.Line2D(
+                [event.xdata, event.xdata], y_lim,
+                color='grey',
+                linestyle=':',
+                linewidth=2
+            )
+            ax.add_line(one_line)
+
+            # draw markers on curves
+            for id_curve, one_curve in enumerate(self.mw.curves.list_curves):
+                self.n_temp_lines += 1
+                id_x, x_curve, _ = mix.get_ids(one_curve.xs, event.xdata)
+                y_curve = one_curve.ys[id_x]
+
+                color_plt = one_curve.ff['color'] \
+                    if one_curve.ff['color'] is not None \
+                    else GLO.new_color(id_curve)
+
+                ax.plot(
+                    x_curve, y_curve,
+                    'o',
+                    color=color_plt,
+                    markersize=10,
+                )
+
+                self.n_temp_lines += 1
+                one_line = mlines.Line2D(
+                    [x_lim[0], x_curve], [y_curve, y_curve],
+                    color=color_plt,
+                    linestyle=':',
+                    linewidth=2
+                )
+                ax.add_line(one_line)
+
+            ax.set_xlim(x_lim)
+            ax.set_ylim(y_lim)
+
+            # update the axis
+            self.mw.draw()
+
+            # remove lines and markers
+            for one_line in ax.lines[-self.n_temp_lines:-1]:
+                one_line.remove()
+            ax.lines[-1].remove()
+        else:
+            if self.n_temp_lines > 0:
                 self.n_temp_lines = 0
-                ax = self.mw.get_ax()
-
-                x_lim = ax.get_xlim()
-                y_lim = ax.get_ylim()
-
-                # draw horizontal and vertical lines
-                self.n_temp_lines += 1
-                one_line = mlines.Line2D(
-                    [x_lim[0], event.xdata], [event.ydata, event.ydata],
-                    color='grey',
-                    linestyle=':',
-                    linewidth=4
-                )
-                one_line.set_dashes([0.2, 0.8])
-                ax.add_line(one_line)
-
-                self.n_temp_lines += 1
-                one_line = mlines.Line2D(
-                    [event.xdata, event.xdata], [y_lim[0], event.ydata],
-                    color='grey',
-                    linestyle=':',
-                    linewidth=4
-                )
-                one_line.set_dashes([0.2, 0.8])
-                ax.add_line(one_line)
-
-                # draw markers on curves
-                for id_curve, one_curve in enumerate(self.mw.curves.list_curves):
-                    self.n_temp_lines += 1
-                    id_x, x_curve, _ = mix.get_ids(one_curve.xs, event.xdata)
-                    y_curve = one_curve.ys[id_x]
-
-                    color_plt = one_curve.ff['color'] \
-                        if one_curve.ff['color'] is not None \
-                        else GLO.new_color(id_curve)
-
-                    ax.plot(
-                        x_curve, y_curve,
-                        'o',
-                        color=color_plt,
-                        markersize=10,
-                    )
-
-                ax.set_xlim(x_lim)
-                ax.set_ylim(y_lim)
-
-                # update the axis
                 self.mw.draw()
 
-                # remove lines and markers
-                for one_line in ax.lines[-self.n_temp_lines:-1]:
-                    one_line.remove()
-                ax.lines[-1].remove()
-            else:
-                if self.n_temp_lines > 0:
-                    self.n_temp_lines = 0
-                    self.mw.draw()
+    def zoom_data(self, event):
+        if self.xy_zoom is None:
+            return
+
+        if event.xdata is not None and event.ydata is not None:
+            ax = self.mw.get_ax()
+
+            left_bottom_corner, w, h = mix.get_rectangular(
+                self.xy_zoom['x1'], event.xdata,
+                self.xy_zoom['y1'], event.ydata,
+            )
+
+            rect = patches.Rectangle(
+                left_bottom_corner, w, h,
+                ls=':',
+                linewidth=2,
+                edgecolor='grey',
+                facecolor='none',
+            )
+            ax.add_patch(rect)
+
+            # update the axis
+            ax.xaxis.set_major_locator(AutoLocator())
+            ax.yaxis.set_major_locator(AutoLocator())
+            self.mw.draw()
+
+            # delete the rectangular
+            ax.patches[-1].remove()
+        else:
+            pass
 
 
 # *** Bottom Figure Frame (with some properties) ***
@@ -207,11 +282,18 @@ class BottomFigureFrame(BFrame):
         self.elements['xyz'] = ivb.BButton(
             master=self,
             text='XYZ',
-            command=self.view_curves_XYZdata
+            command=self.view_xyz
         )
         self.elements['xyz'].grid(row=0, column=8)
 
-    def view_curves_XYZdata(self):
+        self.elements['zoom'] = ivb.BButton(
+            master=self,
+            text='zoom',
+            command=self.zoom_data
+        )
+        self.elements['zoom'].grid(row=0, column=9)
+
+    def view_xyz(self):
         self.mw.fFigure.flag_curves_xyz_data = \
             not self.mw.fFigure.flag_curves_xyz_data
 
@@ -221,6 +303,18 @@ class BottomFigureFrame(BFrame):
             )
         else:
             self.elements['xyz'].configure(
+                bg=GLO.IVIS_color_button
+            )
+
+    def zoom_data(self):
+        self.mw.fFigure.flag_zoom = not self.mw.fFigure.flag_zoom
+
+        if self.mw.fFigure.flag_zoom:
+            self.elements['zoom'].configure(
+                bg=GLO.IVIS_color_active_button
+            )
+        else:
+            self.elements['zoom'].configure(
                 bg=GLO.IVIS_color_button
             )
 
@@ -318,7 +412,7 @@ class AxPropFrame(BFrame):
 
         # Create pages
         self.create_frame_text()
-        # self.create_frame_curves()
+        self.create_frame_curves()
 
         # Activate Text tab:
         self.tabController.call_page('Text')

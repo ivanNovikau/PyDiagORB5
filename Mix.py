@@ -530,6 +530,16 @@ def delete_bold_keyword(text):
     return res_text
 
 
+# find XY coordinates of bottom left corner of a rectangle:
+def get_rectangular(x1, x2, y1, y2):
+    x_left, x_right = (x1, x2) if x1 < x2 else (x2, x1)
+    y_bottom, y_up = (y1, y2) if y1 < y2 else (y2, y1)
+    width = x_right - x_left
+    height = y_up - y_bottom
+
+    return (x_left, y_bottom), width, height
+
+
 
 
 
