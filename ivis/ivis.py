@@ -56,6 +56,7 @@ class Ivis:
 
     # frames:
     fLeft = None
+    fFigure = None
 
     WINDOW_SIZE_W = 1900
     WINDOW_SIZE_H = 990
@@ -72,7 +73,7 @@ class Ivis:
         if curves.list_curves[0].zs is not None:
             self.flag_2d = True
 
-        ax = self.fig.axes[0]
+        ax = self.get_ax()
         self.curves_default = crv.copy_curves(self.curves, ax)
 
         # Main window (top widget)
@@ -91,7 +92,7 @@ class Ivis:
         self.root.bind("<Destroy>", self.destroy)
 
         # Figure frame
-        figFrame = ivf.FigureFrame(mw=self, master=self.root)
+        self.fFigure = ivf.FigureFrame(mw=self, master=self.root)
 
         # Left frame
         self.fLeft = ivf.LeftFrame(mw=self, master=self.root)
@@ -114,7 +115,7 @@ class Ivis:
             row=0, column=0,
             sticky=tk.N + tk.S + tk.E + tk.W
         )
-        figFrame.grid(
+        self.fFigure.grid(
             row=0, column=1, columnspan=n_columns-1,
             sticky=tk.N + tk.S + tk.E + tk.W
         )
@@ -135,3 +136,9 @@ class Ivis:
     def destroy(self, event):
         pass
         # print("destroy application")
+
+    def get_ax(self):
+        return self.fig.axes[0]
+
+    def draw(self):
+        self.fig.canvas.draw()

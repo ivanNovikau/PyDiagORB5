@@ -128,17 +128,16 @@ class PopupCanvasMenu(BMenu):
         }
 
         # add the text into the plot
-        axes = self.mw.fig.axes
-        ax = axes[0]
+        ax = self.mw.get_ax()
 
         ax.text(
             oo_text['x'],
             oo_text['y'],
-            oo_text['line'],
+            mix.create_line_from_list(oo_text['line']),
             fontsize=GLO.FONT_SIZE,
             color=oo_text['color'],
         )
-        self.mw.fig.canvas.draw()
+        self.mw.draw()
 
         # add to curves
         self.mw.curves.list_text.append(curve.PlText(oo_text))

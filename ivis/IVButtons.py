@@ -61,7 +61,7 @@ class TabController:
     name_active = None
 
     # color of active button
-    bg_active = mix.to_rgb((203, 203, 255))
+    bg_active = GLO.IVIS_color_active_button
 
     def __init__(self, master):
         # parent frame

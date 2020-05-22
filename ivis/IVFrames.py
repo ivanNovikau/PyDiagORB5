@@ -8,6 +8,7 @@ import ivis.IVMenus as ivm
 
 import numpy as np
 import re
+import matplotlib.lines as mlines
 
 import tkinter as tk
 from matplotlib.backends.backend_tkagg import (
@@ -49,6 +50,10 @@ class FigureFrame(BFrame):
     # canvas where figure is plotted
     fig_canvas = None
 
+    # to view curves XYZ data
+    flag_curves_xyz_data = False
+    n_temp_lines = 0
+
     def __init__(self, mw, **kwargs):
         super(FigureFrame, self).__init__(mw, **kwargs)
 
@@ -77,6 +82,7 @@ class FigureFrame(BFrame):
         # press events
         self.fig_canvas.mpl_connect("key_press_event", self.on_key_press)
         self.fig_canvas.mpl_connect("button_press_event", self.on_button_press)
+        self.fig_canvas.mpl_connect('motion_notify_event', self.on_motion)
 
         # create the popup menu of a canvas:
         self.popup_menu_canvas = ivm.PopupCanvasMenu(
@@ -110,30 +116,113 @@ class FigureFrame(BFrame):
 
         button_press_handler(event, self.fig_canvas)
 
+    def on_motion(self, event):
+        fB = self.mw.fFigure.fBottom
+        fB.elements['xdata'].set(event.xdata)
+        fB.elements['ydata'].set(event.ydata)
+        fB.elements['xgui'].set(event.guiEvent.x_root)
+        fB.elements['ygui'].set(event.guiEvent.y_root)
+
+        if self.flag_curves_xyz_data:
+            if event.xdata is not None and event.ydata is not None:
+                self.n_temp_lines = 0
+                ax = self.mw.get_ax()
+
+                x_lim = ax.get_xlim()
+                y_lim = ax.get_ylim()
+
+                # draw horizontal and vertical lines
+                self.n_temp_lines += 1
+                one_line = mlines.Line2D(
+                    [x_lim[0], event.xdata], [event.ydata, event.ydata],
+                    color='grey',
+                    linestyle=':',
+                    linewidth=4
+                )
+                one_line.set_dashes([0.2, 0.8])
+                ax.add_line(one_line)
+
+                self.n_temp_lines += 1
+                one_line = mlines.Line2D(
+                    [event.xdata, event.xdata], [y_lim[0], event.ydata],
+                    color='grey',
+                    linestyle=':',
+                    linewidth=4
+                )
+                one_line.set_dashes([0.2, 0.8])
+                ax.add_line(one_line)
+
+                # draw markers on curves
+                for id_curve, one_curve in enumerate(self.mw.curves.list_curves):
+                    self.n_temp_lines += 1
+                    id_x, x_curve, _ = mix.get_ids(one_curve.xs, event.xdata)
+                    y_curve = one_curve.ys[id_x]
+
+                    color_plt = one_curve.ff['color'] \
+                        if one_curve.ff['color'] is not None \
+                        else GLO.new_color(id_curve)
+
+                    ax.plot(
+                        x_curve, y_curve,
+                        'o',
+                        color=color_plt,
+                        markersize=10,
+                    )
+
+                ax.set_xlim(x_lim)
+                ax.set_ylim(y_lim)
+
+                # update the axis
+                self.mw.draw()
+
+                # remove lines and markers
+                for one_line in ax.lines[-self.n_temp_lines:-1]:
+                    one_line.remove()
+                ax.lines[-1].remove()
+            else:
+                if self.n_temp_lines > 0:
+                    self.n_temp_lines = 0
+                    self.mw.draw()
+
 
 # *** Bottom Figure Frame (with some properties) ***
 class BottomFigureFrame(BFrame):
     fFigure = None  # figure frame
 
     # label with axes coordinates
+    elements = {}
     lbXYdata = None
 
     def __init__(self, mw, figure_frame, **kwargs):
         super(BottomFigureFrame, self).__init__(mw, **kwargs)
         self.fFigure = figure_frame
 
-        # Add labels
-        self.lbXYdata = tk.Label(
-            master=self,
-            text='XY data',
-            bg=GLO.IVIS_label_color
-        )
+        # Entries:
+        self.elements['xdata'] = ivb.LabelledEntry(self, "X-data", [0, 0]).var
+        self.elements['ydata'] = ivb.LabelledEntry(self, "Y-data", [0, 2]).var
+        self.elements['xgui'] = ivb.LabelledEntry(self, "X-GUI", [0, 4]).var
+        self.elements['ygui'] = ivb.LabelledEntry(self, "Y-GUI", [0, 6]).var
 
-        # set position of frame elements
-        self.lbXYdata.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        self.rowconfigure(0, weight=1)
-        self.columnconfigure(0, weight=1)
-        self.columnconfigure(1, weight=0)
+        # Buttons:
+        self.elements['xyz'] = ivb.BButton(
+            master=self,
+            text='XYZ',
+            command=self.view_curves_XYZdata
+        )
+        self.elements['xyz'].grid(row=0, column=8)
+
+    def view_curves_XYZdata(self):
+        self.mw.fFigure.flag_curves_xyz_data = \
+            not self.mw.fFigure.flag_curves_xyz_data
+
+        if self.mw.fFigure.flag_curves_xyz_data:
+            self.elements['xyz'].configure(
+                bg=GLO.IVIS_color_active_button
+            )
+        else:
+            self.elements['xyz'].configure(
+                bg=GLO.IVIS_color_button
+            )
 
 
 # *** Left Frame (with Figure, Axes properties and post-processing) ***
@@ -177,17 +266,17 @@ class FigPropFrame(BFrame):
         # Buttons
         self.bUpdatePlot = ivb.BButton(
             master=self,
-            text="Update plot",
-            command=self.update_plot
+            text="Default plot",
+            command=self.default_plot
         )
 
         # arrange elements
         self.bUpdatePlot.grid(row=0, column=0)
 
-    def update_plot(self):
+    def default_plot(self):
         # --- create a figure and plot data ---
         mw = self.mw
-        ax = mw.fig.axes[0]
+        ax = mw.get_ax()
 
         mw.curves = crv.copy_curves(mw.curves_default, ax)
 
@@ -196,7 +285,7 @@ class FigPropFrame(BFrame):
             FIG_W=mw.curves.ff['figure_width'] / 2,
             FIG_H=mw.curves.ff['figure_height'] / 2,
         )
-        mw.fig.canvas.draw()
+        self.mw.draw()
 
         # update elemens in left panel:
         self.mw.fLeft.fAxProp.update_elements()
@@ -250,15 +339,15 @@ class AxPropFrame(BFrame):
         })
 
         # update the plot format
-        ax = self.mw.fig.axes[0]
+        ax = self.mw.get_ax()
         ax.texts = []
         cpr.format_plot(
             self.mw.fig, ax, self.mw.curves, self.mw.flag_2d
         )
-        self.mw.fig.canvas.draw()
+        self.mw.draw()
 
     def update_elements(self):
-        ax = self.mw.fig.axes[0]
+        ax = self.mw.get_ax()
         self.mw.curves = crv.copy_curves(self.mw.curves_default, ax)
         curves = self.mw.curves
 
@@ -274,12 +363,12 @@ class AxPropFrame(BFrame):
     def default_plot(self):
         self.update_elements()
 
-        ax = self.mw.fig.axes[0]
+        ax = self.mw.get_ax()
         ax.texts = []
         cpr.format_plot(
             self.mw.fig, ax, self.mw.curves, self.mw.flag_2d
         )
-        self.mw.fig.canvas.draw()
+        self.mw.draw()
 
     def create_frame_text(self):
         # --- FUNCTIONS ------------------------------------------------------------------
@@ -303,7 +392,6 @@ class AxPropFrame(BFrame):
                 self.feiText_elements['y'].set('')
                 self.feiText_elements['color'].var.set('black')
                 self.feiText_elements['flag_invisible'].set(0)
-
 
         def write_text(*args):
             if self.id_current_text is not None:
@@ -357,8 +445,7 @@ class AxPropFrame(BFrame):
             cf.rowconfigure(id_row, weight=0)
 
         # --- FRAME with information from a selected element ---
-        # - Root frame -
-        self.fElementInf = tk.Frame(
+        self.fElementInf = tk.Frame(  # root frame
             cf,
             bg=GLO.IVIS_selected_element_inf_frame
         )

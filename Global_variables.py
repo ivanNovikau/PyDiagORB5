@@ -188,6 +188,7 @@ IVIS_canvas_color = to_rgb((140, 140, 140))
 IVIS_border_color = to_rgb((60, 60, 60))
 IVIS_color_tabs_frame = to_rgb((160, 160, 160))
 IVIS_color_button = to_rgb((160, 160, 160))
+IVIS_color_active_button = to_rgb((203, 203, 255))
 IVIS_COEF_FONT_SIZE = 3
 ext_data = '.dat'
 ext_latex = '.tex'
