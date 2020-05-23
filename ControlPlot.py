@@ -439,6 +439,7 @@ def format_plot(fig, ax, curves, flag_2d=False):
             one_geom.draw(mpl, ax, {})
 
     # add text:
+    ax.texts = []
     if curves.ff['flag_add_text_plot']:
         for itext in range(ntexts):
             loc_text = curves.list_text[itext]

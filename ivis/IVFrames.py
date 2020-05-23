@@ -5,6 +5,11 @@ import Global_variables as GLO
 import ControlPlot as cpr
 import ivis.IVButtons as ivb
 import ivis.IVMenus as ivm
+import ivis.IVPageText as ivp_text
+import ivis.IVPageCurves as ivp_curves
+import ivis.IVPageData as ivp_data
+import ivis.IVPageFigures as ivp_figures
+import ivis.IVPageAxes as ivp_axes
 
 import numpy as np
 import re
@@ -27,6 +32,11 @@ def reload():
     mix.reload_module(cpr)
     mix.reload_module(ivb)
     mix.reload_module(ivm)
+    mix.reload_module(ivp_text)
+    mix.reload_module(ivp_curves)
+    mix.reload_module(ivp_data)
+    mix.reload_module(ivp_figures)
+    mix.reload_module(ivp_axes)
 
 
 # *** Basic Frame ***
@@ -319,343 +329,91 @@ class BottomFigureFrame(BFrame):
             )
 
 
-# *** Left Frame (with Figure, Axes properties and post-processing) ***
+# *** Left Frame (with Figure, Axes properties and processing) ***
 class LeftFrame(BFrame):
-    # frames
-    fFigProp = None
-    fAxProp = None
-    fProc = None
+    names_sections = ['fig', 'ax', 'proc']
+    sections = {}
 
     def __init__(self, mw, **kwargs):
         super(LeftFrame, self).__init__(mw, **kwargs)
 
-        # Add frames:
-        self.fFigProp = FigPropFrame(self.mw, master=self)
-        self.fAxProp = AxPropFrame(self.mw, master=self)
-        self.fProc = ProcessingFrame(self.mw, master=self)
+        # --- create sections' dictionaries ---
+        self.sections['fig'] = {}
+        self.sections['ax'] = {}
+        self.sections['proc'] = {}
 
-        # set position of elements
-        self.fFigProp.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        self.fAxProp.grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        self.fProc.grid(row=2, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        # --- create frames ---
+        cnt = mix.Counter()
         self.columnconfigure(0, weight=1)
-        self.rowconfigure(0, weight=1)
-        self.rowconfigure(1, weight=1)
-        self.rowconfigure(2, weight=1)
+        for oname in self.names_sections:
+            sec = self.sections[oname]
+            frame = self.sections[oname]['frame'] = tk.Frame(master=self)
+            sec['pages'] = {}
 
+            # style
+            frame.config(
+                highlightbackground=GLO.IVIS_border_color,
+                highlightthickness=2,
+            )
 
-# *** Frame with Figure properties  ***
-class FigPropFrame(BFrame):
-    bUpdatePlot = None
+            # position and relative size
+            frame.grid(
+                row=cnt.next(), column=0, sticky=tk.N + tk.S + tk.E + tk.W
+            )
+            self.rowconfigure(cnt.counter, weight=1)
 
-    def __init__(self, mw, **kwargs):
-        super(FigPropFrame, self).__init__(mw, **kwargs)
+            # tab controller
+            sec['tc'] = ivb.TabController(frame)
 
-        # style
-        self.config(
-            highlightbackground=GLO.IVIS_border_color,
-            highlightthickness=2,
+        # create elements in the sections:
+        self.create_section_fig()
+        self.create_section_ax()
+
+    def create_section_fig(self):
+        name_section = 'fig'
+        sec = self.sections[name_section]
+        tc, pages = sec['tc'], sec['pages']
+
+        # Create Data page
+        pages['data'] = ivp_data.PageData(
+            frame=tc.create_page('data'),
+            mw=self.mw,
         )
 
-        # Buttons
-        self.bUpdatePlot = ivb.BButton(
-            master=self,
-            text="Default plot",
-            command=self.default_plot
+        # Create Figures page
+        pages['figures'] = ivp_figures.PageFigures(
+            frame=tc.create_page('figures'),
+            mw=self.mw,
         )
 
-        # arrange elements
-        self.bUpdatePlot.grid(row=0, column=0)
-
-    def default_plot(self):
-        # --- create a figure and plot data ---
-        mw = self.mw
-        ax = mw.get_ax()
-
-        mw.curves = crv.copy_curves(mw.curves_default, ax)
-
-        mw.fig, _, _ = cpr.plot(
-            mw.curves_default, mw.fig, ax,
-            FIG_W=mw.curves.ff['figure_width'] / 2,
-            FIG_H=mw.curves.ff['figure_height'] / 2,
-        )
-        self.mw.draw()
-
-        # update elemens in left panel:
-        self.mw.fLeft.fAxProp.update_elements()
-
-
-# *** Frame with Axes properties  ***
-class AxPropFrame(BFrame):
-    tabController = None
-    n_columns = 5
-    omAText = None
-
-    # frames with information about different elements
-    fElementInf = None  # root element frame
-    feiText = None
-    main_els = {}
-    feiText_elements = {}
-    id_current_text = None
-
-    def __init__(self, mw, **kwargs):
-        super(AxPropFrame, self).__init__(mw, **kwargs)
-
-        # style
-        self.config(
-            highlightbackground=GLO.IVIS_border_color,
-            highlightthickness=2,
+        # Create Axes page
+        pages['axes'] = ivp_axes.PageAxes(
+            frame=tc.create_page('axes'),
+            mw=self.mw,
         )
 
-        # Create Tab Controller
-        self.tabController = ivb.TabController(self)
+        # activate Data tab:
+        tc.call_page('data')
 
-        # Create pages
-        self.create_frame_text()
-        self.create_frame_curves()
+    def create_section_ax(self):
+        name_section = 'ax'
+        sec = self.sections[name_section]
+        tc, pages = sec['tc'], sec['pages']
 
-        # Activate Text tab:
-        self.tabController.call_page('Text')
-
-        # self.fText.tkraise()
-
-    def rebuild_plot(self):
-        ivis_add_xticks = list(mix.array_from_str(self.main_els['xaticks'].get()))
-        ivis_add_yticks = list(mix.array_from_str(self.main_els['yaticks'].get()))
-        self.mw.curves.ff.update({
-            'title': self.main_els['title'].get(),
-            'xlabel': self.main_els['xlabel'].get(),
-            'ylabel': self.main_els['ylabel'].get(),
-            'xticks': self.mw.curves_default.ff['xticks'] + ivis_add_xticks,
-            'yticks': self.mw.curves_default.ff['yticks'] + ivis_add_yticks,
-            'ivis_add_xticks': ivis_add_xticks,
-            'ivis_add_yticks': ivis_add_yticks,
-        })
-
-        # update the plot format
-        ax = self.mw.get_ax()
-        ax.texts = []
-        cpr.format_plot(
-            self.mw.fig, ax, self.mw.curves, self.mw.flag_2d
-        )
-        self.mw.draw()
-
-    def update_elements(self):
-        ax = self.mw.get_ax()
-        self.mw.curves = crv.copy_curves(self.mw.curves_default, ax)
-        curves = self.mw.curves
-
-        self.main_els['title'].set(curves.ff['title'] if curves.ff['title'] is not None else "")
-        self.main_els['xlabel'].set(curves.ff['xlabel'] if curves.ff['xlabel'] is not None else "")
-        self.main_els['ylabel'].set(curves.ff['ylabel'] if curves.ff['ylabel'] is not None else "")
-        self.main_els['xaticks'].set("")
-        self.main_els['yaticks'].set("")
-        self.omAText.update_options(
-            mix.get_atext_from_curves(curves)
+        # Create Text page
+        pages['text'] = ivp_text.PageText(
+            frame=tc.create_page('text'),
+            mw=self.mw,
         )
 
-    def default_plot(self):
-        self.update_elements()
-
-        ax = self.mw.get_ax()
-        ax.texts = []
-        cpr.format_plot(
-            self.mw.fig, ax, self.mw.curves, self.mw.flag_2d
-        )
-        self.mw.draw()
-
-    def create_frame_text(self):
-        # --- FUNCTIONS ------------------------------------------------------------------
-        def text_selected(opt_selected, id_selected):
-            self.id_current_text = id_selected
-            if self.id_current_text is not None:
-                el_text = self.mw.curves.list_text[id_selected]
-
-                self.feiText_elements['text'].set(
-                    mix.delete_bold_keyword(el_text.line)
-                )
-                self.feiText_elements['x'].set(el_text.x)
-                self.feiText_elements['y'].set(el_text.y)
-                self.feiText_elements['color'].var.set(el_text.color)
-                self.feiText_elements['flag_invisible'].set(el_text.flag_invisible)
-
-                self.feiText.tkraise()
-            else:
-                self.feiText_elements['text'].set('')
-                self.feiText_elements['x'].set('')
-                self.feiText_elements['y'].set('')
-                self.feiText_elements['color'].var.set('black')
-                self.feiText_elements['flag_invisible'].set(0)
-
-        def write_text(*args):
-            if self.id_current_text is not None:
-                res_line = self.feiText_elements['text'].get()
-                res_line = mix.create_line_from_list(res_line)
-                self.mw.curves.list_text[self.id_current_text].line = res_line
-
-        def write_text_x(*args):
-            if self.id_current_text is not None:
-                res_x = float(self.feiText_elements['x'].get())
-                self.mw.curves.list_text[self.id_current_text].x = res_x
-
-        def write_text_y(*args):
-            if self.id_current_text is not None:
-                res_y = float(self.feiText_elements['y'].get())
-                self.mw.curves.list_text[self.id_current_text].y = res_y
-
-        def write_text_color(*args):
-            if self.id_current_text is not None:
-                res_color = self.feiText_elements['color'].var.get()
-                self.mw.curves.list_text[self.id_current_text].color = res_color
-
-        def write_text_invisible(*args):
-            if self.id_current_text is not None:
-                self.mw.curves.list_text[self.id_current_text].flag_invisible = \
-                    self.feiText_elements['flag_invisible'].get()
-
-        # ---------------------------------------------------------------
-        cf = self.tabController.create_page('Text')
-        curves = self.mw.curves
-
-        # Entries:
-        self.main_els['title'] = ivb.LabelledEntry(cf, "Title: ", [0, 0], curves.ff['title']).var
-        self.main_els['xlabel'] = ivb.LabelledEntry(cf, "X label: ", [1, 0], curves.ff['xlabel']).var
-        self.main_els['ylabel'] = ivb.LabelledEntry(cf, "Y label: ", [2, 0], curves.ff['ylabel']).var
-        self.main_els['xaticks'] = ivb.LabelledEntry(cf, "X additional ticks: ", [3, 0], "").var
-        self.main_els['yaticks'] = ivb.LabelledEntry(cf, "Y additional ticks: ", [4, 0], "").var
-
-        self.omAText = ivb.LabelledOptionMenu(
-            cf,
-            "Additional text: ",
-            [5, 0],
-            mix.get_atext_from_curves(curves),
-            text_selected
+        # Create Curves page
+        pages['curves'] = ivp_curves.PageCurves(
+            frame=tc.create_page('curves'),
+            mw=self.mw,
         )
 
-        cf.columnconfigure(0, weight=1)
-        cf.columnconfigure(1, weight=2)
-        n_rows = 6
-        for id_row in range(n_rows):
-            cf.rowconfigure(id_row, weight=0)
-
-        # --- FRAME with information from a selected element ---
-        self.fElementInf = tk.Frame(  # root frame
-            cf,
-            bg=GLO.IVIS_selected_element_inf_frame
-        )
-
-        n_rows += 1
-        self.fElementInf.grid(
-            row=n_rows-1,
-            column=0, columnspan=2,
-            sticky=tk.N + tk.S + tk.E + tk.W,
-        )
-
-        # - Text frame -
-        self.feiText = tk.Frame(
-            self.fElementInf,
-            bg=GLO.IVIS_selected_element_inf_frame
-        )
-        self.feiText.grid(
-            row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W,
-        )
-
-        # entry with text
-        self.feiText_elements['text'] = ivb.LabelledEntry(
-            self.feiText, "Text: ", [0, 0], ''
-        ).var
-        self.feiText_elements['text'].trace(
-            'w',
-            write_text
-        )
-
-        # entry with text x coodinate
-        self.feiText_elements['x'] = ivb.LabelledEntry(
-            self.feiText, "X: ", [1, 0], ''
-        ).var
-        self.feiText_elements['x'].trace(
-            'w',
-            write_text_x
-        )
-
-        # entry with text y coodinate
-        self.feiText_elements['y'] = ivb.LabelledEntry(
-            self.feiText, "Y: ", [2, 0], ''
-        ).var
-        self.feiText_elements['y'].trace(
-            'w',
-            write_text_y
-        )
-
-        # entry with text color
-        self.feiText_elements['color'] = ivb.LabelledOptionMenu(
-            self.feiText,
-            "Color: ",
-            [3, 0],
-            ["black", "red", "green", "blue", "grey"],
-            None
-        )
-        self.feiText_elements['color'].var.trace(
-            'w',
-            write_text_color
-        )
-
-        # checkbutton invisible:
-        self.feiText_elements['flag_invisible'] = tk.IntVar()
-        tk.Checkbutton(
-            self.feiText,
-            text="Invisible",
-            variable=self.feiText_elements['flag_invisible']
-        ).grid(row=4, column=0)
-        self.feiText_elements['flag_invisible'].trace(
-            'w',
-            write_text_invisible
-        )
-
-        # --- Buttons ---
-        n_rows += 1
-        ivb.BButton(
-            master=cf,
-            text='Rebuild plot',
-            command=self.rebuild_plot
-        ).grid(row=n_rows+1, column=0)
-        ivb.BButton(
-            master=cf,
-            text='Default',
-            command=self.default_plot
-        ).grid(row=n_rows + 1, column=1)
-
-        cf.rowconfigure(6, weight=1)
-
-    def create_frame_curves(self):
-        cf = self.tabController.create_page('Curves')
-
-        # labels:
-        ivb.BLabel(master=cf, text="List of curves: ").grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Color: ").grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Colormap: ").grid(row=2, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Styles: ").grid(row=3, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Width: ").grid(row=4, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        ivb.BLabel(master=cf, text="Marker size: ").grid(row=5, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-
-        cf.columnconfigure(0, weight=1)
-        n_rows = 6
-        for id_row in range(n_rows):
-            cf.rowconfigure(id_row, weight=1)
-
-
-# *** Frame to work with post-processing  ***
-class ProcessingFrame(BFrame):
-    def __init__(self, mw, **kwargs):
-        super(ProcessingFrame, self).__init__(mw, **kwargs)
-
-        # style
-        self.config(
-            highlightbackground=GLO.IVIS_border_color,
-            highlightthickness=2,
-        )
-
-
+        # activate Text tab:
+        tc.call_page('text')
 
 
 

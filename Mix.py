@@ -540,6 +540,22 @@ def get_rectangular(x1, x2, y1, y2):
     return (x_left, y_bottom), width, height
 
 
+# counter:
+class Counter:
+    counter = None
+    n_elements = None
+
+    def __init__(self, init_counter=-1, init_number=0):
+        self.counter = init_counter
+        self.n_elements = init_number
+
+    def next(self):
+        self.counter += 1
+        self.n_elements += 1
+        return self.counter
+
+
+
 
 
 

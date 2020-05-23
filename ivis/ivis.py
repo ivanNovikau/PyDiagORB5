@@ -52,7 +52,7 @@ class Ivis:
     menubar = None
 
     # styles:
-    colorbg_root = mix.to_rgb((120, 120, 120))
+    # colorbg_root = mix.to_rgb((120, 120, 120))
 
     # frames:
     fLeft = None
@@ -82,9 +82,9 @@ class Ivis:
             int(self.WINDOW_SIZE_W), int(self.WINDOW_SIZE_H),
             int(self.WINDOW_POSITION_FROM_RIGHT), int(self.WINDOW_POSITION_FROM_DOWN)
         ))
-        self.root.configure(
-            bg=self.colorbg_root
-        )
+        # self.root.configure(
+        #     bg=self.colorbg_root
+        # )
         self.root.wm_title("ivis")
 
         # to handle closure of the window
@@ -135,7 +135,7 @@ class Ivis:
 
     def destroy(self, event):
         pass
-        # print("destroy application")
+        # print("destroy")
 
     def get_ax(self):
         return self.fig.axes[0]

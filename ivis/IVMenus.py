@@ -4,6 +4,7 @@ import curve as crv
 import Global_variables as GLO
 import ControlPlot as cpr
 import curve
+import ivis.IVButtons as ivb
 
 import os
 from matplotlib import rcParams
@@ -22,6 +23,7 @@ def reload():
     mix.reload_module(GLO)
     mix.reload_module(cpr)
     mix.reload_module(curve)
+    mix.reload_module(ivb)
 
 
 # *** Basic Menu ***
@@ -63,60 +65,46 @@ class PopupCanvasMenu(BMenu):
         chWindow = tk.Toplevel(self)
         chWindow.wm_title("Add text")
 
-        # add labels
-        lbText = tk.Label(chWindow, text="Text")
-        lbText.grid(row=0)
+        # row counter:
+        cnt = mix.Counter()
 
-        lbX = tk.Label(chWindow, text="X")
-        lbX.grid(row=1)
+        # create window widgets
+        eText = ivb.LabelledEntry(chWindow, "Text", [cnt.next(), 0], '')
+        vText = eText.var
+        vX = ivb.LabelledEntry(
+            chWindow, "X", [cnt.next(), 0], '{:0.3e}'.format(self.xdata)
+        ).var
+        vY = ivb.LabelledEntry(
+            chWindow, "Y", [cnt.next(), 0], '{:0.3e}'.format(self.ydata)
+        ).var
+        vColor = ivb.LabelledOptionMenu(
+            chWindow, "Color", [cnt.next(), 0], GLO.IVIS_text_colors,
+            None, GLO.IVIS_text_colors[0]
+        ).var
 
-        lbY = tk.Label(chWindow, text="Y")
-        lbY.grid(row=2)
-
-        lbC = tk.Label(chWindow, text="Color")
-        lbC.grid(row=3)
-
-        # add inputs
-        vText = tk.StringVar()
-        enText = tk.Entry(chWindow, textvariable=vText)
-        enText.grid(row=0, column=1)
-
-        vX = tk.StringVar(value='{:0.3e}'.format(self.xdata))
-        enX = tk.Entry(chWindow, textvariable=vX)
-        enX.grid(row=1, column=1)
-
-        vY = tk.StringVar(value='{:0.3e}'.format(self.ydata))
-        enY = tk.Entry(chWindow, textvariable=vY)
-        enY.grid(row=2, column=1)
-
-        # select color
-        vColor = tk.StringVar()
-        vColor.set("black")  # default value
-
-        tk.OptionMenu(
-            chWindow,
-            vColor,
-            "black", "red", "green", "blue", "grey"
-        ).grid(row=3, column=1)
-
-        # add buttons
         bEnter = tk.Button(
             chWindow,
             text='Enter',
-            command=lambda: self.add_text_get_values(None, chWindow, vX, vY, vText, vColor)
+            command=lambda: self.add_text_get_values(
+                None, chWindow, vX, vY, vText, vColor
+            )
         )
-        bEnter.grid(row=4, column=0)
-        bCancel = tk.Button(chWindow, text='Cancel', command=chWindow.destroy)
-        bCancel.grid(row=4, column=1)
+        bEnter.grid(row=cnt.next(), column=0)
 
+        bCancel = tk.Button(chWindow, text='Cancel', command=chWindow.destroy)
+        bCancel.grid(row=cnt.counter, column=1)
+
+        # bind the Enter key to the button "Enter"
         chWindow.bind(
             '<Return>',
-            lambda event: self.add_text_get_values(event, chWindow, vX, vY, vText, vColor)
+            lambda event: self.add_text_get_values(
+                event, chWindow, vX, vY, vText, vColor
+            )
         )
 
         # set focus
         chWindow.focus_set()
-        enText.focus_set()
+        eText.entry.focus_set()
 
     def add_text_get_values(self, event, chWindow, vX, vY, vText, vColor):
         # check text
@@ -136,6 +124,7 @@ class PopupCanvasMenu(BMenu):
             mix.create_line_from_list(oo_text['line']),
             fontsize=GLO.FONT_SIZE,
             color=oo_text['color'],
+            ha="center",
         )
         self.mw.draw()
 
@@ -143,9 +132,7 @@ class PopupCanvasMenu(BMenu):
         self.mw.curves.list_text.append(curve.PlText(oo_text))
 
         # update text OptionMenu in left panel
-        self.mw.fLeft.fAxProp.omAText.update_options(
-            mix.get_atext_from_curves(self.mw.curves)
-        )
+        self.mw.fLeft.sections['ax']['pages']['text'].update_elements()
 
         # destroy the window
         chWindow.destroy()
@@ -181,14 +168,12 @@ class FileMenu(BMenu):
     def get_pgfplot_filename(self):
         defaultextension = ''
         initialdir = os.path.expanduser(rcParams['savefig.directory'])
-        # initialfile = self.canvas.get_default_filename()
 
         fname = tk.filedialog.asksaveasfilename(
             master=self.mw.root,
             title='Save pgfplot',
             defaultextension=defaultextension,
             initialdir=initialdir,
-            # initialfile=initialfile,
         )
 
         # Save dir for next time, unless empty str (i.e., use cwd).

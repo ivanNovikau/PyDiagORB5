@@ -190,6 +190,7 @@ IVIS_color_tabs_frame = to_rgb((160, 160, 160))
 IVIS_color_button = to_rgb((160, 160, 160))
 IVIS_color_active_button = to_rgb((203, 203, 255))
 IVIS_COEF_FONT_SIZE = 3
+IVIS_text_colors = ["black", "red", "green", "blue", "grey"]
 ext_data = '.dat'
 ext_latex = '.tex'
 ext_png = '.png'

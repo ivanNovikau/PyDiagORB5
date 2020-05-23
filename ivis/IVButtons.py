@@ -159,7 +159,9 @@ class LabelledOptionMenu:
     ids_elements = {}
     call_selected = None
 
-    def __init__(self, master, text, pos_row_col, options, call_selected=None):
+    def __init__(
+            self, master, text, pos_row_col, options, call_selected=None, init_var=None
+    ):
         # Label
         self.master = master
         self.label = BLabel(master=self.master, text=text)
@@ -169,6 +171,9 @@ class LabelledOptionMenu:
         res_options = self.form_options(options)
 
         self.var = tk.StringVar()
+        if init_var is not None:
+            self.var.set(init_var)
+
         self.entry = tk.OptionMenu(
             self.master,
             self.var,
