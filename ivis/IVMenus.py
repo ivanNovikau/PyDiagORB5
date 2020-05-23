@@ -132,7 +132,7 @@ class PopupCanvasMenu(BMenu):
         self.mw.curves.list_text.append(curve.PlText(oo_text))
 
         # update text OptionMenu in left panel
-        self.mw.fLeft.sections['ax']['pages']['text'].update_elements()
+        self.mw.fLeft.sections['ax']['pages']['text'].update_atext_om()
 
         # destroy the window
         chWindow.destroy()

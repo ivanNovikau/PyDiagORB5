@@ -51,9 +51,6 @@ class Ivis:
     # Menu bar
     menubar = None
 
-    # styles:
-    # colorbg_root = mix.to_rgb((120, 120, 120))
-
     # frames:
     fLeft = None
     fFigure = None
@@ -73,8 +70,7 @@ class Ivis:
         if curves.list_curves[0].zs is not None:
             self.flag_2d = True
 
-        ax = self.get_ax()
-        self.curves_default = crv.copy_curves(self.curves, ax)
+        self.curves_default = crv.copy_curves(self.curves, self.get_ax())
 
         # Main window (top widget)
         self.root = tk.Tk()
@@ -82,9 +78,6 @@ class Ivis:
             int(self.WINDOW_SIZE_W), int(self.WINDOW_SIZE_H),
             int(self.WINDOW_POSITION_FROM_RIGHT), int(self.WINDOW_POSITION_FROM_DOWN)
         ))
-        # self.root.configure(
-        #     bg=self.colorbg_root
-        # )
         self.root.wm_title("ivis")
 
         # to handle closure of the window
@@ -142,3 +135,21 @@ class Ivis:
 
     def draw(self):
         self.fig.canvas.draw()
+
+    def build_default_axis(self):
+        self.curves = crv.copy_curves(self.curves_default, self.get_ax())
+        self.build_axis()
+
+    def build_axis(self):
+        curves = self.curves
+        cpr.plot(
+            curves, self.fig, self.get_ax(),
+            FIG_W=curves.ff['figure_width'] / 2,
+            FIG_H=curves.ff['figure_height'] / 2,
+        )
+        self.draw()
+        self.update_elements()
+
+    def update_elements(self):
+        self.fLeft.update_elements()
+        self.fFigure.update_elements()

@@ -42,12 +42,20 @@ def reload():
 # *** Basic Frame ***
 class BFrame(tk.Frame):
     mw = None  # main window
+    names_sections = None
+    sections = {}
 
     def __init__(self, mw, **kwargs):
         if 'bg' not in kwargs:
             kwargs['bg'] = GLO.IVIS_frame_color
         super(BFrame, self).__init__(**kwargs)
         self.mw = mw
+
+    def update_elements(self):
+        for oname in self.names_sections:
+            sec = self.sections[oname]
+            for opage in sec['pages'].values():
+                opage.update_elements()
 
 
 # *** Figure Frame (where figures are plotted) ***
@@ -110,6 +118,9 @@ class FigureFrame(BFrame):
 
         # set position of frame elemens
         self.arrange_elements()
+
+    def update_elements(self):
+        pass
 
     def arrange_elements(self):
         self.fUpper.grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
@@ -303,6 +314,9 @@ class BottomFigureFrame(BFrame):
         )
         self.elements['zoom'].grid(row=0, column=9)
 
+    def update_elements(self):
+        pass
+
     def view_xyz(self):
         self.mw.fFigure.flag_curves_xyz_data = \
             not self.mw.fFigure.flag_curves_xyz_data
@@ -331,10 +345,9 @@ class BottomFigureFrame(BFrame):
 
 # *** Left Frame (with Figure, Axes properties and processing) ***
 class LeftFrame(BFrame):
-    names_sections = ['fig', 'ax', 'proc']
-    sections = {}
 
     def __init__(self, mw, **kwargs):
+        self.names_sections = ['fig', 'ax', 'proc']
         super(LeftFrame, self).__init__(mw, **kwargs)
 
         # --- create sections' dictionaries ---

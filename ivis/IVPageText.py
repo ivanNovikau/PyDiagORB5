@@ -39,6 +39,21 @@ class PageText(ivis_base_page.BasePage):
 
         self.create_elements()
 
+    def update_elements(self):
+        curves = self.mw.curves
+        self.elements['title'].set(curves.ff['title'] if curves.ff['title'] is not None else "")
+        self.elements['xlabel'].set(curves.ff['xlabel'] if curves.ff['xlabel'] is not None else "")
+        self.elements['ylabel'].set(curves.ff['ylabel'] if curves.ff['ylabel'] is not None else "")
+        self.elements['xaticks'].set("")
+        self.elements['yaticks'].set("")
+        self.update_atext_om()
+
+    def update_atext_om(self):
+        curves = self.mw.curves
+        self.elements['atext']['om'].update_options(
+            mix.get_atext_from_curves(curves)
+        )
+
     def create_elements(self):
         curves = self.mw.curves
 
@@ -49,18 +64,27 @@ class PageText(ivis_base_page.BasePage):
         self.elements['title'] = ivb.LabelledEntry(
             self.frame, "Title: ", [cnt.next(), 0], curves.ff['title']
         ).var
+        self.elements['title'].trace('w', self.write_title)
+
         self.elements['xlabel'] = ivb.LabelledEntry(
             self.frame, "X label: ", [cnt.next(), 0], curves.ff['xlabel']
         ).var
+        self.elements['xlabel'].trace('w', self.write_xlabel)
+
         self.elements['ylabel'] = ivb.LabelledEntry(
             self.frame, "Y label: ", [cnt.next(), 0], curves.ff['ylabel']
         ).var
+        self.elements['ylabel'].trace('w', self.write_ylabel)
+
         self.elements['xaticks'] = ivb.LabelledEntry(
             self.frame, "X additional ticks: ", [cnt.next(), 0], ""
         ).var
+        self.elements['xaticks'].trace('w', self.write_xaticks)
+
         self.elements['yaticks'] = ivb.LabelledEntry(
             self.frame, "Y additional ticks: ", [cnt.next(), 0], ""
         ).var
+        self.elements['yaticks'].trace('w', self.write_yaticks)
 
         # --- Create a dictionary to save elements to describe additional text ---
         self.elements['atext'] = {}
@@ -82,18 +106,6 @@ class PageText(ivis_base_page.BasePage):
 
         # --- Frame with properties of a selected additional text ---
         self.create_frame_additional_text(cnt.next())
-
-        # --- create buttons ---
-        ivb.BButton(
-            master=self.frame,
-            text='Set new format',
-            command=self.set_format
-        ).grid(row=cnt.next(), column=0)
-        ivb.BButton(
-            master=self.frame,
-            text='Default format',
-            command=self.default_format
-        ).grid(row=cnt.counter, column=1)
 
     def create_frame_additional_text(self, id_row):
         # create a frame
@@ -205,45 +217,33 @@ class PageText(ivis_base_page.BasePage):
             self.mw.curves.list_text[self.id_current_text].flag_invisible = \
                 self.elements['atext']['flag_invisible'].get()
 
-    def default_format(self):
-        self.update_default_elements()
-        self.draw_new_format()
+    def write_title(self, *args):
+        self.mw.curves.ff['title'] = self.elements['title'].get()
 
-    def update_default_elements(self):
-        curves = self.mw.curves = crv.copy_curves(
-            self.mw.curves_default, self.mw.get_ax()
+    def write_xlabel(self, *args):
+        self.mw.curves.ff['xlabel'] = self.elements['xlabel'].get()
+
+    def write_ylabel(self, *args):
+        self.mw.curves.ff['ylabel'] = self.elements['ylabel'].get()
+
+    def write_xaticks(self, *args):
+        ivis_add_xticks = list(
+            mix.array_from_str(self.elements['xaticks'].get())
         )
-        self.update_elements(curves)
+        self.mw.curves.ff['ivis_add_xticks'] = ivis_add_xticks
+        if len(ivis_add_xticks) > 0:
+            self.mw.curves.ff['xticks'] = \
+                self.mw.curves_default.ff['xticks'] + ivis_add_xticks
 
-    def update_elements(self, curves=None):
-        if curves is None:
-            curves = self.mw.curves
-        self.elements['title'].set(curves.ff['title'] if curves.ff['title'] is not None else "")
-        self.elements['xlabel'].set(curves.ff['xlabel'] if curves.ff['xlabel'] is not None else "")
-        self.elements['ylabel'].set(curves.ff['ylabel'] if curves.ff['ylabel'] is not None else "")
-        self.elements['xaticks'].set("")
-        self.elements['yaticks'].set("")
-        self.elements['atext']['om'].update_options(
-            mix.get_atext_from_curves(curves)
+    def write_yaticks(self, *args):
+        ivis_add_yticks = list(
+            mix.array_from_str(self.elements['yaticks'].get())
         )
+        self.mw.curves.ff['ivis_add_yticks'] = ivis_add_yticks
+        if len(ivis_add_yticks) > 0:
+            self.mw.curves.ff['yticks'] = \
+                self.mw.curves_default.ff['yticks'] + ivis_add_yticks
 
-    def set_format(self):
-        ivis_add_xticks = list(mix.array_from_str(self.elements['xaticks'].get()))
-        ivis_add_yticks = list(mix.array_from_str(self.elements['yaticks'].get()))
-        self.mw.curves.ff.update({
-            'title': self.elements['title'].get(),
-            'xlabel': self.elements['xlabel'].get(),
-            'ylabel': self.elements['ylabel'].get(),
-            'xticks': self.mw.curves_default.ff['xticks'] + ivis_add_xticks,
-            'yticks': self.mw.curves_default.ff['yticks'] + ivis_add_yticks,
-            'ivis_add_xticks': ivis_add_xticks,
-            'ivis_add_yticks': ivis_add_yticks,
-        })
-        self.draw_new_format()
 
-    def draw_new_format(self):
-        cpr.format_plot(
-            self.mw.fig, self.mw.get_ax(), self.mw.curves, self.mw.flag_2d
-        )
-        self.mw.draw()
+
 

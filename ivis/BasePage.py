@@ -25,3 +25,7 @@ class BasePage:
     def __init__(self, frame, mw):
         self.frame = frame
         self.mw = mw
+
+    def update_elements(self):
+        curves = self.mw.curves
+        pass

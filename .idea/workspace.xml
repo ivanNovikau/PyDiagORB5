@@ -2,17 +2,13 @@
 <project version="4">
   <component name="ChangeListManager">
     <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="">
-      <change afterPath="$PROJECT_DIR$/ivis/BasePage.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ivis/IVPageAxes.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ivis/IVPageData.py" afterDir="false" />
-      <change afterPath="$PROJECT_DIR$/ivis/IVPageFigures.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ControlPlot.py" beforeDir="false" afterPath="$PROJECT_DIR$/ControlPlot.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Global_variables.py" beforeDir="false" afterPath="$PROJECT_DIR$/Global_variables.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/Mix.py" beforeDir="false" afterPath="$PROJECT_DIR$/Mix.py" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/ivis/IVButtons.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/IVButtons.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/curve.py" beforeDir="false" afterPath="$PROJECT_DIR$/curve.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ivis/BasePage.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/BasePage.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ivis/IVFrames.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/IVFrames.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ivis/IVMenus.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/IVMenus.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ivis/IVPageAxes.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/IVPageAxes.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ivis/IVPageCurves.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/IVPageCurves.py" afterDir="false" />
+      <change beforePath="$PROJECT_DIR$/ivis/IVPageText.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/IVPageText.py" afterDir="false" />
       <change beforePath="$PROJECT_DIR$/ivis/ivis.py" beforeDir="false" afterPath="$PROJECT_DIR$/ivis/ivis.py" afterDir="false" />
     </list>
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
@@ -26,14 +22,14 @@
     <favorites_list name="PyDiagORB5" />
   </component>
   <component name="FileEditorManager">
-    <splitter split-orientation="horizontal" split-proportion="0.56379104">
+    <splitter split-orientation="horizontal" split-proportion="0.4483667">
       <split-first>
         <leaf SIDE_TABS_SIZE_LIMIT_KEY="300">
           <file leaf-file-name="common.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/common.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="60">
-                  <caret line="51" column="27" selection-start-line="51" selection-start-column="27" selection-end-line="51" selection-end-column="27" />
+                <state relative-caret-position="580">
+                  <caret line="1733" lean-forward="true" selection-start-line="1733" selection-end-line="1733" />
                   <folding>
                     <element signature="e#695#1308#0" />
                     <element signature="e#1336#5769#0" />
@@ -413,8 +409,8 @@
           <file leaf-file-name="ivis.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ivis/ivis.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-573">
-                  <caret line="55" lean-forward="true" selection-start-line="55" selection-end-line="55" />
+                <state relative-caret-position="394">
+                  <caret line="146" column="26" lean-forward="true" selection-start-line="146" selection-start-column="26" selection-end-line="146" selection-end-column="26" />
                   <folding>
                     <element signature="e#234#447#0" />
                     <element signature="e#578#665#0" />
@@ -423,49 +419,25 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="curve.py" pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/curve.py">
+          <file leaf-file-name="IVPageText.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/ivis/IVPageText.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="880">
-                  <caret line="211" column="4" selection-start-line="211" selection-start-column="4" selection-end-line="214" selection-end-column="6" />
+                <state relative-caret-position="520">
+                  <caret line="107" column="53" lean-forward="true" selection-start-line="107" selection-start-column="53" selection-end-line="107" selection-end-column="53" />
                   <folding>
-                    <element signature="e#113#251#0" />
-                    <element signature="e#448#484#0" />
-                    <element signature="e#517#555#0" />
-                    <element signature="e#586#617#0" />
-                    <element signature="e#648#679#0" />
-                    <element signature="e#710#741#0" />
-                    <element signature="e#772#803#0" />
-                    <element signature="e#838#875#0" />
-                    <element signature="e#934#1032#0" />
-                    <element signature="e#1053#5256#0" />
-                    <element signature="e#1299#1343#0" />
-                    <element signature="e#1664#1747#0" />
-                    <element signature="e#1892#2072#0" />
-                    <element signature="e#2118#2386#0" />
-                    <element signature="e#2518#2841#0" />
-                    <element signature="e#2630#2726#0" />
-                    <element signature="e#2915#3413#0" />
-                    <element signature="e#3255#3413#0" />
-                    <element signature="e#3314#3413#0" />
-                    <element signature="e#3459#3691#0" />
-                    <element signature="e#3570#3691#0" />
-                    <element signature="e#3726#3763#0" />
-                    <element signature="e#3800#4031#0" />
-                    <element signature="e#3840#3945#0" />
-                    <element signature="e#3879#3945#0" />
-                    <element signature="e#3972#4031#0" />
-                    <element signature="e#4070#4263#0" />
-                    <element signature="e#4112#4198#0" />
-                    <element signature="e#4290#4310#0" />
-                    <element signature="e#4352#4641#0" />
-                    <element signature="e#4679#5129#0" />
-                    <element signature="e#4813#5034#0" />
-                    <element signature="e#5163#5256#0" />
-                    <element signature="e#5277#5791#0" />
-                    <element signature="e#5435#5482#0" />
-                    <element signature="e#5524#5791#0" />
-                    <element signature="e#6144#6220#0" />
+                    <element signature="e#559#783#0" />
+                    <element signature="e#897#969#0" />
+                    <element signature="e#1010#2573#0" />
+                    <element signature="e#2635#4587#0" />
+                    <element signature="e#4657#5508#0" />
+                    <element signature="e#5557#5787#0" />
+                    <element signature="e#5833#5999#0" />
+                    <element signature="e#6045#6211#0" />
+                    <element signature="e#6261#6440#0" />
+                    <element signature="e#6492#6669#0" />
+                    <element signature="e#8015#8072#0" />
+                    <element signature="e#8115#8172#0" />
+                    <element signature="e#8228#8287#0" />
                   </folding>
                 </state>
               </provider>
@@ -474,28 +446,48 @@
           <file leaf-file-name="IVFrames.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ivis/IVFrames.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="387">
-                  <caret line="334" column="10" lean-forward="true" selection-start-line="334" selection-start-column="10" selection-end-line="334" selection-end-column="10" />
+                <state relative-caret-position="200">
+                  <caret line="45" column="16" selection-start-line="45" selection-start-column="16" selection-end-line="45" selection-end-column="16" />
                   <folding>
-                    <element signature="e#0#17#0" expanded="true" />
-                    <element signature="e#824#1034#0" />
-                    <element signature="e#1119#7738#0" />
-                    <element signature="e#3175#3271#0" />
-                    <element signature="e#7831#9566#0" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="IVMenus.py" pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/ivis/IVMenus.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-20">
-                  <caret line="83" lean-forward="true" selection-start-line="83" selection-end-line="83" />
-                  <folding>
-                    <element signature="e#0#17#0" expanded="true" />
-                    <element signature="e#517#686#0" />
-                    <element signature="e#628#686#0" />
+                    <element signature="e#705#1056#0" />
+                    <element signature="e#1227#1365#0" />
+                    <element signature="e#1406#1566#0" />
+                    <element signature="e#1452#1566#0" />
+                    <element signature="e#1651#8315#0" />
+                    <element signature="e#2034#3198#0" />
+                    <element signature="e#3239#3243#0" />
+                    <element signature="e#3285#3707#0" />
+                    <element signature="e#3752#3848#0" />
+                    <element signature="e#3896#5163#0" />
+                    <element signature="e#3930#5031#0" />
+                    <element signature="e#3966#5031#0" />
+                    <element signature="e#4056#4179#0" />
+                    <element signature="e#4071#4179#0" />
+                    <element signature="e#4264#5031#0" />
+                    <element signature="e#4284#4392#0" />
+                    <element signature="e#4499#4603#0" />
+                    <element signature="e#5205#5568#0" />
+                    <element signature="e#5609#7440#0" />
+                    <element signature="e#5677#7319#0" />
+                    <element signature="e#6245#7029#0" />
+                    <element signature="e#7346#7440#0" />
+                    <element signature="e#7388#7440#0" />
+                    <element signature="e#7482#8315#0" />
+                    <element signature="e#7603#8284#0" />
+                    <element signature="e#8408#10188#0" />
+                    <element signature="e#8573#9395#0" />
+                    <element signature="e#9436#9440#0" />
+                    <element signature="e#9474#9836#0" />
+                    <element signature="e#9630#9723#0" />
+                    <element signature="e#9750#9836#0" />
+                    <element signature="e#9871#10188#0" />
+                    <element signature="e#9980#10074#0" />
+                    <element signature="e#10101#10188#0" />
+                    <element signature="e#10288#12598#0" />
+                    <element signature="e#10330#11422#0" />
+                    <element signature="e#10736#11311#0" />
+                    <element signature="e#11466#12087#0" />
+                    <element signature="e#12130#12598#0" />
                   </folding>
                 </state>
               </provider>
@@ -508,24 +500,16 @@
           <file leaf-file-name="ControlPlot.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/ControlPlot.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="-201">
-                  <caret line="447" column="27" lean-forward="true" selection-start-line="447" selection-start-column="27" selection-end-line="447" selection-end-column="27" />
+                <state relative-caret-position="267">
+                  <caret line="47" selection-start-line="47" selection-end-line="47" />
                   <folding>
                     <element signature="e#358#463#0" />
                     <element signature="e#499#1221#0" />
                     <element signature="e#589#650#0" />
                     <element signature="e#733#1221#0" />
                     <element signature="e#795#1221#0" />
-                    <element signature="e#1289#1555#0" />
-                    <element signature="e#1630#2984#0" />
-                    <element signature="e#1927#2119#0" />
-                    <element signature="e#1955#2119#0" />
-                    <element signature="e#2138#2321#0" />
-                    <element signature="e#2166#2286#0" />
-                    <element signature="e#2377#2880#0" />
                     <element signature="e#2452#2880#0" />
                     <element signature="e#2518#2880#0" />
-                    <element signature="e#2899#2958#0" />
                     <element signature="e#3063#7569#0" />
                     <element signature="e#3127#4378#0" />
                     <element signature="e#3170#4378#0" />
@@ -546,20 +530,24 @@
                     <element signature="e#7441#7539#0" />
                     <element signature="e#7621#8578#0" />
                     <element signature="e#7838#7881#0" />
-                    <element signature="e#8631#11173#0" />
-                    <element signature="e#8686#11173#0" />
-                    <element signature="e#9148#9271#0" />
-                    <element signature="e#9354#9630#0" />
                     <element signature="e#9397#9505#0" />
                     <element signature="e#9540#9630#0" />
                     <element signature="e#9657#11173#0" />
                     <element signature="e#9893#10136#0" />
                     <element signature="e#10171#10583#0" />
+                    <element signature="e#11229#15458#0" />
                     <element signature="e#12197#12398#0" />
                     <element signature="e#12619#12745#0" />
                     <element signature="e#13730#13989#0" />
                     <element signature="e#14309#14469#0" />
                     <element signature="e#14543#14650#0" />
+                    <element signature="e#14734#15125#0" />
+                    <element signature="e#14774#15125#0" />
+                    <element signature="e#15252#15372#0" />
+                    <element signature="e#15507#15685#0" />
+                    <element signature="e#15731#15906#0" />
+                    <element signature="e#15946#16010#0" />
+                    <element signature="e#16013#16040#0" />
                   </folding>
                 </state>
               </provider>
@@ -581,7 +569,7 @@
           <file leaf-file-name="Mix.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/Mix.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="410">
+                <state relative-caret-position="571">
                   <caret line="532" column="32" selection-start-line="532" selection-start-column="32" selection-end-line="532" selection-end-column="32" />
                   <folding>
                     <element signature="e#115#206#0" />
@@ -647,61 +635,107 @@
                     <element signature="e#14717#15230#0" />
                     <element signature="e#15304#15487#0" />
                     <element signature="e#15560#15682#0" />
-                    <element signature="e#15764#15880#0" />
-                    <element signature="e#15772#15863#0" />
                     <element signature="e#15941#16092#0" />
                     <element signature="e#16196#16406#0" />
+                    <element signature="e#16439#16710#0" />
                   </folding>
                 </state>
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="IVPageText.py" pinned="false" current-in-tab="false">
-            <entry file="file://$PROJECT_DIR$/ivis/IVPageText.py">
+          <file leaf-file-name="curve.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/curve.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="389">
-                  <caret line="68" column="8" selection-start-line="68" selection-start-column="8" selection-end-line="74" selection-end-column="9" />
-                  <folding>
-                    <element signature="e#559#783#0" />
-                    <element signature="e#897#969#0" />
-                    <element signature="e#3002#4954#0" />
-                    <element signature="e#5024#5875#0" />
-                    <element signature="e#5116#5593#0" />
-                    <element signature="e#5620#5875#0" />
-                    <element signature="e#5924#6154#0" />
-                    <element signature="e#5973#6154#0" />
-                    <element signature="e#6200#6366#0" />
-                    <element signature="e#6249#6366#0" />
-                    <element signature="e#6412#6578#0" />
-                    <element signature="e#6461#6578#0" />
-                    <element signature="e#6628#6807#0" />
-                    <element signature="e#6677#6807#0" />
-                    <element signature="e#6859#7036#0" />
-                    <element signature="e#6908#7036#0" />
-                  </folding>
-                </state>
-              </provider>
-            </entry>
-          </file>
-          <file leaf-file-name="IVButtons.py" pinned="false" current-in-tab="true">
-            <entry file="file://$PROJECT_DIR$/ivis/IVButtons.py">
-              <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="398">
-                  <caret line="175" selection-start-line="175" selection-end-line="175" />
+                <state relative-caret-position="302">
+                  <caret line="66" column="45" selection-start-line="66" selection-start-column="45" selection-end-line="66" selection-end-column="45" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
-                    <element signature="e#382#737#0" />
-                    <element signature="e#540#737#0" />
-                    <element signature="e#790#943#0" />
-                    <element signature="e#859#943#0" />
-                    <element signature="e#996#3130#0" />
-                    <element signature="e#1264#1905#0" />
-                    <element signature="e#2624#3130#0" />
-                    <element signature="e#2820#2920#0" />
-                    <element signature="e#3183#3824#0" />
-                    <element signature="e#3321#3824#0" />
-                    <element signature="e#5641#5964#0" />
-                    <element signature="e#5796#5926#0" />
+                    <element signature="e#113#251#0" />
+                    <element signature="e#448#484#0" />
+                    <element signature="e#586#617#0" />
+                    <element signature="e#648#679#0" />
+                    <element signature="e#710#741#0" />
+                    <element signature="e#772#803#0" />
+                    <element signature="e#838#875#0" />
+                    <element signature="e#934#1032#0" />
+                    <element signature="e#1299#1343#0" />
+                    <element signature="e#1664#1747#0" />
+                    <element signature="e#1892#2072#0" />
+                    <element signature="e#2118#2386#0" />
+                    <element signature="e#2518#2841#0" />
+                    <element signature="e#2630#2726#0" />
+                    <element signature="e#2915#3413#0" />
+                    <element signature="e#3255#3413#0" />
+                    <element signature="e#3314#3413#0" />
+                    <element signature="e#3726#3763#0" />
+                    <element signature="e#3800#4031#0" />
+                    <element signature="e#3840#3945#0" />
+                    <element signature="e#3879#3945#0" />
+                    <element signature="e#3972#4031#0" />
+                    <element signature="e#4070#4263#0" />
+                    <element signature="e#4112#4198#0" />
+                    <element signature="e#4290#4310#0" />
+                    <element signature="e#4352#4641#0" />
+                    <element signature="e#4679#5129#0" />
+                    <element signature="e#4813#5034#0" />
+                    <element signature="e#5163#5256#0" />
+                    <element signature="e#5277#5791#0" />
+                    <element signature="e#5435#5482#0" />
+                    <element signature="e#5524#5791#0" />
+                    <element signature="e#6144#6220#0" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="IVMenus.py" pinned="false" current-in-tab="false">
+            <entry file="file://$PROJECT_DIR$/ivis/IVMenus.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="345">
+                  <caret line="134" column="71" selection-start-line="134" selection-start-column="71" selection-end-line="134" selection-end-column="71" />
+                  <folding>
+                    <element signature="e#335#523#0" />
+                    <element signature="e#573#742#0" />
+                    <element signature="e#684#742#0" />
+                    <element signature="e#985#1141#0" />
+                    <element signature="e#1178#1452#0" />
+                    <element signature="e#1195#1403#0" />
+                    <element signature="e#1491#2881#0" />
+                    <element signature="e#2997#3143#0" />
+                    <element signature="e#3800#12390#0" />
+                    <element signature="e#3842#4187#0" />
+                    <element signature="e#4235#4556#0" />
+                    <element signature="e#4602#5126#0" />
+                    <element signature="e#5014#5105#0" />
+                    <element signature="e#5171#5355#0" />
+                    <element signature="e#5403#7174#0" />
+                    <element signature="e#5658#5953#0" />
+                    <element signature="e#5806#5890#0" />
+                    <element signature="e#6453#6829#0" />
+                    <element signature="e#7222#9536#0" />
+                    <element signature="e#9604#10084#0" />
+                    <element signature="e#10132#10317#0" />
+                    <element signature="e#10369#10603#0" />
+                    <element signature="e#10658#10961#0" />
+                    <element signature="e#10766#10898#0" />
+                    <element signature="e#11018#11563#0" />
+                    <element signature="e#11115#11220#0" />
+                    <element signature="e#11396#11501#0" />
+                    <element signature="e#11621#12390#0" />
+                    <element signature="e#11811#12270#0" />
+                    <element signature="e#11914#12270#0" />
+                  </folding>
+                </state>
+              </provider>
+            </entry>
+          </file>
+          <file leaf-file-name="IVPageCurves.py" pinned="false" current-in-tab="true">
+            <entry file="file://$PROJECT_DIR$/ivis/IVPageCurves.py">
+              <provider selected="true" editor-type-id="text-editor">
+                <state relative-caret-position="305">
+                  <caret line="77" column="34" lean-forward="true" selection-start-line="77" selection-start-column="34" selection-end-line="77" selection-end-column="34" />
+                  <folding>
+                    <element signature="e#0#17#0" expanded="true" />
                   </folding>
                 </state>
               </provider>
@@ -720,8 +754,6 @@
   </component>
   <component name="FindInProjectRecents">
     <findStrings>
-      <find>get_default_filename</find>
-      <find>FIG_SIZE_W</find>
       <find>cpr</find>
       <find>ivis</find>
       <find>plot_data</find>
@@ -750,6 +782,8 @@
       <find>legends</find>
       <find>n_columns</find>
       <find>tb</find>
+      <find>ws</find>
+      <find>CurveName</find>
     </findStrings>
     <replaceStrings>
       <replace>min_n_periods</replace>
@@ -790,7 +824,6 @@
   <component name="IdeDocumentHistory">
     <option name="CHANGED_PATHS">
       <list>
-        <option value="$PROJECT_DIR$/arbitrary_data.py" />
         <option value="$PROJECT_DIR$/Geom.py" />
         <option value="$PROJECT_DIR$/main-ITPA.py" />
         <option value="$PROJECT_DIR$/main_ITPA.py" />
@@ -826,21 +859,22 @@
         <option value="$PROJECT_DIR$/../Ivis/testMatplotlib.py" />
         <option value="$PROJECT_DIR$/ivis/template_plot_2d.txt" />
         <option value="$PROJECT_DIR$/ivis/template_plot_1d.txt" />
-        <option value="$PROJECT_DIR$/curve.py" />
         <option value="$PROJECT_DIR$/Mix.py" />
         <option value="$PROJECT_DIR$/ControlPlot.py" />
         <option value="$PROJECT_DIR$/ivis/IVText.py" />
         <option value="$PROJECT_DIR$/ivis/IVCurves.py" />
         <option value="$PROJECT_DIR$/ivis/IVPageData.py" />
-        <option value="$PROJECT_DIR$/ivis/ivis.py" />
-        <option value="$PROJECT_DIR$/ivis/BasePage.py" />
         <option value="$PROJECT_DIR$/ivis/IVPageFigures.py" />
-        <option value="$PROJECT_DIR$/ivis/IVFrames.py" />
-        <option value="$PROJECT_DIR$/ivis/IVPageText.py" />
-        <option value="$PROJECT_DIR$/ivis/IVPageAxes.py" />
         <option value="$PROJECT_DIR$/Global_variables.py" />
         <option value="$PROJECT_DIR$/ivis/IVButtons.py" />
+        <option value="$PROJECT_DIR$/ivis/BasePage.py" />
+        <option value="$PROJECT_DIR$/ivis/ivis.py" />
+        <option value="$PROJECT_DIR$/ivis/IVPageAxes.py" />
+        <option value="$PROJECT_DIR$/ivis/IVFrames.py" />
         <option value="$PROJECT_DIR$/ivis/IVMenus.py" />
+        <option value="$PROJECT_DIR$/ivis/IVPageText.py" />
+        <option value="$PROJECT_DIR$/curve.py" />
+        <option value="$PROJECT_DIR$/ivis/IVPageCurves.py" />
       </list>
     </option>
   </component>
@@ -1036,9 +1070,8 @@
   </component>
   <component name="ToolWindowManager">
     <frame x="-8" y="-8" width="1936" height="1056" extended-state="6" />
-    <editor active="true" />
     <layout>
-      <window_info active="true" content_ui="combo" id="Project" order="0" sideWeight="0.5751634" visible="true" weight="0.13277134" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.5751634" weight="0.13277134" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32897604" />
       <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.5036881" side_tool="true" weight="0.18736383" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.039106146" />
@@ -1106,7 +1139,7 @@
       <breakpoints-dialog>
         <breakpoints-dialog />
       </breakpoints-dialog>
-      <option name="time" value="3080" />
+      <option name="time" value="3094" />
     </breakpoint-manager>
     <watches-manager>
       <configuration name="4492">
@@ -1228,13 +1261,6 @@ print(Z_calc[0,1:3])</expression-string>
     </expressions>
   </component>
   <component name="editorHistoryManager">
-    <entry file="file://$PROJECT_DIR$/main_CPS2019_old.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="280">
-          <caret line="47" lean-forward="true" selection-start-line="47" selection-end-line="47" selection-end-column="7" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/MPR.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="180">
@@ -1390,13 +1416,6 @@ print(Z_calc[0,1:3])</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/matplotlib/backends/backend_tkagg.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="260">
-          <caret line="13" column="22" selection-start-line="13" selection-start-column="20" selection-end-line="13" selection-end-column="24" />
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/matplotlib/backends/backend_agg.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="-4429">
@@ -1450,6 +1469,45 @@ print(Z_calc[0,1:3])</expression-string>
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="860">
           <caret line="55" column="12" selection-start-line="55" selection-start-column="12" selection-end-line="62" selection-end-column="33" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+            <element signature="e#146#284#0" />
+            <element signature="e#303#469#0" />
+            <element signature="e#463#469#0" />
+            <element signature="e#1464#2145#0" />
+            <element signature="e#1556#1765#0" />
+            <element signature="e#1556#1589#0" />
+            <element signature="e#1672#1709#0" />
+            <element signature="e#1808#2145#0" />
+            <element signature="e#1879#2145#0" />
+            <element signature="e#2170#3147#0" />
+            <element signature="e#2408#3147#0" />
+            <element signature="e#2606#3028#0" />
+            <element signature="e#3176#4116#0" />
+            <element signature="e#3303#3324#0" />
+            <element signature="e#3366#3703#0" />
+            <element signature="e#3746#4116#0" />
+            <element signature="e#4203#4690#0" />
+            <element signature="e#4567#4675#0" />
+            <element signature="e#4804#5403#0" />
+            <element signature="e#4804#4833#0" />
+            <element signature="e#5547#6774#0" />
+            <element signature="e#5659#5703#0" />
+            <element signature="e#6469#6562#0" />
+            <element signature="e#6602#6726#0" />
+            <element signature="e#6818#7858#0" />
+            <element signature="e#6818#6852#0" />
+            <element signature="e#7000#7839#0" />
+            <element signature="e#7945#8147#0" />
+            <element signature="e#8044#8125#0" />
+            <element signature="e#8261#9583#0" />
+            <element signature="e#8261#8334#0" />
+            <element signature="e#8535#9314#0" />
+            <element signature="e#8725#9274#0" />
+            <element signature="e#8931#9001#0" />
+            <element signature="e#9036#9274#0" />
+            <element signature="e#9438#9549#0" />
+          </folding>
         </state>
       </provider>
     </entry>
@@ -1460,56 +1518,194 @@ print(Z_calc[0,1:3])</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/curve.py">
+    <entry file="file://$PROJECT_DIR$/ivis/IVText.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="880">
-          <caret line="211" column="4" selection-start-line="211" selection-start-column="4" selection-end-line="214" selection-end-column="6" />
+        <state relative-caret-position="460">
+          <caret line="42" column="8" selection-start-line="42" selection-start-column="8" selection-end-line="42" selection-end-column="31" />
           <folding>
-            <element signature="e#113#251#0" />
-            <element signature="e#448#484#0" />
-            <element signature="e#517#555#0" />
-            <element signature="e#586#617#0" />
-            <element signature="e#648#679#0" />
-            <element signature="e#710#741#0" />
-            <element signature="e#772#803#0" />
-            <element signature="e#838#875#0" />
-            <element signature="e#934#1032#0" />
-            <element signature="e#1053#5256#0" />
-            <element signature="e#1299#1343#0" />
-            <element signature="e#1664#1747#0" />
-            <element signature="e#1892#2072#0" />
-            <element signature="e#2118#2386#0" />
-            <element signature="e#2518#2841#0" />
-            <element signature="e#2630#2726#0" />
-            <element signature="e#2915#3413#0" />
-            <element signature="e#3255#3413#0" />
-            <element signature="e#3314#3413#0" />
-            <element signature="e#3459#3691#0" />
-            <element signature="e#3570#3691#0" />
-            <element signature="e#3726#3763#0" />
-            <element signature="e#3800#4031#0" />
-            <element signature="e#3840#3945#0" />
-            <element signature="e#3879#3945#0" />
-            <element signature="e#3972#4031#0" />
-            <element signature="e#4070#4263#0" />
-            <element signature="e#4112#4198#0" />
-            <element signature="e#4290#4310#0" />
-            <element signature="e#4352#4641#0" />
-            <element signature="e#4679#5129#0" />
-            <element signature="e#4813#5034#0" />
-            <element signature="e#5163#5256#0" />
-            <element signature="e#5277#5791#0" />
-            <element signature="e#5435#5482#0" />
-            <element signature="e#5524#5791#0" />
-            <element signature="e#6144#6220#0" />
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ivis/IVCurves.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="540">
+          <caret line="46" column="19" selection-start-line="46" selection-start-column="19" selection-end-line="46" selection-end-column="19" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ivis/IVPageData.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="860">
+          <caret line="43" selection-start-line="43" selection-end-line="43" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Global_variables.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="385">
+          <caret line="192" column="59" selection-start-line="192" selection-start-column="59" selection-end-line="192" selection-end-column="59" />
+          <folding>
+            <element signature="e#0#47#0" expanded="true" />
+            <element signature="e#87#93#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ivis/IVButtons.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="425">
+          <caret line="153" column="25" selection-start-line="153" selection-start-column="25" selection-end-line="153" selection-end-column="25" />
+          <folding>
+            <element signature="e#194#326#0" />
+            <element signature="e#382#737#0" />
+            <element signature="e#540#737#0" />
+            <element signature="e#790#943#0" />
+            <element signature="e#859#943#0" />
+            <element signature="e#996#3130#0" />
+            <element signature="e#1264#1905#0" />
+            <element signature="e#1973#2578#0" />
+            <element signature="e#2624#3130#0" />
+            <element signature="e#2820#2920#0" />
+            <element signature="e#3183#3824#0" />
+            <element signature="e#3321#3824#0" />
+            <element signature="e#3887#5964#0" />
+            <element signature="e#4086#4834#0" />
+            <element signature="e#4881#5257#0" />
+            <element signature="e#4944#5230#0" />
+            <element signature="e#5032#5230#0" />
+            <element signature="e#5087#5186#0" />
+            <element signature="e#5305#5592#0" />
+            <element signature="e#5352#5592#0" />
+            <element signature="e#5641#5964#0" />
+            <element signature="e#5796#5926#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/Mix.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="571">
+          <caret line="532" column="32" selection-start-line="532" selection-start-column="32" selection-end-line="532" selection-end-column="32" />
+          <folding>
+            <element signature="e#115#206#0" />
+            <element signature="e#244#290#0" />
+            <element signature="e#335#1716#0" />
+            <element signature="e#400#491#0" />
+            <element signature="e#528#641#0" />
+            <element signature="e#690#785#0" />
+            <element signature="e#825#909#0" />
+            <element signature="e#945#1038#0" />
+            <element signature="e#1077#1608#0" />
+            <element signature="e#1123#1608#0" />
+            <element signature="e#1262#1608#0" />
+            <element signature="e#1625#1696#0" />
+            <element signature="e#1771#2952#0" />
+            <element signature="e#1945#2028#0" />
+            <element signature="e#2070#2255#0" />
+            <element signature="e#2164#2255#0" />
+            <element signature="e#2298#2485#0" />
+            <element signature="e#2402#2485#0" />
+            <element signature="e#2520#2678#0" />
+            <element signature="e#2601#2678#0" />
+            <element signature="e#2713#2890#0" />
+            <element signature="e#2813#2890#0" />
+            <element signature="e#2988#3142#0" />
+            <element signature="e#3166#3387#0" />
+            <element signature="e#3279#3317#0" />
+            <element signature="e#3336#3366#0" />
+            <element signature="e#3430#3757#0" />
+            <element signature="e#3797#3937#0" />
+            <element signature="e#3984#4144#0" />
+            <element signature="e#4197#6967#0" />
+            <element signature="e#7959#8204#0" />
+            <element signature="e#7959#8011#0" />
+            <element signature="e#8255#8366#0" />
+            <element signature="e#8431#8735#0" />
+            <element signature="e#8775#8826#0" />
+            <element signature="e#8877#9499#0" />
+            <element signature="e#9201#9480#0" />
+            <element signature="e#9343#9439#0" />
+            <element signature="e#9576#9734#0" />
+            <element signature="e#9666#9718#0" />
+            <element signature="e#9826#13706#0" />
+            <element signature="e#9826#9885#0" />
+            <element signature="e#10757#10826#0" />
+            <element signature="e#11145#13217#0" />
+            <element signature="e#11267#13170#0" />
+            <element signature="e#11413#11546#0" />
+            <element signature="e#11419#11517#0" />
+            <element signature="e#11560#11608#0" />
+            <element signature="e#11948#12061#0" />
+            <element signature="e#12165#13170#0" />
+            <element signature="e#12339#12394#0" />
+            <element signature="e#12508#12776#0" />
+            <element signature="e#13334#13479#0" />
+            <element signature="e#13599#13690#0" />
+            <element signature="e#13790#14342#0" />
+            <element signature="e#13992#14163#0" />
+            <element signature="e#14032#14163#0" />
+            <element signature="e#14073#14163#0" />
+            <element signature="e#14422#14465#0" />
+            <element signature="e#14555#14605#0" />
+            <element signature="e#14717#15230#0" />
+            <element signature="e#15304#15487#0" />
+            <element signature="e#15560#15682#0" />
+            <element signature="e#15941#16092#0" />
+            <element signature="e#16196#16406#0" />
+            <element signature="e#16439#16710#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/matplotlib/backends/backend_tkagg.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="100">
+          <caret line="8" selection-start-line="8" selection-end-line="8" />
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ivis/IVPageFigures.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="820">
+          <caret line="41" column="12" selection-start-line="41" selection-start-column="12" selection-end-line="41" selection-end-column="12" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ivis/IVPageAxes.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="1040">
+          <caret line="52" column="30" lean-forward="true" selection-start-line="52" selection-start-column="30" selection-end-line="52" selection-end-column="30" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ivis/BasePage.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="600">
+          <caret line="30" column="12" selection-start-line="30" selection-start-column="12" selection-end-line="30" selection-end-column="12" />
+          <folding>
+            <element signature="e#0#17#0" expanded="true" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/common.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="60">
-          <caret line="51" column="27" selection-start-line="51" selection-start-column="27" selection-end-line="51" selection-end-column="27" />
+        <state relative-caret-position="580">
+          <caret line="1733" lean-forward="true" selection-start-line="1733" selection-end-line="1733" />
           <folding>
             <element signature="e#695#1308#0" />
             <element signature="e#1336#5769#0" />
@@ -1885,110 +2081,112 @@ print(Z_calc[0,1:3])</expression-string>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/IVText.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="460">
-          <caret line="42" column="8" selection-start-line="42" selection-start-column="8" selection-end-line="42" selection-end-column="31" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/IVCurves.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="540">
-          <caret line="46" column="19" selection-start-line="46" selection-start-column="19" selection-end-line="46" selection-end-column="19" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/IVPageCurves.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state>
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/IVPageData.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="860">
-          <caret line="43" selection-start-line="43" selection-end-line="43" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/ivis.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-573">
-          <caret line="55" lean-forward="true" selection-start-line="55" selection-end-line="55" />
-          <folding>
-            <element signature="e#234#447#0" />
-            <element signature="e#578#665#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/BasePage.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="520">
-          <caret line="26" column="20" lean-forward="true" selection-start-line="26" selection-start-column="20" selection-end-line="26" selection-end-column="20" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/IVPageFigures.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="687">
-          <caret line="41" column="12" selection-start-line="41" selection-start-column="12" selection-end-line="41" selection-end-column="12" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
     <entry file="file://$PROJECT_DIR$/ivis/IVFrames.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="387">
-          <caret line="334" column="10" lean-forward="true" selection-start-line="334" selection-start-column="10" selection-end-line="334" selection-end-column="10" />
+        <state relative-caret-position="200">
+          <caret line="45" column="16" selection-start-line="45" selection-start-column="16" selection-end-line="45" selection-end-column="16" />
           <folding>
-            <element signature="e#0#17#0" expanded="true" />
-            <element signature="e#824#1034#0" />
-            <element signature="e#1119#7738#0" />
-            <element signature="e#3175#3271#0" />
-            <element signature="e#7831#9566#0" />
+            <element signature="e#705#1056#0" />
+            <element signature="e#1227#1365#0" />
+            <element signature="e#1406#1566#0" />
+            <element signature="e#1452#1566#0" />
+            <element signature="e#1651#8315#0" />
+            <element signature="e#2034#3198#0" />
+            <element signature="e#3239#3243#0" />
+            <element signature="e#3285#3707#0" />
+            <element signature="e#3752#3848#0" />
+            <element signature="e#3896#5163#0" />
+            <element signature="e#3930#5031#0" />
+            <element signature="e#3966#5031#0" />
+            <element signature="e#4056#4179#0" />
+            <element signature="e#4071#4179#0" />
+            <element signature="e#4264#5031#0" />
+            <element signature="e#4284#4392#0" />
+            <element signature="e#4499#4603#0" />
+            <element signature="e#5205#5568#0" />
+            <element signature="e#5609#7440#0" />
+            <element signature="e#5677#7319#0" />
+            <element signature="e#6245#7029#0" />
+            <element signature="e#7346#7440#0" />
+            <element signature="e#7388#7440#0" />
+            <element signature="e#7482#8315#0" />
+            <element signature="e#7603#8284#0" />
+            <element signature="e#8408#10188#0" />
+            <element signature="e#8573#9395#0" />
+            <element signature="e#9436#9440#0" />
+            <element signature="e#9474#9836#0" />
+            <element signature="e#9630#9723#0" />
+            <element signature="e#9750#9836#0" />
+            <element signature="e#9871#10188#0" />
+            <element signature="e#9980#10074#0" />
+            <element signature="e#10101#10188#0" />
+            <element signature="e#10288#12598#0" />
+            <element signature="e#10330#11422#0" />
+            <element signature="e#10736#11311#0" />
+            <element signature="e#11466#12087#0" />
+            <element signature="e#12130#12598#0" />
           </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$PROJECT_DIR$/ivis/IVMenus.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="345">
+          <caret line="134" column="71" selection-start-line="134" selection-start-column="71" selection-end-line="134" selection-end-column="71" />
+          <folding>
+            <element signature="e#335#523#0" />
+            <element signature="e#573#742#0" />
+            <element signature="e#684#742#0" />
+            <element signature="e#985#1141#0" />
+            <element signature="e#1178#1452#0" />
+            <element signature="e#1195#1403#0" />
+            <element signature="e#1491#2881#0" />
+            <element signature="e#2997#3143#0" />
+            <element signature="e#3800#12390#0" />
+            <element signature="e#3842#4187#0" />
+            <element signature="e#4235#4556#0" />
+            <element signature="e#4602#5126#0" />
+            <element signature="e#5014#5105#0" />
+            <element signature="e#5171#5355#0" />
+            <element signature="e#5403#7174#0" />
+            <element signature="e#5658#5953#0" />
+            <element signature="e#5806#5890#0" />
+            <element signature="e#6453#6829#0" />
+            <element signature="e#7222#9536#0" />
+            <element signature="e#9604#10084#0" />
+            <element signature="e#10132#10317#0" />
+            <element signature="e#10369#10603#0" />
+            <element signature="e#10658#10961#0" />
+            <element signature="e#10766#10898#0" />
+            <element signature="e#11018#11563#0" />
+            <element signature="e#11115#11220#0" />
+            <element signature="e#11396#11501#0" />
+            <element signature="e#11621#12390#0" />
+            <element signature="e#11811#12270#0" />
+            <element signature="e#11914#12270#0" />
+          </folding>
+        </state>
+      </provider>
+    </entry>
+    <entry file="file://$USER_HOME$/AppData/Local/Programs/Python/Python36/Lib/site-packages/matplotlib/figure.py">
+      <provider selected="true" editor-type-id="text-editor">
+        <state relative-caret-position="228">
+          <caret line="77" selection-start-line="77" selection-end-line="77" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ControlPlot.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-201">
-          <caret line="447" column="27" lean-forward="true" selection-start-line="447" selection-start-column="27" selection-end-line="447" selection-end-column="27" />
+        <state relative-caret-position="267">
+          <caret line="47" selection-start-line="47" selection-end-line="47" />
           <folding>
             <element signature="e#358#463#0" />
             <element signature="e#499#1221#0" />
             <element signature="e#589#650#0" />
             <element signature="e#733#1221#0" />
             <element signature="e#795#1221#0" />
-            <element signature="e#1289#1555#0" />
-            <element signature="e#1630#2984#0" />
-            <element signature="e#1927#2119#0" />
-            <element signature="e#1955#2119#0" />
-            <element signature="e#2138#2321#0" />
-            <element signature="e#2166#2286#0" />
-            <element signature="e#2377#2880#0" />
             <element signature="e#2452#2880#0" />
             <element signature="e#2518#2880#0" />
-            <element signature="e#2899#2958#0" />
             <element signature="e#3063#7569#0" />
             <element signature="e#3127#4378#0" />
             <element signature="e#3170#4378#0" />
@@ -2009,176 +2207,110 @@ print(Z_calc[0,1:3])</expression-string>
             <element signature="e#7441#7539#0" />
             <element signature="e#7621#8578#0" />
             <element signature="e#7838#7881#0" />
-            <element signature="e#8631#11173#0" />
-            <element signature="e#8686#11173#0" />
-            <element signature="e#9148#9271#0" />
-            <element signature="e#9354#9630#0" />
             <element signature="e#9397#9505#0" />
             <element signature="e#9540#9630#0" />
             <element signature="e#9657#11173#0" />
             <element signature="e#9893#10136#0" />
             <element signature="e#10171#10583#0" />
+            <element signature="e#11229#15458#0" />
             <element signature="e#12197#12398#0" />
             <element signature="e#12619#12745#0" />
             <element signature="e#13730#13989#0" />
             <element signature="e#14309#14469#0" />
             <element signature="e#14543#14650#0" />
+            <element signature="e#14734#15125#0" />
+            <element signature="e#14774#15125#0" />
+            <element signature="e#15252#15372#0" />
+            <element signature="e#15507#15685#0" />
+            <element signature="e#15731#15906#0" />
+            <element signature="e#15946#16010#0" />
+            <element signature="e#16013#16040#0" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/IVPageAxes.py">
+    <entry file="file://$PROJECT_DIR$/curve.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="385">
-          <caret line="60" column="8" selection-start-line="60" selection-start-column="8" selection-end-line="60" selection-end-column="8" />
+        <state relative-caret-position="302">
+          <caret line="66" column="45" selection-start-line="66" selection-start-column="45" selection-end-line="66" selection-end-column="45" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
+            <element signature="e#113#251#0" />
+            <element signature="e#448#484#0" />
+            <element signature="e#586#617#0" />
+            <element signature="e#648#679#0" />
+            <element signature="e#710#741#0" />
+            <element signature="e#772#803#0" />
+            <element signature="e#838#875#0" />
+            <element signature="e#934#1032#0" />
+            <element signature="e#1299#1343#0" />
+            <element signature="e#1664#1747#0" />
+            <element signature="e#1892#2072#0" />
+            <element signature="e#2118#2386#0" />
+            <element signature="e#2518#2841#0" />
+            <element signature="e#2630#2726#0" />
+            <element signature="e#2915#3413#0" />
+            <element signature="e#3255#3413#0" />
+            <element signature="e#3314#3413#0" />
+            <element signature="e#3726#3763#0" />
+            <element signature="e#3800#4031#0" />
+            <element signature="e#3840#3945#0" />
+            <element signature="e#3879#3945#0" />
+            <element signature="e#3972#4031#0" />
+            <element signature="e#4070#4263#0" />
+            <element signature="e#4112#4198#0" />
+            <element signature="e#4290#4310#0" />
+            <element signature="e#4352#4641#0" />
+            <element signature="e#4679#5129#0" />
+            <element signature="e#4813#5034#0" />
+            <element signature="e#5163#5256#0" />
+            <element signature="e#5277#5791#0" />
+            <element signature="e#5435#5482#0" />
+            <element signature="e#5524#5791#0" />
+            <element signature="e#6144#6220#0" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/Mix.py">
+    <entry file="file://$PROJECT_DIR$/ivis/ivis.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="410">
-          <caret line="532" column="32" selection-start-line="532" selection-start-column="32" selection-end-line="532" selection-end-column="32" />
+        <state relative-caret-position="394">
+          <caret line="146" column="26" lean-forward="true" selection-start-line="146" selection-start-column="26" selection-end-line="146" selection-end-column="26" />
           <folding>
-            <element signature="e#115#206#0" />
-            <element signature="e#244#290#0" />
-            <element signature="e#335#1716#0" />
-            <element signature="e#400#491#0" />
-            <element signature="e#528#641#0" />
-            <element signature="e#690#785#0" />
-            <element signature="e#825#909#0" />
-            <element signature="e#945#1038#0" />
-            <element signature="e#1077#1608#0" />
-            <element signature="e#1123#1608#0" />
-            <element signature="e#1262#1608#0" />
-            <element signature="e#1625#1696#0" />
-            <element signature="e#1771#2952#0" />
-            <element signature="e#1945#2028#0" />
-            <element signature="e#2070#2255#0" />
-            <element signature="e#2164#2255#0" />
-            <element signature="e#2298#2485#0" />
-            <element signature="e#2402#2485#0" />
-            <element signature="e#2520#2678#0" />
-            <element signature="e#2601#2678#0" />
-            <element signature="e#2713#2890#0" />
-            <element signature="e#2813#2890#0" />
-            <element signature="e#2988#3142#0" />
-            <element signature="e#3166#3387#0" />
-            <element signature="e#3279#3317#0" />
-            <element signature="e#3336#3366#0" />
-            <element signature="e#3430#3757#0" />
-            <element signature="e#3797#3937#0" />
-            <element signature="e#3984#4144#0" />
-            <element signature="e#4197#6967#0" />
-            <element signature="e#7959#8204#0" />
-            <element signature="e#7959#8011#0" />
-            <element signature="e#8255#8366#0" />
-            <element signature="e#8431#8735#0" />
-            <element signature="e#8775#8826#0" />
-            <element signature="e#8877#9499#0" />
-            <element signature="e#9201#9480#0" />
-            <element signature="e#9343#9439#0" />
-            <element signature="e#9576#9734#0" />
-            <element signature="e#9666#9718#0" />
-            <element signature="e#9826#13706#0" />
-            <element signature="e#9826#9885#0" />
-            <element signature="e#10757#10826#0" />
-            <element signature="e#11145#13217#0" />
-            <element signature="e#11267#13170#0" />
-            <element signature="e#11413#11546#0" />
-            <element signature="e#11419#11517#0" />
-            <element signature="e#11560#11608#0" />
-            <element signature="e#11948#12061#0" />
-            <element signature="e#12165#13170#0" />
-            <element signature="e#12339#12394#0" />
-            <element signature="e#12508#12776#0" />
-            <element signature="e#13334#13479#0" />
-            <element signature="e#13599#13690#0" />
-            <element signature="e#13790#14342#0" />
-            <element signature="e#13992#14163#0" />
-            <element signature="e#14032#14163#0" />
-            <element signature="e#14073#14163#0" />
-            <element signature="e#14422#14465#0" />
-            <element signature="e#14555#14605#0" />
-            <element signature="e#14717#15230#0" />
-            <element signature="e#15304#15487#0" />
-            <element signature="e#15560#15682#0" />
-            <element signature="e#15764#15880#0" />
-            <element signature="e#15772#15863#0" />
-            <element signature="e#15941#16092#0" />
-            <element signature="e#16196#16406#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/Global_variables.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="385">
-          <caret line="192" column="59" selection-start-line="192" selection-start-column="59" selection-end-line="192" selection-end-column="59" />
-          <folding>
-            <element signature="e#0#47#0" expanded="true" />
-            <element signature="e#87#93#0" />
+            <element signature="e#234#447#0" />
+            <element signature="e#578#665#0" />
           </folding>
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/ivis/IVPageText.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="389">
-          <caret line="68" column="8" selection-start-line="68" selection-start-column="8" selection-end-line="74" selection-end-column="9" />
+        <state relative-caret-position="520">
+          <caret line="107" column="53" lean-forward="true" selection-start-line="107" selection-start-column="53" selection-end-line="107" selection-end-column="53" />
           <folding>
             <element signature="e#559#783#0" />
             <element signature="e#897#969#0" />
-            <element signature="e#3002#4954#0" />
-            <element signature="e#5024#5875#0" />
-            <element signature="e#5116#5593#0" />
-            <element signature="e#5620#5875#0" />
-            <element signature="e#5924#6154#0" />
-            <element signature="e#5973#6154#0" />
-            <element signature="e#6200#6366#0" />
-            <element signature="e#6249#6366#0" />
-            <element signature="e#6412#6578#0" />
-            <element signature="e#6461#6578#0" />
-            <element signature="e#6628#6807#0" />
-            <element signature="e#6677#6807#0" />
-            <element signature="e#6859#7036#0" />
-            <element signature="e#6908#7036#0" />
+            <element signature="e#1010#2573#0" />
+            <element signature="e#2635#4587#0" />
+            <element signature="e#4657#5508#0" />
+            <element signature="e#5557#5787#0" />
+            <element signature="e#5833#5999#0" />
+            <element signature="e#6045#6211#0" />
+            <element signature="e#6261#6440#0" />
+            <element signature="e#6492#6669#0" />
+            <element signature="e#8015#8072#0" />
+            <element signature="e#8115#8172#0" />
+            <element signature="e#8228#8287#0" />
           </folding>
         </state>
       </provider>
     </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/IVButtons.py">
+    <entry file="file://$PROJECT_DIR$/ivis/IVPageCurves.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="398">
-          <caret line="175" selection-start-line="175" selection-end-line="175" />
+        <state relative-caret-position="305">
+          <caret line="77" column="34" lean-forward="true" selection-start-line="77" selection-start-column="34" selection-end-line="77" selection-end-column="34" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
-            <element signature="e#382#737#0" />
-            <element signature="e#540#737#0" />
-            <element signature="e#790#943#0" />
-            <element signature="e#859#943#0" />
-            <element signature="e#996#3130#0" />
-            <element signature="e#1264#1905#0" />
-            <element signature="e#2624#3130#0" />
-            <element signature="e#2820#2920#0" />
-            <element signature="e#3183#3824#0" />
-            <element signature="e#3321#3824#0" />
-            <element signature="e#5641#5964#0" />
-            <element signature="e#5796#5926#0" />
-          </folding>
-        </state>
-      </provider>
-    </entry>
-    <entry file="file://$PROJECT_DIR$/ivis/IVMenus.py">
-      <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="-20">
-          <caret line="83" lean-forward="true" selection-start-line="83" selection-end-line="83" />
-          <folding>
-            <element signature="e#0#17#0" expanded="true" />
-            <element signature="e#517#686#0" />
-            <element signature="e#628#686#0" />
           </folding>
         </state>
       </provider>

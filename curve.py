@@ -3,6 +3,8 @@ import Constants as cst
 import Geom as geom
 import Global_variables as GLO
 
+import numpy as np
+
 
 def reload():
     # Important: put here all modules that you want to reload
@@ -53,6 +55,21 @@ class Curve:
         self.ys_err = ys
         self.xs_err = xs
         return self
+
+    def copy(self):
+        res = Curve()
+        res.xs = np.array(self.xs) if self.xs is not None else None
+        res.ys = np.array(self.ys) if self.ys is not None else None
+        res.zs = np.array(self.zs) if self.zs is not None else None
+
+        res.xs_err = np.array(self.xs_err) if self.xs_err is not None else None
+        res.ys_err = np.array(self.ys_err) if self.ys_err is not None else None
+        res.ws = np.array(self.ws) if self.ws is not None else None
+
+        res.ff = dict(self.ff)
+        res.CurveName = self.CurveName
+
+        return res
 
 
 class Curves:
@@ -182,6 +199,13 @@ class Curves:
         else:
             return False
 
+    def get_legends(self):
+        legends = []
+        for ocurve in self.list_curves:
+            legends.append(ocurve.ff['legend'])
+
+        return legends
+
 
 class PlText:
     x = None
@@ -209,13 +233,26 @@ def copy_curves(curves, ax):
 
     # copy format
     curves_copy.set_ff(curves.ff)
+
+    xlim, ylim = ax.get_xlim(), ax.get_ylim()
+    xticks, yticks = ax.get_xticks(), ax.get_yticks()
+    xticks = xticks[1:]  if xlim[0] > xticks[0] else xticks
+    xticks = xticks[:-1] if xlim[-1] < xticks[-1] else xticks
+    yticks = yticks[1:] if ylim[0] > yticks[0] else yticks
+    yticks = yticks[:-1] if ylim[-1] < yticks[-1] else yticks
+
     curves_copy.ff.update({
-        'xticks': list(ax.get_xticks())[1:-1],
-        'yticks': list(ax.get_yticks())[1:-1],
+        'xticks': xticks,
+        'yticks': yticks,
     })
 
     # copy curves
-    curves_copy.load(curves)
+    for one_curve in curves.list_curves:
+        new_curve = one_curve.copy()
+
+        curves_copy.n_curves += 1
+        curves_copy.list_curves.append(new_curve)
+        curves_copy.map_curves[one_curve.name] = new_curve
 
     # copy texts
     for one_text in curves.list_text:
@@ -225,8 +262,6 @@ def copy_curves(curves, ax):
 
     # copy geometries
     curves_copy.newg(curves.list_geoms)
-
-
 
     return curves_copy
 

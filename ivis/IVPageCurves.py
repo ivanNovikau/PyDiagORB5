@@ -32,6 +32,7 @@ def reload():
 
 
 class PageCurves(ivis_base_page.BasePage):
+    id_selected_legend = None
 
     def __init__(self, **kwargs):
         super(PageCurves, self).__init__(**kwargs)
@@ -44,7 +45,27 @@ class PageCurves(ivis_base_page.BasePage):
         # row counter
         cnt = mix.Counter()
 
-        # # labels:
+        # create curves' dictionaries
+        self.elements['curve'] = {}
+
+        # OptionMenu with available curves
+        self.elements['curve']['om'] = ivb.LabelledOptionMenu(
+            self.frame,
+            "Curves: ",
+            [cnt.next(), 0],
+            curves.get_legends(),
+            self.get_selected_curve
+        )
+
+        # *** set relative sizes ***
+        self.frame.columnconfigure(0, weight=1)
+        self.frame.columnconfigure(1, weight=2)
+        for id_row in range(cnt.n_elements):
+            self.frame.rowconfigure(id_row, weight=0)
+
+        # --- Frame with properties of a selected additional text ---
+        self.create_frame_curve_properties(cnt.next())
+
         # ivb.BLabel(master=cf, text="List of curves: ").grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
         # ivb.BLabel(master=cf, text="Color: ").grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
         # ivb.BLabel(master=cf, text="Colormap: ").grid(row=2, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
@@ -56,3 +77,59 @@ class PageCurves(ivis_base_page.BasePage):
         # n_rows = 6
         # for id_row in range(n_rows):
         #     cf.rowconfigure(id_row, weight=1)
+
+    def update_elements(self):
+        self.update_curves_om()
+
+    def update_curves_om(self):
+        curves = self.mw.curves
+        self.elements['curve']['om'].update_options(
+            curves.get_legends()
+        )
+
+    def create_frame_curve_properties(self, id_row):
+        fcrv = self.elements['curve']
+
+        # create a frame
+        fcrv['frame'] = tk.Frame(
+            self.frame,
+            bg=GLO.IVIS_selected_element_inf_frame
+        )
+        fcrv['frame'].grid(
+            row=id_row, column=0, columnspan=2,
+            sticky=tk.N + tk.S + tk.E + tk.W,
+        )
+
+        # row counter
+        cnt = mix.Counter()
+
+        # legend
+        fcrv['legend'] = ivb.LabelledEntry(
+            fcrv['frame'], "Legend: ", [cnt.next(), 0], ''
+        ).var
+        fcrv['legend'].trace(
+            'w',
+            self.curve_write_legend
+        )
+
+    def get_selected_curve(self, opt_selected, id_selected):
+        self.id_selected_legend = id_selected
+        fcrv = self.elements['curve']
+        if self.id_selected_legend is not None:
+            ocurve = self.mw.curves.list_curves[self.id_selected_legend]
+
+            fcrv['legend'].set(ocurve.ff['legend'])
+
+            fcrv['frame'].tkraise()
+        else:
+            pass
+
+    def curve_write_legend(self, *args):
+        if self.id_selected_legend is not None:
+            res = self.elements['curve']['legend'].get()
+            ocurve = self.mw.curves.list_curves[self.id_selected_legend]
+            ocurve.ff['legend'] = res
+
+
+
+

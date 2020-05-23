@@ -44,26 +44,13 @@ class PageAxes(ivis_base_page.BasePage):
         cnt = mix.Counter()
 
         # Buttons
-        self.elements['bDefault'] = ivb.BButton(
+        ivb.BButton(
             master=self.frame,
-            text="Default axis",
-            command=self.default_axis
-        )
-        self.elements['bDefault'].grid(row=cnt.next(), column=0)
-
-    def default_axis(self):
-        # --- create a figure and plot data ---
-        mw = self.mw
-        ax = mw.get_ax()
-
-        mw.curves = crv.copy_curves(mw.curves_default, ax)
-
-        cpr.plot(
-            mw.curves_default, mw.fig, ax,
-            FIG_W=mw.curves.ff['figure_width'] / 2,
-            FIG_H=mw.curves.ff['figure_height'] / 2,
-        )
-        mw.draw()
-
-        # update elements:
-        mw.fLeft.sections['ax']['pages']['text'].update_default_elements()
+            text="Build axis",
+            command=self.mw.build_axis
+        ).grid(row=cnt.next(), column=0)
+        ivb.BButton(
+            master=self.frame,
+            text="Build default axis",
+            command=self.mw.build_default_axis
+        ).grid(row=cnt.counter, column=1)
