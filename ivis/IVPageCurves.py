@@ -112,6 +112,22 @@ class PageCurves(ivis_base_page.BasePage):
             self.curve_write_legend
         )
 
+        # XY data
+        fcrv['x'] = ivb.LabelledEntry(
+            fcrv['frame'], "X: ", [cnt.next(), 0], ''
+        ).var
+        fcrv['y'] = ivb.LabelledEntry(
+            fcrv['frame'], "Y: ", [cnt.next(), 0], ''
+        ).var
+
+        # add an checkbutton "on fly":
+        fcrv['flag_on_fly'] = tk.IntVar()
+        tk.Checkbutton(
+            fcrv['frame'],
+            text="See XYZ on fly",
+            variable=fcrv['flag_on_fly']
+        ).grid(row=cnt.next(), column=0)
+
     def get_selected_curve(self, opt_selected, id_selected):
         self.id_selected_legend = id_selected
         fcrv = self.elements['curve']
@@ -129,6 +145,29 @@ class PageCurves(ivis_base_page.BasePage):
             res = self.elements['curve']['legend'].get()
             ocurve = self.mw.curves.list_curves[self.id_selected_legend]
             ocurve.ff['legend'] = res
+
+    def follow_curve_xyz_data(self, id_curve, xcurve, ycurve):
+        if self.id_selected_legend == id_curve:
+            fcrv = self.elements['curve']
+            if fcrv['flag_on_fly'].get():
+                fcrv['x'].set(xcurve)
+                fcrv['y'].set(ycurve)
+
+    def set_curve_xyz_point(self, xdata, ydata):
+        if xdata is None or ydata is None:
+            return
+
+        if self.id_selected_legend is not None:
+            fcrv = self.elements['curve']
+            if not fcrv['flag_on_fly'].get():
+                one_curve = self.mw.curves.list_curves[self.id_selected_legend]
+
+                id_x, xcurve, _ = mix.get_ids(one_curve.xs, xdata)
+                ycurve = one_curve.ys[id_x]
+
+                fcrv['x'].set(xcurve)
+                fcrv['y'].set(ycurve)
+
 
 
 

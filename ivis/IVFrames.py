@@ -140,15 +140,17 @@ class FigureFrame(BFrame):
 
     def on_button_press(self, event):
         if event.button == 1:
+
+            # --- ZOOM ------------------------------------------------
             if self.flag_zoom:
 
-                # start drawing a rectangle:
+                # start drawing a rectangle
                 if self.xy_zoom is None:
                     self.xy_zoom = {
                         'x1': event.xdata,
                         'y1': event.ydata
                     }
-                # end drawing a rectangle
+                # ZOOM: end drawing a rectangle
                 else:
                     self.xy_zoom.update({
                         'x2': event.xdata,
@@ -172,6 +174,12 @@ class FigureFrame(BFrame):
 
                     # update the axis
                     self.mw.draw()
+
+            # --- Find a curve XYZ -------------------------------------------------
+            if self.flag_curves_xyz_data:
+                self.mw.fLeft.sections['ax']['pages']['curves'].set_curve_xyz_point(
+                    event.xdata, event.ydata
+                )
 
         if event.button == 3:
             self.popup_menu_canvas.call(event)
@@ -233,6 +241,11 @@ class FigureFrame(BFrame):
                     linewidth=2
                 )
                 ax.add_line(one_line)
+
+                # --- Find a curve XYZ ---
+                self.mw.fLeft.sections['ax']['pages']['curves'].follow_curve_xyz_data(
+                    id_curve, x_curve, y_curve
+                )
 
             ax.set_xlim(x_lim)
             ax.set_ylim(y_lim)
