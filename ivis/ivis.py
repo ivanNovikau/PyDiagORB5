@@ -103,7 +103,7 @@ class Ivis:
         self.root.config(menu=self.menubar)
 
         # --- create the window grid ---
-        n_columns = 3
+        n_columns = 2
         self.fLeft.grid(
             row=0, column=0,
             sticky=tk.N + tk.S + tk.E + tk.W
@@ -113,8 +113,9 @@ class Ivis:
             sticky=tk.N + tk.S + tk.E + tk.W
         )
         self.root.rowconfigure(0, weight=1)
-        for id_column in range(n_columns):
-            self.root.columnconfigure(id_column, weight=1)
+        self.root.columnconfigure(0, weight=1)
+        for id_column in range(1, n_columns):
+            self.root.columnconfigure(id_column, weight=5)
 
         # --- Launch tkinter loop ---
         tk.mainloop()

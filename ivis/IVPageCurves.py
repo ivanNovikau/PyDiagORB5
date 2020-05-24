@@ -58,25 +58,25 @@ class PageCurves(ivis_base_page.BasePage):
         )
 
         # *** set relative sizes ***
-        self.frame.columnconfigure(0, weight=1)
-        self.frame.columnconfigure(1, weight=2)
-        for id_row in range(cnt.n_elements):
-            self.frame.rowconfigure(id_row, weight=0)
+        for id_column in range(2):
+            self.frame.columnconfigure(id_column, weight=1)
+            for id_row in range(cnt.n_elements):
+                self.frame.rowconfigure(id_row, weight=0)
 
         # --- Frame with properties of a selected additional text ---
         self.create_frame_curve_properties(cnt.next())
 
-        # ivb.BLabel(master=cf, text="List of curves: ").grid(row=0, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        # ivb.BLabel(master=cf, text="Color: ").grid(row=1, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
+        # --- Create comparison table ---
+        rows_list = ['X', 'Y', 'Z']
+        columns_list = self.mw.curves.get_legends()
+
+        self.elements['table-comparison'] = ivb.Table(
+            'Curves Comparison Table', self.frame, (cnt.next(), 0, 1, 2),
+            rows_list, columns_list,
+            default_rows_columns=(0, 0, 3, 0)
+        )
+
         # ivb.BLabel(master=cf, text="Colormap: ").grid(row=2, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        # ivb.BLabel(master=cf, text="Styles: ").grid(row=3, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        # ivb.BLabel(master=cf, text="Width: ").grid(row=4, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        # ivb.BLabel(master=cf, text="Marker size: ").grid(row=5, column=0, sticky=tk.N + tk.S + tk.E + tk.W)
-        #
-        # cf.columnconfigure(0, weight=1)
-        # n_rows = 6
-        # for id_row in range(n_rows):
-        #     cf.rowconfigure(id_row, weight=1)
 
     def update_elements(self):
         self.update_curves_om()
@@ -147,18 +147,27 @@ class PageCurves(ivis_base_page.BasePage):
             ocurve.ff['legend'] = res
 
     def follow_curve_xyz_data(self, id_curve, xcurve, ycurve):
+        fcrv = self.elements['curve']
+
+        # follow XYZ data of a selected curve
         if self.id_selected_legend == id_curve:
-            fcrv = self.elements['curve']
             if fcrv['flag_on_fly'].get():
                 fcrv['x'].set(xcurve)
                 fcrv['y'].set(ycurve)
+
+        # follow XYZ data in the table:
+        if fcrv['flag_on_fly'].get():
+            self.elements['table-comparison'].set_cell(0, id_curve, xcurve)  # set x
+            self.elements['table-comparison'].set_cell(1, id_curve, ycurve)  # set y
 
     def set_curve_xyz_point(self, xdata, ydata):
         if xdata is None or ydata is None:
             return
 
+        fcrv = self.elements['curve']
+
+        # set XYZ data of a selected curve:
         if self.id_selected_legend is not None:
-            fcrv = self.elements['curve']
             if not fcrv['flag_on_fly'].get():
                 one_curve = self.mw.curves.list_curves[self.id_selected_legend]
 
@@ -167,6 +176,19 @@ class PageCurves(ivis_base_page.BasePage):
 
                 fcrv['x'].set(xcurve)
                 fcrv['y'].set(ycurve)
+
+        # set XYZ data in the table:
+        if not fcrv['flag_on_fly'].get():
+            tcomp = self.elements['table-comparison']
+            for id_curve in tcomp.map_column_ids.keys():
+                one_curve = self.mw.curves.list_curves[id_curve]
+
+                id_x, xcurve, _ = mix.get_ids(one_curve.xs, xdata)
+                ycurve = one_curve.ys[id_x]
+
+                tcomp.set_cell(0, id_curve, xcurve)  # set x
+                tcomp.set_cell(1, id_curve, ycurve)  # set y
+
 
 
 
