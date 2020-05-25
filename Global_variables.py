@@ -61,8 +61,10 @@ DEF_OPERATION_FFT_2D = {
 # --- FOR PLOTTING ---
 if 'Terminal' in get_ipython().__class__.__name__:
     FLAG_LATEX = True
+    FLAG_IVIS = True
 else:
     FLAG_LATEX = False
+    FLAG_IVIS = False
 
 DASHES_FORMAT = [0.5, 0.4]
 MARKER_EDGE_WIDTH_COEF = 0.5
@@ -140,7 +142,7 @@ DEF_PLOT_FORMAT = {  # describe format of a plot
     'flag_tight_layout': True,
     'sci_limits': (-2, 2),
     'flag_graphic': False,
-    'flag_ivis': False,
+    'flag_ivis': FLAG_IVIS,
     'flag_add_text_plot': True,  # to render or not an additional text
 }
 DEF_CURVE_FORMAT = {  # describe format of a curve
@@ -152,8 +154,6 @@ DEF_CURVE_FORMAT = {  # describe format of a curve
     'markerfacecolor': "None",
     'colormap': DEF_COLORMAP,  # hot, jet, pink, hot_r, jet_r etc.
     'colormap_center': None,
-    # for contour plot, for proper change of vmax,
-    #   change levels as well as np.linspace(vmin, vmax, Nlevels)
     'levels': COLORMAP_LEVELS,
     'pr_alpha': 1,
     'flag_errorbar': False,
@@ -191,6 +191,8 @@ IVIS_color_button = to_rgb((160, 160, 160))
 IVIS_color_active_button = to_rgb((203, 203, 255))
 IVIS_COEF_FONT_SIZE = 3
 IVIS_text_colors = ["black", "red", "green", "blue", "grey"]
+IVIS_line_colors = ["blue", "red", "green", "black", "grey"]
+IVIS_line_width = '1.0pt'
 ext_data = '.dat'
 ext_latex = '.tex'
 ext_png = '.png'

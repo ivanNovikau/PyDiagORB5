@@ -11,6 +11,14 @@
 	grid style=dashed,
 	height=0.5\textwidth,
 	width=IVIS104N{:0.3f}N104IVIS\textwidth,
+	ylabel style={
+		yshift=-1.5ex,
+	},
+	legend style={
+	    font=\tiny,  %\tiny, \small
+	    at={(0,0)},
+		anchor=south west,
+	},
 ]
 IVIS1N{}N1IVIS
 IVIS107N{}N107IVIS

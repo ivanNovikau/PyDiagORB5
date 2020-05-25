@@ -44,6 +44,9 @@ def init(dd):
     dd['path_orb'] = path_to_file
     f = h5.File(path_to_file, 'r')
 
+    if 'flag_equB_mult' not in dd:
+        dd['flag_equB_mult'] = True
+
     # max amount of memory to occupy for one array (in gigabytes):
     dd['max_size_Gb'] = 1.5
 

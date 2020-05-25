@@ -119,6 +119,9 @@ class PageCurves(ivis_base_page.BasePage):
         fcrv['y'] = ivb.LabelledEntry(
             fcrv['frame'], "Y: ", [cnt.next(), 0], ''
         ).var
+        fcrv['z'] = ivb.LabelledEntry(
+            fcrv['frame'], "Z: ", [cnt.next(), 0], ''
+        ).var
 
         # add an checkbutton "on fly":
         fcrv['flag_on_fly'] = tk.IntVar()
@@ -146,7 +149,7 @@ class PageCurves(ivis_base_page.BasePage):
             ocurve = self.mw.curves.list_curves[self.id_selected_legend]
             ocurve.ff['legend'] = res
 
-    def follow_curve_xyz_data(self, id_curve, xcurve, ycurve):
+    def follow_curve_xyz_data(self, id_curve, xcurve, ycurve, zcurve=None):
         fcrv = self.elements['curve']
 
         # follow XYZ data of a selected curve
@@ -154,11 +157,13 @@ class PageCurves(ivis_base_page.BasePage):
             if fcrv['flag_on_fly'].get():
                 fcrv['x'].set(xcurve)
                 fcrv['y'].set(ycurve)
+                fcrv['z'].set(zcurve)
 
         # follow XYZ data in the table:
         if fcrv['flag_on_fly'].get():
             self.elements['table-comparison'].set_cell(0, id_curve, xcurve)  # set x
             self.elements['table-comparison'].set_cell(1, id_curve, ycurve)  # set y
+            self.elements['table-comparison'].set_cell(2, id_curve, zcurve)  # set z
 
     def set_curve_xyz_point(self, xdata, ydata):
         if xdata is None or ydata is None:
@@ -172,7 +177,12 @@ class PageCurves(ivis_base_page.BasePage):
                 one_curve = self.mw.curves.list_curves[self.id_selected_legend]
 
                 id_x, xcurve, _ = mix.get_ids(one_curve.xs, xdata)
-                ycurve = one_curve.ys[id_x]
+                if not one_curve.get_flag_2d():
+                    ycurve = one_curve.ys[id_x]
+                else:
+                    id_y, ycurve, _ = mix.get_ids(one_curve.ys, ydata)
+                    zcurve = one_curve.zs[id_x, id_y]
+                    fcrv['z'].set(zcurve)
 
                 fcrv['x'].set(xcurve)
                 fcrv['y'].set(ycurve)
@@ -182,15 +192,12 @@ class PageCurves(ivis_base_page.BasePage):
             tcomp = self.elements['table-comparison']
             for id_curve in tcomp.map_column_ids.keys():
                 one_curve = self.mw.curves.list_curves[id_curve]
-
                 id_x, xcurve, _ = mix.get_ids(one_curve.xs, xdata)
-                ycurve = one_curve.ys[id_x]
-
+                if not one_curve.get_flag_2d():
+                    ycurve = one_curve.ys[id_x]
+                else:
+                    id_y, ycurve, _ = mix.get_ids(one_curve.ys, ydata)
+                    zcurve = one_curve.zs[id_x, id_y]
+                    tcomp.set_cell(2, id_curve, zcurve)  # set z
                 tcomp.set_cell(0, id_curve, xcurve)  # set x
                 tcomp.set_cell(1, id_curve, ycurve)  # set y
-
-
-
-
-
-

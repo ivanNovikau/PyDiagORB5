@@ -201,9 +201,16 @@ class FileMenu(BMenu):
         for id_curve, one_curve in enumerate(curves.list_curves):
             file_name = fname + "{:d}".format(id_curve) + GLO.ext_data
             file_data_name_curves.append(file_name)
+
+            y_res = one_curve.ys
+            if curves.ff['flag_norm']:
+                y_res = ymath.find_norm(y_res, one_curve.ff['norm_to'])
+            if curves.ff['flag_semilogy']:
+                y_res = abs(y_res)
+
             output_df = pd.DataFrame({
                 'X': one_curve.xs,
-                'Y': one_curve.ys
+                'Y': y_res,
             })
             output_df.to_csv(file_name, sep=" ", index=False)
 
@@ -220,9 +227,15 @@ class FileMenu(BMenu):
         # set .dat file name
         result_data_line = ''
         for id_curve, file_data_name in enumerate(file_data_name_curves):
-            line_file_name = '\\addplot table [y=Y, x=X]{' \
-                             + '{}'.format(file_data_name) \
-                             + '};\n'
+            color_line = GLO.IVIS_line_colors[id_curve]
+            line_style = "solid"
+            if np.mod(id_curve, 2) != 0:
+                line_style = "dashed"
+
+            line_file_name = \
+                '\\addplot ' + '[{}, {}, line width={}]'.format(
+                    color_line, line_style, GLO.IVIS_line_width) + \
+                 ' table [y=Y, x=X]{' + '{}'.format(file_data_name) + '};\n'
             line_legend = '\\addlegendentry{' \
                           + '{}'.format(curves.list_curves[id_curve].ff['legend']) \
                           + '};\n'

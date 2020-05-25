@@ -148,9 +148,21 @@ class Ivis:
             FIG_W=curves.ff['figure_width'] / 2,
             FIG_H=curves.ff['figure_height'] / 2,
         )
+
+        if self.flag_2d:
+            cax = self.get_colorbar()
+            cax.remove()
+
         self.draw()
         self.update_elements()
 
     def update_elements(self):
         self.fLeft.update_elements()
         self.fFigure.update_elements()
+
+    def get_colorbar(self):
+        if self.flag_2d:
+            cax = self.fig.axes[1]
+        else:
+            cax =None
+        return cax

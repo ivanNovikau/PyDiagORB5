@@ -71,6 +71,12 @@ class Curve:
 
         return res
 
+    def get_flag_2d(self):
+        if self.zs is None:
+            return False
+        else:
+            return True
+
 
 class Curves:
     list_curves = None
@@ -201,8 +207,11 @@ class Curves:
 
     def get_legends(self):
         legends = []
-        for ocurve in self.list_curves:
-            legends.append(ocurve.ff['legend'])
+        for id_curve, ocurve in enumerate(self.list_curves):
+            leg = ocurve.ff['legend']
+            if leg is None:
+                leg = "curve {:d}".format(id_curve)
+            legends.append(leg)
 
         return legends
 
@@ -241,10 +250,10 @@ def copy_curves(curves, ax):
     yticks = yticks[1:] if ylim[0] > yticks[0] else yticks
     yticks = yticks[:-1] if ylim[-1] < yticks[-1] else yticks
 
-    curves_copy.ff.update({
-        'xticks': xticks,
-        'yticks': yticks,
-    })
+    # curves_copy.ff.update({
+    #     'xticks': xticks,
+    #     'yticks': yticks,
+    # })
 
     # copy curves
     for one_curve in curves.list_curves:

@@ -21,6 +21,14 @@
 	extra y ticks={IVIS106N{}N106IVIS},
 	height=0.5\textwidth,
 	width=IVIS104N{:0.3f}N104IVIS\textwidth,
+	ylabel style={
+		yshift=-3.5ex,
+	},
+	legend style={
+	    font=\tiny,  %\tiny, \small
+	    at={(0,0)},
+		anchor=south west,
+	},
     enlargelimits=false,
     axis on top
 ]

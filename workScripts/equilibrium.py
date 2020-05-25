@@ -38,11 +38,13 @@ def plot_safety_factor(dds, legends, flag_ivis=False):
 def plot_magnetic_field_configuration(dd, flag_ivis=False):
     oo_format = {
         's_domain': [0.0, 1.0],
-        'flag_mult': False,
         'flag_subplots': False,
-        'q_fluxes': [1.0],
+        'q_fluxes': [1.0, 3.0],
         'flag_graphic': True,
         'flag_plot_q': False,
         'flag_ivis': flag_ivis,
     }
     cm.Bq_equil(dd, oo_format=oo_format)
+
+
+

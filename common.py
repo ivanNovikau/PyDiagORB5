@@ -1808,7 +1808,7 @@ def Bq_equil(dd, oo_format={}):
 
     # --- additional data ---
     s_domain = oo_format.get('s_domain', [0.0, 1.0])
-    flag_mult = oo_format.get('flag_mult', True)
+    flag_mult = dd['flag_equB_mult']
     flag_subplots = oo_format.get('flag_subplots', False)
     flag_q_s = oo_format.get('flag_q_s', False)  # True: plot q(s); False: plot q(R[m])
     q_fluxes = oo_format.get('q_fluxes', None)
@@ -1816,7 +1816,7 @@ def Bq_equil(dd, oo_format={}):
     flag_graphic = oo_format.get('flag_graphic', False)
     flag_plot_B = oo_format.get('flag_plot_B', True)
     flag_plot_q = oo_format.get('flag_plot_q', True)
-    flag_ivis = oo_format.get('flag_ivis', False)
+    flag_ivis = oo_format.get('flag_ivis', GLO.FLAG_IVIS)
 
     qplot_s_ticks = oo_format.get('qplot_s_ticks', np.nan)
 

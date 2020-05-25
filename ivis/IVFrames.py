@@ -12,6 +12,7 @@ import ivis.IVPageFigures as ivp_figures
 import ivis.IVPageAxes as ivp_axes
 
 import numpy as np
+from scipy import interpolate
 import re
 import matplotlib.lines as mlines
 import matplotlib.patches as patches
@@ -165,15 +166,22 @@ class FigureFrame(BFrame):
                     x_lim = (x1, x2) if x1 < x2 else (x2, x1)
                     y_lim = (y1, y2) if y1 < y2 else (y2, y1)
 
-                    ax = self.mw.get_ax()
-                    ax.set_xlim(x_lim)
-                    ax.set_ylim(y_lim)
+                    if not self.mw.flag_2d:
+                        ax = self.mw.get_ax()
+                        ax.set_xlim(x_lim)
+                        ax.set_ylim(y_lim)
+
+                        self.mw.draw()
+                    else:
+                        one_curve = self.mw.curves.list_curves[0]
+                        ids_x, one_curve.xs, _ = mix.get_ids(one_curve.xs, x_lim)
+                        ids_y, one_curve.ys, _ = mix.get_ids(one_curve.ys, y_lim)
+                        one_curve.zs = mix.get_slice(one_curve.zs, ids_x, ids_y)
+
+                        self.mw.build_axis()
 
                     # reset to None XY coordinates of the zoom box
                     self.xy_zoom = None
-
-                    # update the axis
-                    self.mw.draw()
 
             # --- Find a curve XYZ -------------------------------------------------
             if self.flag_curves_xyz_data:
@@ -206,57 +214,76 @@ class FigureFrame(BFrame):
             x_lim = ax.get_xlim()
             y_lim = ax.get_ylim()
 
-            # draw horizontal and vertical lines
-            self.n_temp_lines += 1
-            one_line = mlines.Line2D(
-                [event.xdata, event.xdata], y_lim,
-                color='grey',
-                linestyle=':',
-                linewidth=2
-            )
-            ax.add_line(one_line)
-
-            # draw markers on curves
-            for id_curve, one_curve in enumerate(self.mw.curves.list_curves):
-                self.n_temp_lines += 1
-                id_x, x_curve, _ = mix.get_ids(one_curve.xs, event.xdata)
-                y_curve = one_curve.ys[id_x]
-
-                color_plt = one_curve.ff['color'] \
-                    if one_curve.ff['color'] is not None \
-                    else GLO.new_color(id_curve)
-
-                ax.plot(
-                    x_curve, y_curve,
-                    'o',
-                    color=color_plt,
-                    markersize=10,
-                )
-
+            # draw a vertical line (and a horizontal one for 2d data)
+            if not self.mw.flag_2d:
                 self.n_temp_lines += 1
                 one_line = mlines.Line2D(
-                    [x_lim[0], x_curve], [y_curve, y_curve],
-                    color=color_plt,
+                    [event.xdata, event.xdata], y_lim,
+                    color='grey',
                     linestyle=':',
                     linewidth=2
                 )
                 ax.add_line(one_line)
 
+            # if self.mw.flag_2d:
+            #     self.n_temp_lines += 1
+            #     one_line = mlines.Line2D(
+            #         x_lim, [event.ydata, event.ydata],
+            #         color='grey',
+            #         linestyle=':',
+            #         linewidth=2
+            #     )
+            #     ax.add_line(one_line)
+
+            # draw markers on curves
+            for id_curve, one_curve in enumerate(self.mw.curves.list_curves):
+                if not one_curve.get_flag_2d():
+                    self.n_temp_lines += 1
+                    id_x, x_curve, _ = mix.get_ids(one_curve.xs, event.xdata)
+                    y_curve = one_curve.ys[id_x]
+                    z_curve = None
+
+                    color_plt = one_curve.ff['color'] \
+                        if one_curve.ff['color'] is not None \
+                        else GLO.new_color(id_curve)
+
+                    ax.plot(
+                        x_curve, y_curve,
+                        'o',
+                        color=color_plt,
+                        markersize=10,
+                    )
+
+                    self.n_temp_lines += 1
+                    one_line = mlines.Line2D(
+                        [x_lim[0], x_curve], [y_curve, y_curve],
+                        color=color_plt,
+                        linestyle=':',
+                        linewidth=2
+                    )
+                    ax.add_line(one_line)
+
+                    ax.set_xlim(x_lim)
+                    ax.set_ylim(y_lim)
+
+                    # update the axis
+                    self.mw.draw()
+
+                    # remove lines and markers
+                    for one_line in ax.lines[-self.n_temp_lines:-1]:
+                        one_line.remove()
+                    if len(ax.lines) > 0:
+                        ax.lines[-1].remove()
+                else:
+                    xs, ys, zs = one_curve.xs, one_curve.ys, one_curve.zs
+                    id_x, x_curve, _ = mix.get_ids(xs, event.xdata)
+                    id_y, y_curve, _ = mix.get_ids(ys, event.ydata)
+                    z_curve = zs[id_x, id_y]
+
                 # --- Find a curve XYZ ---
                 self.mw.fLeft.sections['ax']['pages']['curves'].follow_curve_xyz_data(
-                    id_curve, x_curve, y_curve
+                    id_curve, x_curve, y_curve, z_curve
                 )
-
-            ax.set_xlim(x_lim)
-            ax.set_ylim(y_lim)
-
-            # update the axis
-            self.mw.draw()
-
-            # remove lines and markers
-            for one_line in ax.lines[-self.n_temp_lines:-1]:
-                one_line.remove()
-            ax.lines[-1].remove()
         else:
             if self.n_temp_lines > 0:
                 self.n_temp_lines = 0
