@@ -44,8 +44,8 @@ class PageText(ivis_base_page.BasePage):
         self.elements['title'].set(curves.ff['title'] if curves.ff['title'] is not None else "")
         self.elements['xlabel'].set(curves.ff['xlabel'] if curves.ff['xlabel'] is not None else "")
         self.elements['ylabel'].set(curves.ff['ylabel'] if curves.ff['ylabel'] is not None else "")
-        self.elements['xaticks'].set("")
-        self.elements['yaticks'].set("")
+        # self.elements['xaticks'].set("")
+        # self.elements['yaticks'].set("")
         self.update_atext_om()
 
     def update_atext_om(self):
@@ -76,15 +76,15 @@ class PageText(ivis_base_page.BasePage):
         ).var
         self.elements['ylabel'].trace('w', self.write_ylabel)
 
-        self.elements['xaticks'] = ivb.LabelledEntry(
-            self.frame, "X additional ticks: ", [cnt.next(), 0], ""
-        ).var
-        self.elements['xaticks'].trace('w', self.write_xaticks)
-
-        self.elements['yaticks'] = ivb.LabelledEntry(
-            self.frame, "Y additional ticks: ", [cnt.next(), 0], ""
-        ).var
-        self.elements['yaticks'].trace('w', self.write_yaticks)
+        # self.elements['xaticks'] = ivb.LabelledEntry(
+        #     self.frame, "X additional ticks: ", [cnt.next(), 0], ""
+        # ).var
+        # self.elements['xaticks'].trace('w', self.write_xaticks)
+        #
+        # self.elements['yaticks'] = ivb.LabelledEntry(
+        #     self.frame, "Y additional ticks: ", [cnt.next(), 0], ""
+        # ).var
+        # self.elements['yaticks'].trace('w', self.write_yaticks)
 
         # --- Create a dictionary to save elements to describe additional text ---
         self.elements['atext'] = {}
@@ -227,22 +227,24 @@ class PageText(ivis_base_page.BasePage):
         self.mw.curves.ff['ylabel'] = self.elements['ylabel'].get()
 
     def write_xaticks(self, *args):
-        ivis_add_xticks = list(
-            mix.array_from_str(self.elements['xaticks'].get())
-        )
-        self.mw.curves.ff['ivis_add_xticks'] = ivis_add_xticks
-        if len(ivis_add_xticks) > 0:
-            self.mw.curves.ff['xticks'] = \
-                self.mw.curves_default.ff['xticks'] + ivis_add_xticks
+        pass
+        # ivis_add_xticks = list(
+        #     mix.array_from_str(self.elements['xaticks'].get())
+        # )
+        # self.mw.curves.ff['ivis_add_xticks'] = ivis_add_xticks
+        # if len(ivis_add_xticks) > 0:
+        #     self.mw.curves.ff['xticks'] = \
+        #         self.mw.curves_default.ff['xticks'] + ivis_add_xticks
 
     def write_yaticks(self, *args):
-        ivis_add_yticks = list(
-            mix.array_from_str(self.elements['yaticks'].get())
-        )
-        self.mw.curves.ff['ivis_add_yticks'] = ivis_add_yticks
-        if len(ivis_add_yticks) > 0:
-            self.mw.curves.ff['yticks'] = \
-                self.mw.curves_default.ff['yticks'] + ivis_add_yticks
+        pass
+        # ivis_add_yticks = list(
+        #     mix.array_from_str(self.elements['yaticks'].get())
+        # )
+        # self.mw.curves.ff['ivis_add_yticks'] = ivis_add_yticks
+        # if len(ivis_add_yticks) > 0:
+        #     self.mw.curves.ff['yticks'] = \
+        #         self.mw.curves_default.ff['yticks'] + ivis_add_yticks
 
 
 
