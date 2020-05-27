@@ -47,6 +47,9 @@ def init(dd):
     if 'flag_equB_mult' not in dd:
         dd['flag_equB_mult'] = True
 
+    if 'R0-axis' not in dd:
+        dd['R0-axis'] = dd['R0']
+
     # max amount of memory to occupy for one array (in gigabytes):
     dd['max_size_Gb'] = 1.5
 
