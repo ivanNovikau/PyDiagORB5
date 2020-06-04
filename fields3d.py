@@ -30,7 +30,7 @@ def reload():
 
 
 # read 3D data from orb5_res_parallel
-def init(dd, nn=None):
+def init(dd, nn=None, flag_antenna=False):
     # nn - [...], n-modes to read, if None, read all n-modes
 
     # --- read necessary additional parameters ---
@@ -72,9 +72,15 @@ def init(dd, nn=None):
     ff['m_mins']  = np.array(
         f['/data/var3d/generic/pot3d/mmin'][ids_nn_res, :]
     )  # [n, s]
-    coef_bspl_dft = np.array(
-        f['/data/var3d/generic/pot3d/data'][:, ids_nn_res, :, :]
-    )  # [t, n, s, m]
+
+    if not flag_antenna:
+        coef_bspl_dft = np.array(
+            f['/data/var3d/generic/pot3d/data'][:, ids_nn_res, :, :]
+        )  # [t, n, s, m]
+    else:
+        coef_bspl_dft = np.array(
+            f['/data/var3d/generic/pot3d_antenna/data'][:, ids_nn_res, :, :]
+        )  # [t, n, s, m]
 
     ff['coef_bspl_dft'] = coef_bspl_dft[:]['real'] + 1j * coef_bspl_dft[:]['imaginary']
 
@@ -233,7 +239,7 @@ def form_fields_nm(d3, ff, sel_opt_bspl_s='opt2'):
     else:
         ids_n_res = np.array(ids_n)
 
-    # --- get poloidal and toroidal Fourier transformation of signal, but still Bspline in radial direction ---
+    # --- get poloidal and toroidal Fourier transformation of signal
     s_bspl_ft = np.array(coef_bspl_dft)  # [t, n, s, m]
     for count_n, ntor in enumerate(n):
         m_modes_n1 = m_modes[ids_n_res[count_n], :, :]  # [s, m_width]
@@ -841,6 +847,17 @@ def choose_one_var_ts(one_signal):
 
         vvar = signal_n_allm_ts(dd['3d'], ff, n_mode_chosen, chi_point)
         tit_var = '3D:\ <\Phi' + '(n = {:d})'.format(n_mode_chosen) + '>_m'
+    if opt_var == 'n1-antenna':
+        n_mode_chosen = one_signal['n1']
+        chi_point = one_signal.get('chi-point', 0.0)
+
+        init(dd, nn=[n_mode_chosen], flag_antenna=True)
+        ff = dd['3d']['fields']
+        s = ff['s']
+        t = ff['t']
+
+        vvar = signal_n_allm_ts(dd['3d'], ff, n_mode_chosen, chi_point)
+        tit_var = '3D:\ <\Phi_{ant}' + '(n = {:d})'.format(n_mode_chosen) + '>_m'
     if opt_var == 'n1-m1':
         n_mode_chosen = one_signal['n1']
         m_mode_chosen = one_signal['m1']
@@ -970,6 +987,19 @@ def choose_one_var_rz(one_signal):
 
         vvar, t1 = signal_n_allm_t1(dd['3d'], ff, n_mode_chosen, t_point)
         tit_var = '3D:\ <\Phi' + \
+                  '(n = {:d}, t = {:0.3e})'.format(n_mode_chosen, t1) \
+                   + '>_m'
+    if opt_var == 'n1-antenna':
+        n_mode_chosen = one_signal['n1']
+        t_point = one_signal['t-point']
+
+        init(dd, nn=[n_mode_chosen], flag_antenna=True)
+        ff = dd['3d']['fields']
+        s = ff['s']
+        chi = ff['chi']
+
+        vvar, t1 = signal_n_allm_t1(dd['3d'], ff, n_mode_chosen, t_point)
+        tit_var = '3D:\ <\Phi_{ant}' + \
                   '(n = {:d}, t = {:0.3e})'.format(n_mode_chosen, t1) \
                    + '>_m'
     if opt_var == 'n1-m1':
