@@ -12,7 +12,7 @@ def reload():
     mix.reload_module(GLO)
 
 
-def get_pot_rz(dd, t, variable, n_mode, title):
+def get_pot_rz_n1(dd, t, variable, n_mode, title):
     import fields3d
     mix.reload_module(fields3d)
 
@@ -45,6 +45,15 @@ def get_pot_rz(dd, t, variable, n_mode, title):
 
 
 def anim_2d(two_signals, file_to_save):
+    # two_signals = [ss1, ss2]
+    # ss = {
+    #   'title' = line
+    #   't': time coordinate
+    #   'r': 1d or 2d array (x-coordinate)
+    #   'z': 1d or 2d array (y-coordinate)
+    #   'data': 3d array with data(t, r, z)
+    # }
+
     ncols = 1 if two_signals[1] is None else 2
     fig, axes = mpl.subplots(ncols=ncols, nrows=1)
     if ncols == 1:
@@ -54,17 +63,6 @@ def anim_2d(two_signals, file_to_save):
     mpl.ylabel('Z')
 
     oplot = [None] * ncols
-
-    # for id_col in range(ncols):
-    #     ss = two_signals[id_col]
-    #     ax = axes[id_col]
-    #
-    #     ax.set_title(
-    #         ss['title'] + ':\ t = {:0.3e}'.format(ss['t'][0])
-    #     )
-    #     oplot[id_col] = ax.contourf(
-    #         ss['r'], ss['z'], ss['data'][0]
-    #     )
 
     def set_plot(id_t):
         for id_col in range(ncols):
@@ -84,7 +82,7 @@ def anim_2d(two_signals, file_to_save):
     anim = animation.FuncAnimation(
         fig,
         set_plot,
-        frames=100, interval=100, blit=True,
+        frames=len(two_signals[0]['t']), interval=100, blit=True,
     )
     anim.save(file_to_save)
 

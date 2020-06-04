@@ -248,8 +248,9 @@ def form_fields_nm(d3, ff, sel_opt_bspl_s='opt2'):
         if ntor > 0:
             s_bspl_ft[:, ids_n_res[count_n], :, :] = 2 * s_bspl_ft[:, ids_n_res[count_n], :, :]
 
-    # --- sum radial Bspline in radial direction ---
-    data_ft = sum_rad_bspline(sel_opt_bspl_s, d3, ff, s_bspl_ft)
+    data_ft = s_bspl_ft
+    # # --- sum radial Bspline in radial direction ---
+    # data_ft = sum_rad_bspline(sel_opt_bspl_s, d3, ff, s_bspl_ft)
 
     # results:
     ff.update({
@@ -412,8 +413,8 @@ def save_rhsf(dd, n_save, freqs_ant_wc, gamma_ant_wc, A_scaling=None,
         ddata = grp.create_dataset('w', data=np.array(freqs_ant_res), dtype=np.float)
         ddata.attrs[u'descr'] = 'Frequencies [norm. to wci] of antenna toroidal modes.'
 
-        ddata = grp.create_dataset('A', data=np.array(A_scaling), dtype=np.float)
-        ddata.attrs[u'descr'] = 'Scales of antenna toroidal modes.'
+        # ddata = grp.create_dataset('A', data=np.array(A_scaling), dtype=np.float)
+        # ddata.attrs[u'descr'] = 'Scales of antenna toroidal modes.'
 
         # save radial structure and time moments
         grp = ffile.create_group("data/var3d/generic/phi_antenna/run.1")
@@ -706,25 +707,6 @@ def signal_n_allm_ts(d3, ff, n_mode_chosen, chi_point):
             signal_ts[:, id_s1] += data_ft[:, id_n_res, id_s1, id_m] \
                                    * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi_point)
     return np.real(signal_ts)
-
-    # # field toroidal modes
-    # n, ids_n, _ = get_n_modes(ff['n'], d3['n_all_possible_flux'])
-    #
-    # # --- Take into account difference in field3d structures ---
-    # ids_n_res = range(len(n)) \
-    #     if ff['structure_name'] == 'antenna-init' \
-    #     else np.array(ids_n)
-    #
-    # id_n_chosen = np.argwhere(n == n_mode_chosen)[0][0]
-    # id_n_global = ids_n_res[id_n_chosen]
-
-    # # Get a signal in real poloidal and toroidal coordinates:
-    # signal_ts = np.zeros([np.size(t), np.size(s)], dtype=np.complex64)
-    # for id_s1, s1 in enumerate(s):
-    #     for id_m, m_mode in enumerate(m_modes[id_n_global, id_s1, :]):
-    #         signal_ts[:, id_s1] += data_ft[:, id_n_global, id_s1, id_m] \
-    #                     * np.exp(GLO.DEF_SIGN_M * 1j * m_mode * chi_point)
-    # return np.real(signal_ts)
 
 
 def signal_n1_m1_ts(d3, ff, n_mode_chosen, m_mode_chosen, sel_e='none', chi_point=0):

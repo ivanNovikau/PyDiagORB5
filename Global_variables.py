@@ -61,7 +61,8 @@ DEF_OPERATION_FFT_2D = {
 # --- FOR PLOTTING ---
 if 'Terminal' in get_ipython().__class__.__name__:
     FLAG_LATEX = True
-    FLAG_IVIS = True
+    # FLAG_IVIS = True
+    FLAG_IVIS = False
 else:
     FLAG_LATEX = False
     FLAG_IVIS = False
@@ -83,17 +84,30 @@ DEF_SIGN_M = 1
 DEF_TITLE_PAD = 18
 PGFPLOT_WIDTH = 0.5
 if FLAG_LATEX:
-    FLAG_LATEX = True
-    FIG_SIZE_W = 15
-    FIG_SIZE_H = 9.5
-    LEG_SCALE = 1.5
-    FONT_SIZE = 28
-    SCALE_LABELS = 1.8
-    SCALE_TICKS  = 1.5
-    SCALE_ORDER  = 1.2
-    SCALE_TITLE  = 1.3
-    LINE_WIDTH = 6
-    MARKER_SIZE = 14
+    if FLAG_IVIS:
+        FLAG_LATEX = True
+        FIG_SIZE_W = 15
+        FIG_SIZE_H = 9.5
+        LEG_SCALE = 1.5
+        FONT_SIZE = 28
+        SCALE_LABELS = 1.8
+        SCALE_TICKS  = 1.5
+        SCALE_ORDER  = 1.2
+        SCALE_TITLE  = 1.3
+        LINE_WIDTH = 6
+        MARKER_SIZE = 14
+    else:
+        FLAG_LATEX = True
+        FIG_SIZE_W = 30
+        FIG_SIZE_H = 19
+        LEG_SCALE = 1
+        FONT_SIZE = 22
+        SCALE_LABELS = 1.8
+        SCALE_TICKS = 1.5
+        SCALE_ORDER = 1.2
+        SCALE_TITLE = 1.3
+        LINE_WIDTH = 6
+        MARKER_SIZE = 14
 else:
     FLAG_LATEX = False
     FIG_SIZE_W = 10
