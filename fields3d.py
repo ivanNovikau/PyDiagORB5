@@ -322,16 +322,21 @@ def sum_rad_bspline(sel_opt_bspl_s, d3, ff, s_bspl_ft):
 
 
 # Save antenna structure into a .h5 file
-def save_rhsf(dd, n_save, freqs_ant_wc, gamma_ant_wc, A_scaling=None,
-              name_file_antenna='user_antenna.h5', t_moment=None
-              ):
+def save_rhsf(oo):
+    # oo = {} with the following fields:
     # n_save - array of toroidal modes to save.
-    # freqs_ant_wc - array of frequencies of toroidal modes n_save.
+    # flag_one_freq - True: every antenna toroidal mode can have only one frequency;
+    # freqs_ant_wc:
+    #   if flag_one_freq = True: 1d array of frequencies for every toroidal mode n_save.
+    #   if flag_one_freq = False: 2d array of frequencies for every m and n antenna modes.
     # gamma_ant_wc - array of damping (growth) rates of toroidal modes n_save.
-    # A_scaling - array of scalings of the result structures.
+    # A_scaling - array of scalings of the result structures for every toroidal mode.
     # name_file_antenna - name of a file where one is going to save
     #                       the antenna's radial structure
     # t_moment - when to save 3d structure, if None, when save it at the end of the simulation
+    # m_mask - to indicate which m-modes are taken into account in antenna;
+    #   the same mask is applied for every n mode:  [-deltam, ..., -1, 0, 1,... deltam] or None;
+    #   if None, all m-modes are applied [-deltam,...deltam]
 
     def save_coef_bspl_dft(ids_t, ids_n_ant_global_local, gammas=None, T_periods=None):
         if gammas is None:
@@ -345,6 +350,19 @@ def save_rhsf(dd, n_save, freqs_ant_wc, gamma_ant_wc, A_scaling=None,
                 A_scaling_res[id_n_mode] \
                 * np.exp(gammas[id_n_mode] * coef_quarter * T_periods[id_n_mode])
         return coef_bspl_dft
+
+    # get parameters
+    dd = oo['dd']
+    n_save = oo['n_save']
+    freqs_ant_wc = oo['freqs_ant_wc']
+    gamma_ant_wc = oo['gamma_ant_wc']
+
+    A_scaling = oo.get('A_scaling', None)
+    name_file_antenna = oo.get('name_file_antenna', 'user_antenna.h5')
+    t_moment = oo.get('t_moment', None)
+
+    flag_one_freq = oo.get('flag_one_freq', False)
+    m_mask = oo.get('m_mask', None)
 
     # --- read 3d-field data ---
     init(dd, nn=n_save)
