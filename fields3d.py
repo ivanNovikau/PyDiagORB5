@@ -373,7 +373,7 @@ def save_rhsf(dd, n_save, freqs_ant_wc, gamma_ant_wc, A_scaling=None,
     for counter_loc, id_ant in enumerate(ids_n_ant):
         freqs_ant_res[counter_loc] = freqs_ant_wc[id_ant]
         gamma_ant_res[counter_loc] = gamma_ant_wc[id_ant]
-    T_periods_res = 2 * np.pi / freqs_ant_res
+    T_periods_res = 2 * np.pi / abs(freqs_ant_res)
 
     # where we need an additional signal:
     coef_quarter = 0.25  # a signal at (1 - coef_quarter) * T
