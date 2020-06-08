@@ -27,6 +27,10 @@ def wg_calc_n1_s1_chi1(dd, **oo):
     threshold_g = oo['threshold_g']
     n_samples   = oo['n_samples']
 
+    flag_stat = True
+    if 'flag_stat' in oo:
+        flag_stat = oo['flag_stat']
+
     # signal
     ch_signal = GLO.create_signals_dds(
         GLO.def_fields3d_n1,
@@ -48,7 +52,7 @@ def wg_calc_n1_s1_chi1(dd, **oo):
         'filt_global': filt_global,
         'filt_freq': filt_freq,
         # STATISTICS
-        'flag_stat': True,
+        'flag_stat': flag_stat,
         'n_samples': n_samples,
         'min_n_peaks': min_n_peaks,
         'threshold_w': threshold_w,
