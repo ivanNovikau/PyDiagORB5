@@ -61,8 +61,8 @@ DEF_OPERATION_FFT_2D = {
 # --- FOR PLOTTING ---
 if 'Terminal' in get_ipython().__class__.__name__:
     FLAG_LATEX = True
-    # FLAG_IVIS = True
-    FLAG_IVIS = False
+    FLAG_IVIS = True
+    # FLAG_IVIS = False
 else:
     FLAG_LATEX = False
     FLAG_IVIS = False
