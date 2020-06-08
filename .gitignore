@@ -6,3 +6,4 @@ DRACO_*
 main_*.py
 WORK-NOTEBOOKS/
 *.mp4
+.idea/
