@@ -1,10 +1,7 @@
 <?xml version="1.0" encoding="UTF-8"?>
 <project version="4">
   <component name="ChangeListManager">
-    <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="">
-      <change beforePath="$PROJECT_DIR$/.idea/workspace.xml" beforeDir="false" afterPath="$PROJECT_DIR$/.idea/workspace.xml" afterDir="false" />
-      <change beforePath="$PROJECT_DIR$/workScripts/wg_calc.py" beforeDir="false" afterPath="$PROJECT_DIR$/workScripts/wg_calc.py" afterDir="false" />
-    </list>
+    <list default="true" id="9f1d2434-4819-4df5-a06d-dff2fea31796" name="Default" comment="" />
     <option name="EXCLUDED_CONVERTED_TO_IGNORED" value="true" />
     <option name="TRACKING_ENABLED" value="true" />
     <option name="SHOW_DIALOG" value="false" />
@@ -312,7 +309,7 @@
           <file leaf-file-name="main_IANT.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/main_IANT.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="1440">
+                <state relative-caret-position="567">
                   <caret line="87" column="7" selection-start-line="87" selection-end-line="87" selection-end-column="7" />
                   <folding>
                     <element signature="e#0#17#0" expanded="true" />
@@ -325,7 +322,7 @@
             <entry file="file://$PROJECT_DIR$/workScripts/wg_calc.py">
               <provider selected="true" editor-type-id="text-editor">
                 <state relative-caret-position="660">
-                  <caret line="54" column="30" selection-start-line="54" selection-start-column="21" selection-end-line="54" selection-end-column="30" />
+                  <caret line="54" column="30" selection-start-line="54" selection-start-column="30" selection-end-line="54" selection-end-column="30" />
                 </state>
               </provider>
             </entry>
@@ -413,11 +410,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="fields3d.py" pinned="false" current-in-tab="true">
+          <file leaf-file-name="fields3d.py" pinned="false" current-in-tab="false">
             <entry file="file://$PROJECT_DIR$/fields3d.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="467">
-                  <caret line="376" selection-start-line="376" selection-end-line="376" />
+                <state relative-caret-position="127">
+                  <caret line="341" selection-start-line="341" selection-end-line="341" />
                   <folding>
                     <element signature="e#352#691#0" />
                   </folding>
@@ -425,11 +422,11 @@
               </provider>
             </entry>
           </file>
-          <file leaf-file-name="Global_variables.py" pinned="false" current-in-tab="false">
+          <file leaf-file-name="Global_variables.py" pinned="false" current-in-tab="true">
             <entry file="file://$PROJECT_DIR$/Global_variables.py">
               <provider selected="true" editor-type-id="text-editor">
-                <state relative-caret-position="2040">
-                  <caret line="103" column="22" selection-start-line="103" selection-start-column="22" selection-end-line="103" selection-end-column="22" />
+                <state relative-caret-position="527">
+                  <caret line="65" column="5" selection-start-line="65" selection-start-column="5" selection-end-line="65" selection-end-column="5" />
                   <folding>
                     <element signature="e#0#47#0" expanded="true" />
                     <element signature="e#87#93#0" />
@@ -998,31 +995,41 @@
       <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4963119" weight="0.18100558" />
       <window_info id="Favorites" order="2" sideWeight="0.42374727" side_tool="true" weight="0.13751318" />
       <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
-      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
-      <window_info anchor="bottom" id="Message" order="0" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32849163" />
-    </layout>
-    <layout-to-restore>
-      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
-      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
-      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
-      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.5751634" weight="0.13277134" />
+      <window_info anchor="bottom" id="Version Control" order="7" weight="0.3714597" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.5751634" weight="0.09536354" />
       <window_info id="Structure" order="1" sideWeight="0.4248366" side_tool="true" weight="0.13751318" />
       <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
       <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
       <window_info anchor="bottom" id="TODO" order="6" weight="0.32897604" />
       <window_info anchor="bottom" id="Run" order="2" weight="0.039106146" />
-      <window_info anchor="bottom" id="Find" order="1" weight="0.32897604" />
+      <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4963119" weight="0.18100558" />
+      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Event Log" order="7" sideWeight="0.5036881" side_tool="true" weight="0.18736383" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
+      <window_info id="Favorites" order="2" sideWeight="0.42374727" side_tool="true" weight="0.13751318" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32849163" />
+      <window_info anchor="bottom" id="Terminal" order="7" weight="0.32897604" />
       <window_info anchor="bottom" id="Python Console" order="7" weight="0.32897604" />
+    </layout>
+    <layout-to-restore>
+      <window_info anchor="right" content_ui="combo" id="Hierarchy" order="2" weight="0.25" />
+      <window_info anchor="bottom" id="Inspection" order="5" weight="0.4" />
+      <window_info content_ui="combo" id="Project" order="0" sideWeight="0.5751634" weight="0.13277134" />
+      <window_info id="Structure" order="1" sideWeight="0.4248366" side_tool="true" weight="0.13751318" />
+      <window_info anchor="right" id="Commander" internal_type="SLIDING" order="0" type="SLIDING" weight="0.4" />
+      <window_info anchor="right" id="Ant Build" order="1" weight="0.25" />
+      <window_info anchor="bottom" id="TODO" order="6" weight="0.32897604" />
+      <window_info anchor="bottom" id="Version Control" order="10" weight="0.3714597" />
+      <window_info anchor="bottom" id="Run" order="2" weight="0.039106146" />
+      <window_info anchor="bottom" id="Message" order="0" />
       <window_info anchor="bottom" id="Debug" order="3" sideWeight="0.4963119" visible="true" weight="0.12960894" />
       <window_info anchor="bottom" id="Terminal" order="8" weight="0.32897604" />
       <window_info anchor="bottom" id="Event Log" order="9" sideWeight="0.5036881" side_tool="true" weight="0.18736383" />
-      <window_info anchor="bottom" id="Version Control" order="10" weight="0.3714597" />
-      <window_info anchor="bottom" id="Message" order="0" />
+      <window_info anchor="bottom" id="Cvs" order="4" weight="0.25" />
       <window_info id="Favorites" order="2" sideWeight="0.42374727" side_tool="true" weight="0.13751318" />
+      <window_info anchor="bottom" id="Find" order="1" weight="0.32897604" />
+      <window_info anchor="bottom" id="Python Console" order="7" weight="0.32897604" />
     </layout-to-restore>
   </component>
   <component name="VcsContentAnnotationSettings">
@@ -1641,8 +1648,8 @@ print(Z_calc[0,1:3])</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/Global_variables.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="2040">
-          <caret line="103" column="22" selection-start-line="103" selection-start-column="22" selection-end-line="103" selection-end-column="22" />
+        <state relative-caret-position="527">
+          <caret line="65" column="5" selection-start-line="65" selection-start-column="5" selection-end-line="65" selection-end-column="5" />
           <folding>
             <element signature="e#0#47#0" expanded="true" />
             <element signature="e#87#93#0" />
@@ -1760,7 +1767,7 @@ print(Z_calc[0,1:3])</expression-string>
     </entry>
     <entry file="file://$PROJECT_DIR$/main_IANT.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="1440">
+        <state relative-caret-position="567">
           <caret line="87" column="7" selection-start-line="87" selection-end-line="87" selection-end-column="7" />
           <folding>
             <element signature="e#0#17#0" expanded="true" />
@@ -2047,14 +2054,14 @@ print(Z_calc[0,1:3])</expression-string>
     <entry file="file://$PROJECT_DIR$/workScripts/wg_calc.py">
       <provider selected="true" editor-type-id="text-editor">
         <state relative-caret-position="660">
-          <caret line="54" column="30" selection-start-line="54" selection-start-column="21" selection-end-line="54" selection-end-column="30" />
+          <caret line="54" column="30" selection-start-line="54" selection-start-column="30" selection-end-line="54" selection-end-column="30" />
         </state>
       </provider>
     </entry>
     <entry file="file://$PROJECT_DIR$/fields3d.py">
       <provider selected="true" editor-type-id="text-editor">
-        <state relative-caret-position="467">
-          <caret line="376" selection-start-line="376" selection-end-line="376" />
+        <state relative-caret-position="127">
+          <caret line="341" selection-start-line="341" selection-end-line="341" />
           <folding>
             <element signature="e#352#691#0" />
           </folding>
