@@ -236,15 +236,21 @@ class FileMenu(BMenu):
                 '\\addplot ' + '[{}, {}, line width={}]'.format(
                     color_line, line_style, GLO.IVIS_line_width) + \
                  ' table [y=Y, x=X]{' + '{}'.format(file_data_name) + '};\n'
-            line_legend = '\\addlegendentry{' \
+            line_legend = '\\addlegendentry{$' \
                           + '{}'.format(curves.list_curves[id_curve].ff['legend']) \
-                          + '};\n'
+                          + '$};\n'
             result_data_line += line_file_name + line_legend
         result_data_line = result_data_line[:-1]
         result_text = mix.template_set(result_text, 1, result_data_line)
 
         # set general figure properties:
         result_text = self.set_figure_general_properties(result_text)
+
+        # set y log if necessary
+        if curves.ff['flag_semilogy']:
+            result_text = mix.template_set(result_text, 201, 'ymode=log')
+        else:
+            result_text = mix.template_set(result_text, 201, 'ymode=normal')
 
         # save the resulting text into the .tex file
         ff_tex.write(result_text)
@@ -258,6 +264,15 @@ class FileMenu(BMenu):
         xmin, xmax = np.min(ref_curve.xs), np.max(ref_curve.xs)
         ymin, ymax = np.min(ref_curve.ys), np.max(ref_curve.ys)
         zmin, zmax = np.min(ref_curve.zs), np.max(ref_curve.zs)
+
+        if self.mw.curves.ff['xlimits'] is not None:
+            xmin, xmax = self.mw.curves.ff['xlimits'][0], self.mw.curves.ff['xlimits'][-1]
+        if self.mw.curves.ff['ylimits'] is not None:
+            ymin, ymax = self.mw.curves.ff['ylimits'][0], self.mw.curves.ff['ylimits'][-1]
+        if self.mw.curves.ff['vmin'] is not None:
+            zmin = self.mw.curves.ff['vmin']
+        if self.mw.curves.ff['vmax'] is not None:
+            zmax = self.mw.curves.ff['vmax']
 
         # --- rebuild the figure without axes, and enlarged ---
         self.mw.curves.ff['flag_graphic'] = True
@@ -330,14 +345,14 @@ class FileMenu(BMenu):
         resulting_title = '' \
             if self.mw.curves.ff['title'] is None \
             else self.mw.curves.ff['title']
-        return mix.template_set(result_text, 101, resulting_title)
+        return mix.template_set(result_text, 101, '$' + resulting_title + '$')
 
     def set_xy_labels(self, result_text):
         result_text = mix.template_set(
-            result_text, 102, self.mw.curves.ff['xlabel']
+            result_text, 102, '$' + self.mw.curves.ff['xlabel'] + '$'
         )
         result_text = mix.template_set(
-            result_text, 103, self.mw.curves.ff['ylabel']
+            result_text, 103, '$' + self.mw.curves.ff['ylabel'] + '$'
         )
         return result_text
 

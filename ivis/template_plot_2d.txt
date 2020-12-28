@@ -2,7 +2,8 @@
 \begin{axis}[
     title = {IVIS101N{}N101IVIS},
     xlabel= {IVIS102N{}N102IVIS},
-    ylabel= {IVIS103N{}N103IVIS},,
+    ylabel= {IVIS103N{}N103IVIS},
+%	yticklabels={,,},
     colormap/IVIS8N{}N8IVIS,
     colorbar,
     point meta min=IVIS6N{:0.3e}N6IVIS,
@@ -11,21 +12,25 @@
         ytick={},
         y tick label style={
             /pgf/number format/.cd,
-    %			fixed,
-    %			fixed zerofill,
+ %   			fixed,
+ %  			fixed zerofill,
                 precision=2,  % works only up to 2 numbers after the comma
             /tikz/.cd
         },
     },
 	extra x ticks={IVIS105N{}N105IVIS},
 	extra y ticks={IVIS106N{}N106IVIS},
-	height=0.5\textwidth,
+	extra x tick labels={},
+	extra y tick labels={},
+	extra tick style={major tick length=3pt},
+	height=0.33\textwidth,
 	width=IVIS104N{:0.3f}N104IVIS\textwidth,
 	ylabel style={
-		yshift=-3.5ex,
+		yshift=-2ex,
 	},
 	legend style={
 	    font=\tiny,  %\tiny, \small
+	    fill opacity=0.8,
 	    at={(0,0)},
 		anchor=south west,
 	},

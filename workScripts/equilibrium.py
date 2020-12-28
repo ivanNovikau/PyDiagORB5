@@ -10,7 +10,7 @@ def reload():
     mix.reload_module(GLO)
 
 
-def plot_safety_factor(dds, legends, flag_ivis=False):
+def plot_safety_factor(dds, legends):
     s_domain = [0.0, 1.0]
     styles = ['-', ':']
 
@@ -24,7 +24,6 @@ def plot_safety_factor(dds, legends, flag_ivis=False):
         'ylabel': 'safety factor',
         'styles': styles,
         'legends': legends,
-        'flag_ivis': flag_ivis,
     })
     oo_plot = {
         'signals': q_signal_res,
@@ -35,14 +34,12 @@ def plot_safety_factor(dds, legends, flag_ivis=False):
     cm.plot_vars_1d(oo_plot)
 
 
-def plot_magnetic_field_configuration(dd, flag_ivis=False):
+def plot_magnetic_field_configuration(dd):
     oo_format = {
         's_domain': [0.0, 1.0],
         'flag_subplots': False,
         'q_fluxes': [1.0, 3.0],
-        'flag_graphic': True,
         'flag_plot_q': False,
-        'flag_ivis': flag_ivis,
     }
     cm.Bq_equil(dd, oo_format=oo_format)
 

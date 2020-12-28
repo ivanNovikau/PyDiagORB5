@@ -250,8 +250,10 @@ def plot_vars_2d(oo, fig=None, axs=None):
             data_part2 = mix.get_slice(data, ids_s, ids_chi_part2)
             data = np.concatenate((data_part1, data_part2), axis=1)
 
-        coef_R = dd['R0-axis']  # for AUG
-        # coef_R = 1  # for TCV
+        if dd['flag_equB_mult']:
+            coef_R = dd['R0-axis']  # for AUG
+        else:
+            coef_R = 1  # for TCV
 
         x1 = x1/dd['d_norm'] * coef_R
         x2 = x2/dd['d_norm']
@@ -1813,10 +1815,8 @@ def Bq_equil(dd, oo_format={}):
     flag_q_s = oo_format.get('flag_q_s', False)  # True: plot q(s); False: plot q(R[m])
     q_fluxes = oo_format.get('q_fluxes', None)
     flag_output = oo_format.get('flag_output', False)
-    flag_graphic = oo_format.get('flag_graphic', False)
     flag_plot_B = oo_format.get('flag_plot_B', True)
     flag_plot_q = oo_format.get('flag_plot_q', True)
-    flag_ivis = oo_format.get('flag_ivis', GLO.FLAG_IVIS)
 
     qplot_s_ticks = oo_format.get('qplot_s_ticks', np.nan)
 
@@ -1886,7 +1886,6 @@ def Bq_equil(dd, oo_format={}):
             'fontS': font_size_q,
             'figure_width': GLO.FIG_SIZE_H,
             'xticks': qplot_s_ticks,
-            'flag_ivis': flag_ivis,
         })
         oo_plot = {
             'signals': q_signal_res,
@@ -1964,8 +1963,6 @@ def Bq_equil(dd, oo_format={}):
             'fontS': font_size,
             'figure_width': GLO.FIG_SIZE_W/elong,
             'figure_height': GLO.FIG_SIZE_W,
-            'flag_graphic': flag_graphic,
-            'flag_ivis': flag_ivis,
         })
         oo = {
             'signal': ch_signal,
@@ -3740,20 +3737,34 @@ def test_cwt():
     cpr.plot_curves_3d(curves)
 
 
-def check_init_antenna_radial_structure(dd_current, n_chosen_mode, name_file_antenna):
-    t0_antenna = rd.read_array(
-        dd_current['path'] + '/' + name_file_antenna,
-        'data/var3d/generic/phi_antenna/run.1/t0'
-    )[0]  # time moment, where initial antenna structure is written
-    tq_antenna = rd.read_array(
-        dd_current['path'] + '/' + name_file_antenna,
-        'data/var3d/generic/phi_antenna/run.1/tq'
-    )[0]  # time moment, where antenna at 3/4 of a mode period is written
+def check_init_antenna_radial_structure(dd_field, n_chosen_mode, name_file_antenna,
+                                        dd_ant_init=None, flag_subplots=True, oo_format={}):
+    dd_ant = dd_field if dd_ant_init is None else dd_ant_init
+
+    fileA = dd_ant['path'] + '/' + name_file_antenna
+
+    n_ant = rd.read_array(fileA, 'parameters/n_saved')
+    t0_antenna_array = rd.read_array(fileA, 'data/var3d/generic/phi_antenna/run.1/t0')
+    tq_antenna_array = rd.read_array(fileA, 'data/var3d/generic/phi_antenna/run.1/tq')
+
+    title = oo_format.get('title', None)
+    sel_plot = oo_format.get('sel_plot', 'all')
+    ylabel = oo_format.get('ylabel', None)
+
+    # find time moments where antenna with the chosen n is defined:
+    id_ant = np.where(n_chosen_mode == n_ant)[0]
+    if len(id_ant) == 0:
+        print('Error: there is not antenna with such a toroidal mode number '
+              '(n = {:d})'.format(n_chosen_mode)
+              )
+        return
+    t0_antenna = t0_antenna_array[id_ant[0]]
+    tq_antenna = tq_antenna_array[id_ant[0]]
 
     # signals (field and antenna) at t0
     ch_signals = GLO.create_signals_dds(
         GLO.def_potsc_chi1_t,
-        [dd_current, dd_current],
+        [dd_field, dd_ant],
         types=['fields3d'] * 2,
         variables=['n1', 'n1-antenna-init'],
         operations=['point-t'] * 2,
@@ -3767,12 +3778,12 @@ def check_init_antenna_radial_structure(dd_current, n_chosen_mode, name_file_ant
     ff = dict(GLO.DEF_PLOT_FORMAT)
     ff.update({
         'xlabel': 's',
-        'ylabel': '\Phi',
+        'ylabel': '\Phi' if ylabel is None else ylabel,
         'flag_semilogy': False,
         'styles': ['-', ':'],
-        'legends': ['\Phi', '\Phi_a'],
+        'legends': ['original\ field', 'antenna'],
         'flag_legend': True,
-        'title': 't_0[\omega_{ci}^{-1}] = ' + '{:0.3e}'.format(t0_antenna),
+        'title': 't_0[\omega_{ci}^{-1}] = ' + '{:0.3e}'.format(t0_antenna) if title is None else title,
         'fontS': GLO.FONT_SIZE / 1.5,
         'pad_title': GLO.DEF_TITLE_PAD / 3,
     })
@@ -3781,32 +3792,74 @@ def check_init_antenna_radial_structure(dd_current, n_chosen_mode, name_file_ant
     oo = {
         'signals': ch_signals,
         'ff': ff,
-        'flag_plot': False,
+        'flag_plot': not flag_subplots,
     }
-    curves_t0 = plot_vars_1d(oo)
+    if sel_plot == 'all' or sel_plot == 't0':
+        curves_t0 = plot_vars_1d(oo)
 
     # signal at 3/4 of a mode period
     ch_signals[0]['avr_domain'] = tq_antenna
     ch_signals[1]['avr_domain'] = 1
 
     ff['ylabel'] = None
-    ff['title'] = 't_q[\omega_{ci}^{-1}] = ' + '{:0.3e}'.format(tq_antenna)
+    ff['title'] = 't_q[\omega_{ci}^{-1}] = ' + '{:0.3e}'.format(tq_antenna) if title is None else title
 
     oo['signals'] = ch_signals
     oo['ff'] = ff
-    curves_tq = plot_vars_1d(oo)
+
+    if sel_plot == 'all' or sel_plot == 'tq':
+        curves_tq = plot_vars_1d(oo)
 
     # plotting:
-    print('Radial structure of a field and init. antenna in ' + dd_current['project_name'])
-    oo = {
-        'ncols': 2, 'nrows': 1,
-        'list_curves': [curves_t0, curves_tq],
-        'flag_subplots': True,
-    }
-    plot_several_curves(oo)
+    if flag_subplots and sel_plot == 'all':
+        oo = {
+            'ncols': 2, 'nrows': 1,
+            'list_curves': [curves_t0, curves_tq],
+            'flag_subplots': True,
+        }
+        plot_several_curves(oo)
 
 
-def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_antenna, oo_init={}):
+def compare_antenna_radial_structures(dd, n_modes, antennae_file_names, oo_format={}):
+    n_signals = len(n_modes)
+
+    title = oo_format.get('title', None)
+    ylabel = oo_format.get('ylabel', None)
+    legends = oo_format.get('legends', None)
+
+    # signals (field and antenna) at t0
+    ch_signals = GLO.create_signals_dds(
+        GLO.def_potsc_chi1_t,
+        [dd] * n_signals,
+        types=['fields3d'] * n_signals,
+        variables=['n1-antenna-init'] * n_signals,
+        operations=['point-t'] * n_signals,
+        domains=[0] * n_signals,
+    )
+    for id_s, one_signal in enumerate(ch_signals):
+        one_signal['n1'] = n_modes[id_s]
+        one_signal['file_name'] = antennae_file_names[id_s]
+
+    # styling
+    ff = dict(GLO.DEF_PLOT_FORMAT)
+    ff.update({
+        'xlabel': 's',
+        'ylabel': ylabel,
+        'styles': ['-', ':'],
+        'legends': legends,
+        'flag_legend': True,
+        'title': title,
+        'fontS': GLO.FONT_SIZE / 1.5,
+        'pad_title': GLO.DEF_TITLE_PAD / 3,
+    })
+
+    # create curves
+    plot_vars_1d({'signals': ch_signals, 'ff': ff})
+
+
+
+def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_antenna,
+                                          flag_subplots=True, oo_init={}, oo_format={}):
     t0_antenna = rd.read_array(
         dd_current['path'] + '/' + name_file_antenna,
         'data/var3d/generic/phi_antenna/run.1/t0'
@@ -3818,11 +3871,15 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
 
     oo = dict(oo_init)
 
+    sel_plot = oo_format.get('sel_plot', 'all')
+    plane = oo_format.get('plane', 'schi')
+
     # reference signal
     ch_signal_ref = GLO.create_signals_dds(
         GLO.def_fields3d_n1_schi,
         [dd_current],
         operations=['point-t'],
+        planes=[plane],
     )[0]
     ch_signal_ref['n1'] = n_chosen_mode
 
@@ -3858,7 +3915,7 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         'pad_title': GLO.DEF_TITLE_PAD/3,
     })
     oo.update({
-        'flag_plot': False
+        'flag_plot': not flag_subplots
     })
 
     # plasma curves
@@ -3873,7 +3930,8 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         'signal': field_t0,
         'ff': ff
     })
-    curves_field_t0 = plot_vars_2d(oo)
+    if sel_plot == 'all' or sel_plot == 'orig-t0':
+        curves_field_t0 = plot_vars_2d(oo)
 
     ff = dict(ff_ref)
     ff.update({
@@ -3885,7 +3943,8 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         'signal': field_tq,
         'ff': ff
     })
-    curves_field_tq = plot_vars_2d(oo)
+    if sel_plot == 'all' or sel_plot == 'orig-tq':
+        curves_field_tq = plot_vars_2d(oo)
 
     # antenna curves
     ff = dict(ff_ref)
@@ -3900,7 +3959,8 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         'signal': antenna_t0,
         'ff': ff
     })
-    curves_antenna_t0 = plot_vars_2d(oo)
+    if sel_plot == 'all' or sel_plot == 'ant-t0':
+        curves_antenna_t0 = plot_vars_2d(oo)
 
     ff = dict(ff_ref)
     ff.update({
@@ -3913,16 +3973,18 @@ def check_init_antenna_poloidal_structure(dd_current, n_chosen_mode, name_file_a
         'signal': antenna_tq,
         'ff': ff
     })
-    curves_antenna_tq = plot_vars_2d(oo)
+    if sel_plot == 'all' or sel_plot == 'ant-tq':
+        curves_antenna_tq = plot_vars_2d(oo)
 
     # plotting:
-    oo = {
-        'ncols': 2, 'nrows': 2,
-        'list_curves': [curves_field_t0, curves_field_tq, curves_antenna_t0, curves_antenna_tq],
-        'flag_subplots': True,
-        'flag_3d': True,
-    }
-    plot_several_curves(oo)
+    if flag_subplots and sel_plot == 'all':
+        oo = {
+            'ncols': 2, 'nrows': 2,
+            'list_curves': [curves_field_t0, curves_field_tq, curves_antenna_t0, curves_antenna_tq],
+            'flag_subplots': flag_subplots,
+            'flag_3d': True,
+        }
+        plot_several_curves(oo)
 
 
 def check_antenna_potsc_t0(dd_field, dd_ant, n_chosen_mode, name_file_antenna_ref,
@@ -4159,6 +4221,23 @@ def get_q_s1(dd, s1):
     q, s = get_q(dd)
     q1 = np.interp(s1, s, q)
     return q1
+
+
+def get_t1_max(dd):
+    zf.phibar(dd)
+    t = dd['phibar']['t']
+    return t[-1]
+
+
+def get_rz_grids(dd):
+    rd.potsc_grids(dd)
+    res = {
+        's': dd['potsc_grids']['s'],
+        'chi': dd['potsc_grids']['chi'],
+        'r': dd['potsc_grids']['r'],
+        'z': dd['potsc_grids']['z']
+    }
+    return res
 
 
 def test_circle(dd):

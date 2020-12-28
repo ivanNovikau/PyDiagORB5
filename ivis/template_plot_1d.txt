@@ -1,23 +1,36 @@
 \begin{tikzpicture}
 \begin{axis}[
+    IVIS201N{}N201IVIS,
 	title={IVIS101N{}N101IVIS},
 	xlabel={IVIS102N{}N102IVIS},
 	ylabel={IVIS103N{}N103IVIS},
-	legend pos=north west,
+%	yticklabels={,,},
+%	legend pos=north west,
 	extra x ticks={IVIS105N{}N105IVIS},
 	extra y ticks={IVIS106N{}N106IVIS},
+	extra x tick labels={},
+	extra y tick labels={},
+	extra tick style={major tick length=3pt},
 	xmajorgrids=true,
 	ymajorgrids=true,
 	grid style=dashed,
-	height=0.5\textwidth,
+	height=0.33\textwidth,
 	width=IVIS104N{:0.3f}N104IVIS\textwidth,
 	ylabel style={
-		yshift=-1.5ex,
+		yshift=-0.5ex,
+	},
+	x tick label style={
+		/pgf/number format/.cd,
+					fixed,
+		%			fixed zerofill,
+		precision=2,  % works only up to 2 numbers after the comma
+		/tikz/.cd
 	},
 	legend style={
 	    font=\tiny,  %\tiny, \small
-	    at={(0,0)},
-		anchor=south west,
+	    fill opacity=0.8,
+%	    at={(0,0)},
+%		anchor=south west,
 	},
 ]
 IVIS1N{}N1IVIS

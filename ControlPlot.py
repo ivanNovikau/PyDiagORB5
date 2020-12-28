@@ -420,7 +420,7 @@ def format_plot(fig, ax, curves, flag_2d=False):
     # set title
     res_title = mix.create_line_from_list(curves.ff['title'])
 
-    if res_title is None:
+    if res_title is None or curves.ff['flag_graphic']:
         res_title = ""
 
     ax.set_title(res_title,

@@ -103,6 +103,7 @@ def init(dd):
     dd['T_speak'] = dd['electrons'].T_speak(dd)  # !!!
     dd['rhoL_speak'] = ymath.find_rhoL(dd['T_speak'], dd['B0'], dd['pf'].mass, dd['pf'].Z)
     dd['ele-nbar-m3'] = equil_profiles.ne_avr_m3(dd)
+    dd['rho_star'] = ymath.find_rho_star(dd['Lx'])
 
     # magnetic equilibrium:
     sel_equil = f['/parameters/basic/nsel_equil'].attrs

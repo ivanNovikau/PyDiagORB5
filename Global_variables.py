@@ -15,6 +15,12 @@ MPR_FILE_NAME = 'orb5_res.h5'
 
 dd_null = {'project_name': 'NULL\ PROJECT'}
 
+# type compatible with the complex-like type that ORB5 understands
+comp_datatype = np.dtype([
+    ('real', np.float),
+    ('imaginary', np.float)
+])
+
 # ---------------------------------------------------------------------------
 MIN_N_PEAKS = 3
 COEF_ERR = 1.96          # alpha-quantile of the standard normal distribution
@@ -82,7 +88,6 @@ DEF_COLORS = ['b', 'r', 'g', 'black', 'm', 'c',
 DEF_STYLES = ['-', ':', '-.', ':']
 DEF_SIGN_M = 1
 DEF_TITLE_PAD = 18
-PGFPLOT_WIDTH = 0.5
 if FLAG_LATEX:
     if FLAG_IVIS:
         FLAG_LATEX = True
@@ -205,14 +210,14 @@ IVIS_color_button = to_rgb((160, 160, 160))
 IVIS_color_active_button = to_rgb((203, 203, 255))
 IVIS_COEF_FONT_SIZE = 3
 IVIS_text_colors = ["black", "red", "green", "blue", "grey"]
-IVIS_line_colors = ["blue", "red", "green", "black", "grey"]
+IVIS_line_colors = ["blue", "red", "gray", "black", "green"]
 IVIS_line_width = '1.0pt'
 ext_data = '.dat'
 ext_latex = '.tex'
 ext_png = '.png'
 ext_eps = '.eps'
 IVIS_height_tab_frame = 30
-
+PGFPLOT_WIDTH = 0.33
 
 # --- DEFAULT VARIABLE DEFINITIONS ---
 DEF_SPECIES = 'deuterium'
@@ -319,6 +324,13 @@ def_efield = {
     'plane':            'tnone',
     'avr_operation':    'none-',
     'species':          'total',
+}
+def_chi0_ts = {
+    'type':             'transport',
+    'variable':         'chi_norm0',
+    'plane':            'ts',
+    'avr_operation':    'point-s',
+    'avr_domain':       0.5,
 }
 def_arbitrary_1d = {
     'type':             'arbitrary',
