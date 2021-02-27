@@ -115,7 +115,8 @@ def plot_curves_3d(curves, fig=None, axs=None, FIG_W=None, FIG_H=None):
                 boundaries_map = np.linspace(curves.ff['vmin'], curves.ff['vmax'], 31)
 
             cb = fig.colorbar(
-                ref, shrink=0.8, extend='both',
+                ref, shrink=0.8, 
+                extend='both',
                 cax=cax, ax=axs,
                 boundaries=boundaries_map
             )
@@ -256,7 +257,8 @@ def plot_curves_3d_subplot(curves, ax, fig):
          cmap=res_colormap,
          norm=divnorm,
          vmin=curves.ff['vmin'],  # for proper change of vmax, change levels as well as np.linspace(vmin, vmax, Nlevels)
-         vmax=curves.ff['vmax']
+         vmax=curves.ff['vmax'],
+         extend='both'
     )
     return cs
 
@@ -429,8 +431,9 @@ def format_plot(fig, ax, curves, flag_2d=False):
               usetex=True)
     if GLO.FLAG_LATEX:
         mpl.rc('text', usetex=True)
-        mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
-        mpl.rcParams['text.latex.preamble'] = [r'\boldmath']
+        # mpl.rcParams['text.latex.preamble'] = [r"\usepackage{amsmath}"]
+        # mpl.rcParams['text.latex.preamble'] = [r'\boldmath']
+        mpl.rcParams['text.latex.preamble'] = r"\usepackage{amsmath} \boldmath"
 
     # draw geometrical figures:
     for igeom in range(ngeoms):

@@ -53,11 +53,10 @@ dd_init = {
 }
 
 # --- STANDARD PROJECT ---
-project_geometry        = dict(dd_init)
 project_root_path       = root_lin
 project_relative_path   = '/n0-egam/025b/f001-mpr'
 project_name            = 'LINEAR\ ES\, ADIABATIC\ ELECTRONS'
-b025_f001  = set_dd(project_geometry, project_root_path, project_relative_path, project_name)
+b025_f001  = set_dd(dict(dd_init), project_root_path, project_relative_path, project_name)
 
 # --- PROJECT WITH A LINEAR EGAM IN NLED-AUG WITH DRIFT-KINETIC ELECTRONS ---
 b025k_f001 = set_dd(dict(dd_init), root_lin, '/n0-egam/025b/KIN-smax90/scan-fpart/f001',
